@@ -2730,10 +2730,32 @@ body {
   /** 有公里规则的内置区域；其余分组（超外系、外内系、自建组）公里留白 */
   var KM_GROUP_IDS = ['zone-ab', 'zone-cd', 'zone-ys'];
 
-  /** 该目的地是否没有公里规则（所在分组不是三大内置区域） */
-  function isKmUnknownDest(dest) {
-    var id = getDestGroupId(dest);
-    return !id || KM_GROUP_IDS.indexOf(id) < 0;
+  /** 内置分组的基准地点：组内没单独登记公里的地点，跟随基准地点的公里 */
+  var GROUP_ANCHORS = {
+    'zone-ab': ['外一', '外二'],
+    'zone-cd': ['外四', '外五'],
+    'zone-ys': ['洋山', '沧海路', '洋山（查验）'],
+  };
+
+  /** 某内置分组在当前始发地下的基准公里；没有基准返回 null */
+  function groupAnchorKm(origin, groupId) {
+    var anchors = GROUP_ANCHORS[groupId];
+    if (!anchors) return null;
+    for (var i = 0; i < anchors.length; i++) {
+      var v = lookupBaseKm(origin, anchors[i]);
+      if (typeof v === 'number' && v > 0) return v;
+    }
+    return null;
+  }
+
+  /** 某段的实际公里：自己登记的（非 0）优先，没填则跟随所在分组的基准地点 */
+  function resolveDestKm(origin, dest) {
+    var own = lookupBaseKm(origin, dest);
+    if (typeof own === 'number' && own > 0) return own;
+    var gid = getDestGroupId(dest);
+    // 非内置区域（超外系 / 外内系 / 自建组）没有基准，留空手填
+    if (!gid || KM_GROUP_IDS.indexOf(gid) < 0) return null;
+    return groupAnchorKm(origin, gid);
   }
 
   /** 自动算总公里；有目的地没有公里规则时返回 null（表示需要手填） */
@@ -2749,9 +2771,10 @@ body {
         prevDest = s.dest;
         return;
       }
-      var km = lookupBaseKm(origin, s.dest);
-      // 未配置公里（新分组 / 新目的地）→ 留白，交给人手填
-      if (km === null || isKmUnknownDest(s.dest)) {
+      // 自己没登记公里就跟随所在分组（例如 创元六 在外四外五系 → 按外四/外五算）
+      var km = resolveDestKm(origin, s.dest);
+      // 没有基准的分组（超外系 / 外内系 / 自建组）→ 留白，交给人手填
+      if (km === null) {
         unknown = true;
       } else {
         sum += km;
