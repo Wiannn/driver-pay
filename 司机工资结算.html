@@ -4684,25 +4684,13 @@ body {
     map.setLimitBounds(new AMap.Bounds([120.8, 30.5], [122.25, 31.9]));
   }
 
-  /** 用上海市边界做遮罩，上海以外的区域压暗 */
-  function applyShanghaiMask(map) {
-    if (!map) return;
-    AMap.plugin('AMap.DistrictSearch', function () {
-      var search = new AMap.DistrictSearch({ level: 'city', subdistrict: 0, extensions: 'all' });
-      search.search('上海市', function (status, result) {
-        var d = status === 'complete' && result && result.districtList && result.districtList[0];
-        if (!d || !d.boundaries || !map.setMask) return;
-        map.setMask(d.boundaries);
-      });
-    });
-  }
-
   function initMainMap() {
     if (!mapState.map) {
       $('mapCanvas').innerHTML = '';
       try {
         mapState.map = new AMap.Map('mapCanvas', {
           zoom: 11,
+          zooms: [10, 18],
           center: [121.72, 30.88],
           viewMode: '2D',
           resizeEnable: true,
@@ -4715,7 +4703,6 @@ body {
         return;
       }
       setShanghaiLimit(mapState.map);
-      applyShanghaiMask(mapState.map);
       mapState.map.on('click', onMainMapClick);
     } else {
       mapState.map.resize();
@@ -4949,12 +4936,12 @@ body {
     if (!mapState.coordMap) {
       $('coordMap').innerHTML = '';
       mapState.coordMap = new AMap.Map('coordMap', {
-        zoom: existing ? 14 : 11,
+        zoom: existing ? 14 : 12,
+        zooms: [11, 18],
         center: existing ? [existing.lng, existing.lat] : [121.72, 30.88],
         resizeEnable: true,
       });
       setShanghaiLimit(mapState.coordMap);
-      applyShanghaiMask(mapState.coordMap);
       mapState.coordMap.on('click', function (event) {
         mapState.coordLatLng = {
           lat: round6(event.lnglat.getLat()),
