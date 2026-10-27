@@ -2057,7 +2057,7 @@ body {
     <div class="page-head">
       <div>
         <h2>目的地地图</h2>
-        <p class="sub">按区域查看所有始发地与目的地。左键点「未标注」的地点再点地图即可设定坐标；右键地点（或地图上的圆点）可改用弹窗设置或清除坐标。</p>
+        <p class="sub">按区域查看所有始发地与目的地。点地点可定位放大；右键地点（或地图上的圆点）可在地图上点选坐标、用弹窗精确设置或清除坐标。</p>
       </div>
       <div class="page-actions">
         <button type="button" class="btn btn-ghost" id="mapFitBtn">全览</button>
@@ -3052,13 +3052,13 @@ body {
       if (!row) return;
       var name = row.dataset.mapPlace;
       var coord = placeCoord(name);
-      if (coord) {
-        var group = getPlaceGroups().filter(function (g) { return g.names.indexOf(name) >= 0; })[0];
-        if (mapState.map) mapState.map.setZoomAndCenter(13, [coord.lng, coord.lat]);
-        if (group) openPlaceInfo(name, group);
-      } else {
-        startMapPick(name);
+      if (!coord) {
+        toast('「' + name + '」还没有坐标，右键选「在地图上点选」或「用弹窗精确设置」');
+        return;
       }
+      if (mapState.map) mapState.map.setZoomAndCenter(15, [coord.lng, coord.lat]);
+      var group = getPlaceGroups().filter(function (g) { return g.names.indexOf(name) >= 0; })[0];
+      if (group) openPlaceInfo(name, group);
     });
     $('mapPlaceList').addEventListener('contextmenu', function (e) {
       var row = e.target.closest('[data-map-place]');
