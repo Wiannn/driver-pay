@@ -810,6 +810,31 @@ body {
   background: #fff;
 }
 
+.data-table .trip-updated {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.data-table .trip-date,
+.data-table .trip-route {
+  cursor: text;
+}
+
+.data-table .trip-date input.inline-edit,
+.data-table .trip-route select.inline-edit {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+  outline: none;
+  background: #fff;
+}
+
 .data-table .empty-cell {
   text-align: center;
   padding: 34px 20px;
@@ -2122,13 +2147,14 @@ body {
         <table class="data-table">
           <thead>
             <tr>
-              <th>日期</th>
+              <th>日期（双击编辑）</th>
               <th>司机</th>
-              <th>线路</th>
+              <th>线路（双击编辑）</th>
               <th>箱号（双击编辑）</th>
               <th class="num">公里数</th>
               <th class="num">提成（元）</th>
               <th>备注（双击编辑）</th>
+              <th>更新时间</th>
               <th class="op"></th>
             </tr>
           </thead>
@@ -3099,6 +3125,7 @@ body {
       id: newId(), date: date, driver_id: driverId,
       route_id: routeId, route_origin: routeOrigin, route_steps: routeSteps,
       route_name: routeName, km: round2(km), commission: round2(commission),
+      updated_at: tripStamp(),
     };
     db.trips.push(trip);
     saveLocal();
@@ -3586,7 +3613,11 @@ body {
       var cell = e.target.closest('.container-no[data-trip]');
       if (cell) { e.preventDefault(); editContainerNo(cell); return; }
       var note = e.target.closest('.trip-note[data-trip]');
-      if (note) { e.preventDefault(); editTripNote(note); }
+      if (note) { e.preventDefault(); editTripNote(note); return; }
+      var dateCell = e.target.closest('.trip-date[data-trip]');
+      if (dateCell) { e.preventDefault(); editTripDate(dateCell); return; }
+      var routeCell = e.target.closest('.trip-route[data-trip]');
+      if (routeCell) { e.preventDefault(); editTripRoute(routeCell); }
     });
 
     refreshData();
@@ -4014,7 +4045,7 @@ body {
       var hint = db.trips.length
         ? '本月还没有趟次记录 · 试试切换月份（共有 ' + db.trips.length + ' 笔历史数据）'
         : '还没有趟次记录';
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">' + hint + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-cell">' + hint + '</td></tr>';
       $('tripSummary').textContent = '共 0 趟';
       return;
     }
@@ -4025,15 +4056,18 @@ body {
           return item.id === trip.driver_id;
         });
         return (
-          '<tr><td>' + esc(trip.date) + '</td>' +
+          '<tr><td class="trip-date" data-trip="' + trip.id + '" title="双击修改日期">' +
+            esc(trip.date) + '</td>' +
           '<td>' + esc(driver ? driver.name : '—') + '</td>' +
-          '<td class="route-name">' + esc(trip.route_name) + '</td>' +
+          '<td class="route-name trip-route" data-trip="' + trip.id + '" title="双击更换路线">' +
+            esc(trip.route_name) + '</td>' +
           '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 仅字母数字">' +
             esc(trip.container_no || '') + '</td>' +
           '<td class="num">' + fmt2(trip.km) + '</td>' +
           '<td class="num">' + yuan(trip.commission) + '</td>' +
           '<td class="trip-note" data-trip="' + trip.id + '" title="双击编辑">' +
             esc(trip.note || '') + '</td>' +
+          '<td class="trip-updated">' + esc(trip.updated_at || '—') + '</td>' +
           '<td class="op"><button type="button" class="link-danger" data-del-trip="' +
           trip.id + '">删除</button></td></tr>'
         );
@@ -4990,6 +5024,116 @@ body {
 
   /* ================= 行内操作 ================= */
 
+  /** 当前时间戳，写进趟次的「更新时间」列 */
+  function tripStamp() {
+    var d = new Date();
+    function p(n) { return String(n).padStart(2, '0'); }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+      ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  /** 双击日期单元格 → 内联改日期（跨月会自动跳月份） */
+  function editTripDate(cell) {
+    var tripId = Number(cell.dataset.trip);
+    var trip = db.trips.find(function (t) { return t.id === tripId; });
+    if (!trip) return;
+
+    var input = document.createElement('input');
+    input.type = 'date';
+    input.value = trip.date;
+    input.className = 'inline-edit';
+    input.style.width = '100%';
+
+    cell.innerHTML = '';
+    cell.appendChild(input);
+    input.focus();
+
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      var v = input.value;
+      if (!v || !validDate(v)) { renderTrips(); return; }
+      if (v === trip.date) { renderTrips(); return; }
+      trip.date = v;
+      trip.updated_at = tripStamp();
+      saveLocal();
+      if (String(v).slice(0, 7) !== state.month) ensureMonth(v);
+      renderPage();
+      toast('日期已改为 ' + v);
+    }
+    input.addEventListener('blur', finish);
+    input.addEventListener('change', finish);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { done = true; input.blur(); renderTrips(); }
+    });
+  }
+
+  /** 双击线路单元格 → 下拉换一条路线，公里与提成按新路线重算 */
+  function editTripRoute(cell) {
+    var tripId = Number(cell.dataset.trip);
+    var trip = db.trips.find(function (t) { return t.id === tripId; });
+    if (!trip) return;
+    if (!db.routes.length) {
+      toast('路线库还没有路线，先去「线路价目」添加', 'error');
+      return;
+    }
+
+    var select = document.createElement('select');
+    select.className = 'inline-edit';
+    select.style.width = '100%';
+    select.innerHTML = db.routes.map(function (r) {
+      return '<option value="' + r.id + '">' + esc(buildRouteName(r)) + '</option>';
+    }).join('');
+    if (trip.route_id) select.value = String(trip.route_id);
+
+    cell.innerHTML = '';
+    cell.appendChild(select);
+    select.focus();
+
+    var done = false;
+    function apply() {
+      if (done) return;
+      done = true;
+      var route = db.routes.find(function (r) { return String(r.id) === select.value; });
+      if (!route) { renderTrips(); return; }
+      var newName = buildRouteName(route);
+      if (String(trip.route_id) === String(route.id) && newName === trip.route_name) {
+        renderTrips();
+        return;
+      }
+      trip.route_id = route.id;
+      trip.route_origin = route.origin;
+      trip.route_steps = JSON.parse(JSON.stringify(route.steps || []));
+      trip.route_name = newName;
+      // 换路线后公里/提成按新路线重算；原来手填过就让你决定是否保留
+      var autoKm = computeAutoKm(route.origin, trip.route_steps);
+      var autoCommission = computeAutoCommission(trip.route_steps);
+      var keepOld = false;
+      if ((trip.km || trip.km === 0) && String(trip.km) !== String(autoKm === null ? '' : autoKm)) {
+        keepOld = confirm(
+          '原公里 ' + fmt2(trip.km) + '，按新路线应为 ' + (autoKm === null ? '留空' : fmt2(autoKm)) +
+          '\n\n点「确定」保留原来的公里和提成，点「取消」按新路线重算'
+        );
+      }
+      if (!keepOld) {
+        trip.km = autoKm === null ? 0 : autoKm;
+        trip.commission = autoCommission;
+      }
+      trip.updated_at = tripStamp();
+      saveLocal();
+      renderPage();
+      toast('线路已改为「' + newName + '」');
+    }
+    select.addEventListener('change', apply);
+    select.addEventListener('blur', function () { if (!done) renderTrips(); });
+    select.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); apply(); }
+      if (e.key === 'Escape') { done = true; renderTrips(); }
+    });
+  }
+
   /** 双击箱号单元格 → 内联编辑（仅允许字母和数字） */
   function editContainerNo(cell) {
     var tripId = Number(cell.dataset.trip);
@@ -5018,6 +5162,7 @@ body {
 
     function finish() {
       var v = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      if (v !== (trip.container_no || '')) trip.updated_at = tripStamp();
       trip.container_no = v;
       saveLocal();
       renderTrips();
@@ -5052,7 +5197,9 @@ body {
     input.select();
 
     function finish() {
-      trip.note = input.value.trim();
+      var v = input.value.trim();
+      if (v !== (trip.note || '')) trip.updated_at = tripStamp();
+      trip.note = v;
       saveLocal();
       renderTrips();
     }
