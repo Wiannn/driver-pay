@@ -4177,6 +4177,13 @@ body {
     fillTripBuildOrigin();
     fillOriginSelect();
     fillRouteSelect();
+
+    // 分组调整后地图同步（筛选条、右侧列表、标记颜色）
+    if (typeof mapState !== 'undefined' && mapState && mapState.map) {
+      renderMapFilters();
+      renderMapPlaceList();
+      renderMapMarkers(false);
+    }
   }
 
   function addCfgItem() {
@@ -4743,11 +4750,15 @@ body {
   function renderMapMarkers(fit) {
     var map = mapState.map;
     if (!map) return;
-    map.remove(mapState.markers);
+    // 逐个移除旧标记：AMap 对数组 remove 偶发残留，导致旧颜色的点叠加在新点上方
+    mapState.markers.forEach(function (old) {
+      try { if (old.setMap) old.setMap(null); } catch (e) { /* 忽略 */ }
+      try { map.remove(old); } catch (e) { /* 忽略 */ }
+    });
     mapState.markers = [];
 
     getPlaceGroups().forEach(function (group) {
-      if (!mapState.filter[group.id]) return;
+      if (mapState.filter[group.id] === false) return;
       group.names.forEach(function (name) {
         var coord = placeCoord(name);
         if (!coord) return;
