@@ -2306,9 +2306,11 @@ body {
     // 进 + 提 / 进 + 还（2段）
     if (valid.length === 2 && valid[0].action === '进' && isPick(valid[1])) {
       var secondGroup = getDestGroupId(valid[1].dest);
-      // 进洋山 + 提（还）洋山系 / 进外系 + 提（还）外系（同区域组合）→ 30
-      if (firstGroup === secondGroup) return 30;
-      // 进外系 + 提洋山 或 进洋山 + 提外系 → 暂不存在，按 0
+      // 提（还）洋山系 = 100（沧海路同洋山）
+      if (secondGroup === 'zone-ys') return 100;
+      // 进外系 + 提（还）外系 = 30
+      if (firstGroup !== 'zone-ys') return 30;
+      // 进洋山 + 提外系 → 暂不存在，按 0
       return 0;
     }
     return 0;
