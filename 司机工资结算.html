@@ -1370,6 +1370,116 @@ body {
   color: #aaa;
 }
 
+.cfg-group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex: 0 0 auto;
+}
+
+.cfg-group-ops {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.cfg-group-ops button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #b3bcc9;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cfg-group-ops button:hover {
+  color: var(--primary);
+  background: #fff;
+}
+
+.cfg-group-ops button[data-group-del]:hover {
+  color: var(--danger);
+}
+
+.cfg-group-add {
+  margin-bottom: 12px;
+}
+
+.cfg-group-add button {
+  appearance: none;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px dashed #c8d2e2;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.cfg-group-add button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* 新增分组的内联表单 */
+.cfg-group-add.is-open {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cfg-group-add.is-open input {
+  flex: 1;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.12);
+}
+
+.cfg-group-add.is-open button {
+  width: auto;
+  padding: 0 14px;
+  border-style: solid;
+  border-color: var(--primary);
+}
+
+.cfg-group-add.is-open button[data-group-cancel] {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.cfg-group-add.is-open button[data-group-cancel]:hover {
+  background: #f5f7fa;
+  color: var(--ink-soft);
+}
+
+/* 分组改名输入框 */
+.cfg-group-name-input {
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--primary);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  outline: none;
+  max-width: 150px;
+}
+
 .cfg-group.drag-over {
   background: var(--primary-soft);
   border-color: var(--primary);
@@ -2997,6 +3107,33 @@ body {
     $('cfgModalClose').addEventListener('click', closeCfgModal);
     $('cfgModal').addEventListener('click', function (e) {
       if (e.target.id === 'cfgModal') closeCfgModal();
+      // 分组：新增表单开关 / 确定 / 取消 / 改名 / 删除
+      if (e.target.closest('[data-group-add]')) {
+        e.stopPropagation();
+        cfgGroupAdding = true;
+        renderCfgTags();
+        return;
+      }
+      if (e.target.closest('[data-group-create]')) {
+        e.stopPropagation();
+        var newGroupInput = document.getElementById('cfgGroupNewInput');
+        createDestGroup(newGroupInput ? newGroupInput.value : '');
+        return;
+      }
+      if (e.target.closest('[data-group-cancel]')) {
+        e.stopPropagation();
+        cfgGroupAdding = false;
+        renderCfgTags();
+        return;
+      }
+      var groupEdit = e.target.closest('[data-group-edit]');
+      if (groupEdit) {
+        e.stopPropagation();
+        startGroupRename(groupEdit.getAttribute('data-group-edit'));
+        return;
+      }
+      var groupDel = e.target.closest('[data-group-del]');
+      if (groupDel) { e.stopPropagation(); removeDestGroup(groupDel.getAttribute('data-group-del')); return; }
       // 编辑 tag
       var editBtn = e.target.closest('[data-cfg-edit]');
       if (editBtn) { e.stopPropagation(); editCfgItem(Number(editBtn.dataset.cfgEdit)); return; }
@@ -3015,6 +3152,14 @@ body {
     $('cfgAddBtn').addEventListener('click', addCfgItem);
     $('cfgNewInput').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); addCfgItem(); }
+    });
+    // 新增分组输入框回车确认
+    $('cfgModal').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var groupInput = e.target.closest('#cfgGroupNewInput');
+      if (!groupInput) return;
+      e.preventDefault();
+      createDestGroup(groupInput.value);
     });
     $('cfgSaveBtn').addEventListener('click', saveCfgModal);
 
@@ -4023,6 +4168,7 @@ body {
 
   function openCfgModal(key) {
     cfgModalKey = key;
+    cfgGroupAdding = false;
     if (key === 'origins') { cfgModalLabel = '始发地列表'; $('cfgHint').textContent = '行驶的起点，例如：新库、东库'; }
     else if (key === 'dest_in') { cfgModalLabel = '「进」的目的地'; $('cfgHint').textContent = '纯进或进段的目的地，例如：外五、洋山'; }
     else { cfgModalLabel = '「提 / 还」的目的地'; $('cfgHint').textContent = '「提」和「还」共用的空箱目的地，例如：洋山、沧海路'; }
@@ -4077,6 +4223,96 @@ body {
     });
   }
 
+  /** 是否正在显示「新增分组」的内联输入 */
+  var cfgGroupAdding = false;
+
+  function createDestGroup(label) {
+    label = String(label || '').trim();
+    if (!label) { toast('请输入分组名称', 'error'); return; }
+    var groups = db.configs.dest_groups || (db.configs.dest_groups = []);
+    if (groups.some(function (g) { return g.label === label; })) {
+      toast('分组名称已存在', 'error');
+      return;
+    }
+    groups.push({
+      id: 'zone-' + Date.now().toString(36) + Math.floor(Math.random() * 100).toString(36),
+      label: label,
+      desc: '',
+      members: [],
+      color: pickGroupColor(),
+    });
+    cfgGroupAdding = false;
+    saveLocal();
+    renderCfgTags();
+    refreshCfgDependentUI();
+    toast('已新增分组「' + label + '」');
+  }
+
+  function commitGroupRename(groupId, label) {
+    var groups = db.configs.dest_groups || [];
+    var group = groups.filter(function (g) { return g.id === groupId; })[0];
+    if (!group) return;
+    label = String(label || '').trim();
+    if (!label || label === group.label) { renderCfgTags(); return; }
+    if (groups.some(function (g) { return g.id !== groupId && g.label === label; })) {
+      toast('分组名称已存在', 'error');
+      renderCfgTags();
+      return;
+    }
+    group.label = label;
+    saveLocal();
+    renderCfgTags();
+    refreshCfgDependentUI();
+    toast('分组已改名为「' + label + '」');
+  }
+
+  /** 点 ✎ 后把分组名变成输入框，Enter 保存 / Esc 取消 */
+  function startGroupRename(groupId) {
+    var head = document.querySelector('.cfg-group[data-group-id="' + groupId + '"] .cfg-group-head');
+    if (!head) return;
+    var labelEl = head.querySelector('.cfg-group-label');
+    if (!labelEl) return;
+    var groups = db.configs.dest_groups || [];
+    var group = groups.filter(function (g) { return g.id === groupId; })[0];
+    if (!group) return;
+
+    var input = document.createElement('input');
+    input.className = 'cfg-group-name-input';
+    input.value = group.label;
+    input.setAttribute('data-group-rename', groupId);
+    head.replaceChild(input, labelEl);
+    input.focus();
+    input.select();
+
+    var settled = false;
+    var finish = function (save) {
+      if (settled) return;
+      settled = true;
+      if (save) commitGroupRename(groupId, input.value);
+      else renderCfgTags();
+    };
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', function () { finish(true); });
+  }
+
+  /** 删除分组（组内地点移到未分组） */
+  function removeDestGroup(groupId) {
+    var groups = db.configs.dest_groups || [];
+    var group = groups.filter(function (g) { return g.id === groupId; })[0];
+    if (!group) return;
+    var count = (group.members || []).length;
+    if (!confirm('删除分组「' + group.label + '」？' +
+      (count ? '组内 ' + count + ' 个地点会变为「未分组」，地点本身不会删除。' : '该分组为空。'))) return;
+    db.configs.dest_groups = groups.filter(function (g) { return g.id !== groupId; });
+    saveLocal();
+    renderCfgTags();
+    refreshCfgDependentUI();
+    toast('分组「' + group.label + '」已删除');
+  }
+
   function renderCfgTags() {
     if (!cfgModalKey) return;
     var list = db.configs[cfgModalKey] || [];
@@ -4091,13 +4327,19 @@ body {
       // 目的地：按区域分组显示（可拖拽分组）
       var groups = db.configs.dest_groups || [];
       var shown = {};
-      groups.forEach(function (g) {
+      groups.forEach(function (g, gi) {
         var members = (g.members || []).filter(function (m) { return list.indexOf(m) >= 0; });
         // 组内按名称排序，不按加入顺序
         members = sortNamesByName(members);
         html += '<div class="cfg-group" data-group-id="' + g.id + '">' +
-          '<div class="cfg-group-head">' + esc(g.label) +
-          '<span class="cfg-group-desc">' + esc(g.desc || '') + '</span></div>';
+          '<div class="cfg-group-head">' +
+          '<i class="cfg-group-dot" style="background:' + groupColor(g, gi) + '"></i>' +
+          '<span class="cfg-group-label">' + esc(g.label) + '</span>' +
+          '<span class="cfg-group-desc">' + esc(g.desc || '') + '</span>' +
+          '<span class="cfg-group-ops">' +
+          '<button type="button" data-group-edit="' + esc(g.id) + '" title="修改分组名称">✎</button>' +
+          '<button type="button" data-group-del="' + esc(g.id) + '" title="删除分组">×</button>' +
+          '</span></div>';
         members.forEach(function (name) {
           var idx = list.indexOf(name);
           if (idx >= 0) { html += renderCfgTag(name, idx); shown[name] = true; }
@@ -4105,6 +4347,16 @@ body {
         if (!members.length) html += '<div class="cfg-group-hint">拖目的地到这里归入此组</div>';
         html += '</div>';
       });
+      // 新增分组：按钮 / 内联表单
+      if (cfgGroupAdding) {
+        html += '<div class="cfg-group-add is-open">' +
+          '<input type="text" id="cfgGroupNewInput" maxlength="16" placeholder="新分组名称，例如 超外系">' +
+          '<button type="button" data-group-create="1">确定</button>' +
+          '<button type="button" data-group-cancel="1">取消</button>' +
+          '</div>';
+      } else {
+        html += '<div class="cfg-group-add"><button type="button" data-group-add="1">＋ 新增分组</button></div>';
+      }
       // 未分组
       var ungrouped = list.filter(function (name) { return !shown[name]; });
       if (ungrouped.length || groups.length) {
@@ -4118,6 +4370,11 @@ body {
       }
     }
     $('cfgTags').innerHTML = html;
+    // 打开新增分组表单时自动聚焦
+    if (cfgModalKey !== 'origins' && cfgGroupAdding) {
+      var addInput = document.getElementById('cfgGroupNewInput');
+      if (addInput) addInput.focus();
+    }
   }
 
   function renderCfgTag(name, idx) {
@@ -4590,6 +4847,26 @@ body {
     ungrouped: '#94a3b8',
   };
 
+  /** 自定义分组的可选配色（按顺序取未被占用的） */
+  var GROUP_PALETTE = [
+    '#7c3aed', '#2563eb', '#16a34a', '#0d9488', '#f59e0b',
+    '#db2777', '#0891b2', '#65a30d', '#a16207', '#be123c',
+  ];
+
+  /** 分组的显示颜色：内置组按 id，自定义组按自身 color，兜底按顺序取色 */
+  function groupColor(group, idx) {
+    if (!group) return MAP_COLORS.ungrouped;
+    return MAP_COLORS[group.id] || group.color || GROUP_PALETTE[(idx || 0) % GROUP_PALETTE.length];
+  }
+
+  function pickGroupColor() {
+    var used = (db.configs.dest_groups || []).map(function (g, i) { return groupColor(g, i); });
+    for (var i = 0; i < GROUP_PALETTE.length; i++) {
+      if (used.indexOf(GROUP_PALETTE[i]) < 0) return GROUP_PALETTE[i];
+    }
+    return GROUP_PALETTE[used.length % GROUP_PALETTE.length];
+  }
+
   var mapState = {
     map: null,
     markers: [],
@@ -4660,14 +4937,14 @@ body {
     (cfg.dest_pick || []).forEach(function (n) { if (dests.indexOf(n) < 0) dests.push(n); });
 
     var assigned = {};
-    (cfg.dest_groups || []).forEach(function (g) {
+    (cfg.dest_groups || []).forEach(function (g, gi) {
       // 同一地点若同时存在于多个分组，只归入排在前面的那个分组，避免重复画点、颜色打架
       var names = dests.filter(function (n) {
         return !assigned[n] && (g.members || []).indexOf(n) >= 0;
       });
       names.forEach(function (n) { assigned[n] = true; });
       // 空分组也显示（如刚建的「超外系」），保持与目的地管理同步
-      out.push({ id: g.id, label: g.label, color: MAP_COLORS[g.id] || MAP_COLORS.ungrouped, names: names });
+      out.push({ id: g.id, label: g.label, color: groupColor(g, gi), names: names });
     });
     var rest = dests.filter(function (n) { return !assigned[n]; });
     if (rest.length) out.push({ id: 'ungrouped', label: '未分组', color: MAP_COLORS.ungrouped, names: rest });
