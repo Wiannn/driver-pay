@@ -4617,6 +4617,9 @@ body {
   }
 
   function renderMapPage() {
+    // 每次进入地图页，分组默认收起
+    mapState.collapsed = {};
+    getPlaceGroups().forEach(function (g) { mapState.collapsed[g.id] = true; });
     renderMapFilters();
     renderMapPlaceList();
 
