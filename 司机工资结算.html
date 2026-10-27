@@ -2608,9 +2608,9 @@ body {
   /** 启动时加载数据（纯 localStorage） */
   function loadDb() {
     db = loadLocalDb();
-    var before = db.routes.length;
     db.routes = db.routes.filter(function (r) { return Array.isArray(r.steps); });
-    if (db.routes.length !== before) saveLocal();
+    // 迁移补了分组/公里表时立即写回，避免内存与存储不一致
+    saveLocal();
   }
 
   function newId() {
@@ -4660,8 +4660,27 @@ body {
     return out;
   }
 
+  /** 只同步地点相关配置（分组、坐标、名称表），不动司机/趟次等数据 */
+  function syncConfigsFromStorage() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      var cfg = parsed && parsed.configs;
+      if (!cfg) return;
+      if (Array.isArray(cfg.dest_groups) && cfg.dest_groups.length) {
+        db.configs.dest_groups = cfg.dest_groups;
+      }
+      if (cfg.coords && typeof cfg.coords === 'object') db.configs.coords = cfg.coords;
+      if (Array.isArray(cfg.dest_in)) db.configs.dest_in = cfg.dest_in;
+      if (Array.isArray(cfg.dest_pick)) db.configs.dest_pick = cfg.dest_pick;
+      if (Array.isArray(cfg.origins)) db.configs.origins = cfg.origins;
+    } catch (e) { /* 解析失败就沿用内存数据 */ }
+  }
+
   function renderMapPage() {
-    // 每次进入地图页，分组默认收起
+    // 从存储同步一次地点配置，避免另一个标签页改过分组后这里仍用旧数据
+    syncConfigsFromStorage();
     mapState.collapsed = {};
     mapState.highlight = '';
     getPlaceGroups().forEach(function (g) { mapState.collapsed[g.id] = true; });
@@ -4770,11 +4789,9 @@ body {
   function renderMapMarkers(fit) {
     var map = mapState.map;
     if (!map) return;
-    // 逐个移除旧标记：AMap 对数组 remove 偶发残留，导致旧颜色的点叠加在新点上方
-    mapState.markers.forEach(function (old) {
-      try { if (old.setMap) old.setMap(null); } catch (e) { /* 忽略 */ }
-      try { map.remove(old); } catch (e) { /* 忽略 */ }
-    });
+    // 彻底清掉上一次的所有覆盖物，避免旧颜色的圆点残留叠加
+    if (mapState.info) { try { mapState.info.close(); } catch (e) { /* 忽略 */ } mapState.info = null; }
+    try { map.clearMap(); } catch (e) { /* 忽略 */ }
     mapState.markers = [];
 
     getPlaceGroups().forEach(function (group) {
