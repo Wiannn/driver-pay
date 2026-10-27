@@ -3767,6 +3767,12 @@ body {
     return null;
   }
 
+  /** 名称排序键：中文按拼音比较，中文数字先转成阿拉伯数字，让「外一 / 外二 / 外四」按顺序排 */
+  function cnSortKey(name) {
+    var digits = { '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9' };
+    return String(name == null ? '' : name).replace(/[一二三四五六七八九]/g, function (ch) { return digits[ch]; });
+  }
+
   function renderCfgTags() {
     if (!cfgModalKey) return;
     var list = db.configs[cfgModalKey] || [];
@@ -3783,6 +3789,8 @@ body {
       var shown = {};
       groups.forEach(function (g) {
         var members = (g.members || []).filter(function (m) { return list.indexOf(m) >= 0; });
+        // 组内按名称排序，不按加入顺序
+        members.sort(function (a, b) { return cnSortKey(a).localeCompare(cnSortKey(b), 'zh-CN'); });
         html += '<div class="cfg-group" data-group-id="' + g.id + '">' +
           '<div class="cfg-group-head">' + esc(g.label) +
           '<span class="cfg-group-desc">' + esc(g.desc || '') + '</span></div>';
