@@ -2521,18 +2521,27 @@ body {
         origins:   ['新库', '东库'],
         dest_in:   ['外一', '外二', '外四', '外五', '洋山', '洋山（查验）'],
         dest_pick: ['洋山', '沧海路', '德威八分', '外通', '东森', '外一', '外二', '外四', '外五'],
-        // 区域分组：目的地按区域归类（公里相同的归一组）
+        // 进目的地的区域分组（固定三组，不可增删，仅可改名）
         dest_groups: [
+          { id: 'zone-ab', label: '外一外二系', desc: '靠近外一外二的目的地',
+            members: ['外一', '外二'] },
+          { id: 'zone-cd', label: '外四外五系', desc: '靠近外四外五的目的地',
+            members: ['外四', '外五'] },
+          { id: 'zone-ys', label: '洋山系', desc: '独立计算公里的洋山区域',
+            members: ['洋山', '洋山（查验）'] },
+        ],
+        // 提 / 还目的地的区域分组（可自由增删，主要影响地图分组）
+        dest_pick_groups: [
           { id: 'zone-cw', label: '超外系', desc: '超外区域的目的地',
             members: [] },
           { id: 'zone-ab', label: '外一外二系', desc: '靠近外一外二的目的地',
-            members: ['外一', '外二', '德威八分', '外通', '东森'] },
+            members: ['德威八分', '东森', '外一', '外二', '外通'] },
           { id: 'zone-cd', label: '外四外五系', desc: '靠近外四外五的目的地',
             members: ['外四', '外五'] },
           { id: 'zone-wn', label: '外内系', desc: '外内区域的目的地',
             members: [] },
           { id: 'zone-ys', label: '洋山系', desc: '独立计算公里的洋山区域',
-            members: ['洋山', '洋山（查验）', '沧海路'] },
+            members: ['沧海路', '洋山', '洋山（查验）'] },
         ],
         // 基础公里表：始发地 → 各目的地的单段公里
         base_km: {
@@ -2563,14 +2572,20 @@ body {
     var table = db.configs.base_km || {};
     var row = table[origin] || {};
     var v = row[dest];
-    return typeof v === 'number' ? v : 0;
+    return typeof v === 'number' ? v : null;
+  }
+
+  /** 进 + 提还两套分组一起查（地图与公里判断都要用到） */
+  function allDestGroups() {
+    var cfg = db.configs || {};
+    return (cfg.dest_groups || []).concat(cfg.dest_pick_groups || []);
   }
 
   /** 判断两个目的地是否属于同一个区域（用于公里计算去重） */
   function sameDestGroup(a, b) {
     if (!a || !b) return false;
     if (a === b) return true;
-    var groups = db.configs.dest_groups || [];
+    var groups = allDestGroups();
     for (var i = 0; i < groups.length; i++) {
       var members = groups[i].members || [];
       if (members.indexOf(a) >= 0 && members.indexOf(b) >= 0) return true;
@@ -2578,11 +2593,21 @@ body {
     return false;
   }
 
-  /** 计算自动累加公里：同区域连续步骤不加第二段公里 */
+  /** 有公里规则的内置区域；其余分组（超外系、外内系、自建组）公里留白 */
+  var KM_GROUP_IDS = ['zone-ab', 'zone-cd', 'zone-ys'];
+
+  /** 该目的地是否没有公里规则（所在分组不是三大内置区域） */
+  function isKmUnknownDest(dest) {
+    var id = getDestGroupId(dest);
+    return !id || KM_GROUP_IDS.indexOf(id) < 0;
+  }
+
+  /** 自动算总公里；有目的地没有公里规则时返回 null（表示需要手填） */
   function computeAutoKm(origin, steps) {
     if (!origin || !Array.isArray(steps)) return 0;
     var sum = 0;
     var prevDest = null;
+    var unknown = false;
     steps.forEach(function (s) {
       if (!s || !s.dest) return;
       // 跟前一个同区域 → 不算移动车，不加公里
@@ -2590,15 +2615,21 @@ body {
         prevDest = s.dest;
         return;
       }
-      sum += lookupBaseKm(origin, s.dest);
+      var km = lookupBaseKm(origin, s.dest);
+      // 未配置公里（新分组 / 新目的地）→ 留白，交给人手填
+      if (km === null || isKmUnknownDest(s.dest)) {
+        unknown = true;
+      } else {
+        sum += km;
+      }
       prevDest = s.dest;
     });
-    return sum;
+    return unknown ? null : sum;
   }
 
   /** 判断目的地属于哪个区域 id */
   function getDestGroupId(dest) {
-    var groups = db.configs.dest_groups || [];
+    var groups = allDestGroups();
     for (var i = 0; i < groups.length; i++) {
       if ((groups[i].members || []).indexOf(dest) >= 0) return groups[i].id;
     }
@@ -2611,12 +2642,15 @@ body {
     // 过滤掉没选目的地的步骤
     var valid = steps.filter(function (s) { return s && s.dest; });
     if (!valid.length) return 0;
-    if (valid.length > 2) return 0; // 你说其他组合暂不存在
+    if (valid.length > 3) return 0; // 一进最多带两提，其他组合暂不存在
 
     var first = valid[0];
     var firstGroup = getDestGroupId(first.dest); // zone-ab / zone-cd / zone-ys
     // 「还」与「提」提成规则完全一致
     var isPick = function (s) { return s.action === '提' || s.action === '还'; };
+    var pickHasYangshan = valid.some(function (s, i) {
+      return i > 0 && isPick(s) && getDestGroupId(s.dest) === 'zone-ys';
+    });
 
     // 纯进1段
     if (valid.length === 1 && first.action === '进') {
@@ -2629,13 +2663,18 @@ body {
       return 10;                                  // 提（还）外系 = 10
     }
     // 进 + 提 / 进 + 还（2段）
-    if (valid.length === 2 && valid[0].action === '进' && isPick(valid[1])) {
-      var secondGroup = getDestGroupId(valid[1].dest);
+    if (valid.length === 2 && first.action === '进' && isPick(valid[1])) {
       // 提（还）洋山系 = 100（沧海路同洋山）
-      if (secondGroup === 'zone-ys') return 100;
+      if (getDestGroupId(valid[1].dest) === 'zone-ys') return 100;
       // 进外系 + 提（还）外系 = 30
       if (firstGroup !== 'zone-ys') return 30;
       // 进洋山 + 提外系 → 暂不存在，按 0
+      return 0;
+    }
+    // 一进二提 / 一进还提（3段）：进外系 + 两个外系提 = 60
+    if (valid.length === 3 && first.action === '进' && isPick(valid[1]) && isPick(valid[2])) {
+      if (pickHasYangshan) return 100;          // 含提洋山，按 100
+      if (firstGroup !== 'zone-ys') return 60;  // 一进二提（外）= 60
       return 0;
     }
     return 0;
@@ -2676,28 +2715,48 @@ body {
       var def = defaultDb();
       var cfg = Object.assign({}, def.configs, parsed.configs || {});
       if (!cfg.base_km) cfg.base_km = def.configs.base_km;
-      if (!cfg.dest_groups) cfg.dest_groups = def.configs.dest_groups;
-      else if (!cfg.dest_groups.some(function (g) { return g.id === 'zone-cw'; })) {
-        cfg.dest_groups.unshift({ id: 'zone-cw', label: '超外系', desc: '超外区域的目的地', members: [] });
+      // 旧版只有一套 dest_groups（进 + 提还共用）：
+      // 迁移时把它整体搬成提还分组，进分组只保留固定的三组
+      if (!Array.isArray(cfg.dest_pick_groups)) {
+        cfg.dest_pick_groups = Array.isArray(cfg.dest_groups) && cfg.dest_groups.length
+          ? JSON.parse(JSON.stringify(cfg.dest_groups))
+          : JSON.parse(JSON.stringify(def.configs.dest_pick_groups));
       }
-      if (cfg.dest_groups.every(function (g) { return g.id !== 'zone-wn'; })) {
-        // 外内系：补在外四外五系之后、洋山系之前
-        var pos = cfg.dest_groups.map(function (g) { return g.id; }).indexOf('zone-ys');
-        cfg.dest_groups.splice(pos < 0 ? cfg.dest_groups.length : pos, 0,
-          { id: 'zone-wn', label: '外内系', desc: '外内区域的目的地', members: [] });
-      }
+      var builtinInIds = def.configs.dest_groups.map(function (g) { return g.id; });
+      var oldGroups = Array.isArray(cfg.dest_groups) ? cfg.dest_groups : [];
+      cfg.dest_groups = builtinInIds.map(function (id, i) {
+        var old = oldGroups.filter(function (g) { return g.id === id; })[0];
+        var fresh = def.configs.dest_groups[i];
+        return {
+          id: id,
+          label: (old && old.label) || fresh.label,
+          desc: (old && old.desc) || fresh.desc,
+          members: (old && Array.isArray(old.members)) ? old.members : fresh.members.slice(),
+        };
+      });
+      // 提还分组补齐内置组（超外系 / 外内系等）
+      def.configs.dest_pick_groups.forEach(function (dg, idx) {
+        if (!cfg.dest_pick_groups.some(function (g) { return g.id === dg.id; })) {
+          var pos = cfg.dest_pick_groups.map(function (g) { return g.id; }).indexOf('zone-ys');
+          if (dg.id === 'zone-cw') pos = 0;
+          else if (dg.id === 'zone-wn' && pos < 0) pos = cfg.dest_pick_groups.length;
+          cfg.dest_pick_groups.splice(pos < 0 ? cfg.dest_pick_groups.length : pos, 0,
+            JSON.parse(JSON.stringify(dg)));
+        }
+      });
       if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
       // 修复历史上同一地点被拖进多个分组的情况：保留排在前面的分组，其余移除
-      if (Array.isArray(cfg.dest_groups)) {
+      [cfg.dest_groups, cfg.dest_pick_groups].forEach(function (groupList) {
+        if (!Array.isArray(groupList)) return;
         var seenMember = {};
-        cfg.dest_groups.forEach(function (g) {
+        groupList.forEach(function (g) {
           g.members = (g.members || []).filter(function (m) {
             if (seenMember[m]) return false;
             seenMember[m] = true;
             return true;
           });
         });
-      }
+      });
       // 确保 base_km 里包含所有现有目的地
       Object.keys(cfg.base_km).forEach(function (origin) {
         (cfg.dest_in || []).concat(cfg.dest_pick || []).forEach(function (d) {
@@ -3593,7 +3652,9 @@ body {
     var origin = $('tripBuildOrigin').value;
     var steps = collectTripBuildSteps();
     if (origin && steps.length) {
-      $('tripKm').value = computeAutoKm(origin, steps);
+      var autoKm = computeAutoKm(origin, steps);
+      // 自定义分组没有公里规则 → 留空，手填
+      $('tripKm').value = (autoKm === null ? '' : autoKm);
     }
     // 同步自动提成
     var autoComm = computeAutoCommission(steps);
@@ -3963,7 +4024,10 @@ body {
   /** 生成带 <optgroup> 的目的地下拉 HTML，按区域分组 */
   function getDestOptionsGroupedHtml(action, currentVal) {
     var flat = getDestOptionsForAction(action);
-    var groups = db.configs.dest_groups || [];
+    // 「进」用进分组，「提 / 还」用提还分组
+    var groups = (action === '提' || action === '还')
+      ? (db.configs.dest_pick_groups || [])
+      : (db.configs.dest_groups || []);
     var shown = {};
     var html = '<option value="">请选目的地</option>';
     groups.forEach(function (g) {
@@ -4008,7 +4072,9 @@ body {
     var origin = $('routeOrigin').value;
     var steps = collectStepsFromDom();
     if (origin && steps.length) {
-      $('routeKm').value = computeAutoKm(origin, steps);
+      var autoKm = computeAutoKm(origin, steps);
+      // 自定义分组没有公里规则 → 留空，手填
+      $('routeKm').value = (autoKm === null ? '' : autoKm);
     }
     // 同步自动提成
     var autoComm = computeAutoCommission(steps);
@@ -4185,10 +4251,20 @@ body {
     cfgModalKey = null;
   }
 
+  /** 当前弹窗对应的分组字段：进 → dest_groups（固定三组）；提还 → dest_pick_groups（可增删） */
+  function cfgGroupKey() {
+    return cfgModalKey === 'dest_in' ? 'dest_groups' : 'dest_pick_groups';
+  }
+
+  /** 进目的地的分组固定，不允许新增/删除 */
+  function cfgGroupsLocked() {
+    return cfgModalKey === 'dest_in' || cfgModalKey === 'origins';
+  }
+
   /** 把一个目的地移到指定分组 */
   function moveDestToGroup(destName, targetGroupId) {
     if (!destName) return;
-    var groups = db.configs.dest_groups || [];
+    var groups = db.configs[cfgGroupKey()] || [];
     // 从所有组里移除
     groups.forEach(function (g) {
       g.members = (g.members || []).filter(function (m) { return m !== destName; });
@@ -4203,7 +4279,7 @@ body {
     refreshCfgDependentUI();
   }
   function findDestGroup(dest) {
-    var groups = db.configs.dest_groups || [];
+    var groups = db.configs[cfgGroupKey()] || [];
     for (var i = 0; i < groups.length; i++) {
       if ((groups[i].members || []).indexOf(dest) >= 0) return groups[i];
     }
@@ -4227,9 +4303,11 @@ body {
   var cfgGroupAdding = false;
 
   function createDestGroup(label) {
+    if (cfgGroupsLocked()) return;
     label = String(label || '').trim();
     if (!label) { toast('请输入分组名称', 'error'); return; }
-    var groups = db.configs.dest_groups || (db.configs.dest_groups = []);
+    var key = cfgGroupKey();
+    var groups = db.configs[key] || (db.configs[key] = []);
     if (groups.some(function (g) { return g.label === label; })) {
       toast('分组名称已存在', 'error');
       return;
@@ -4249,7 +4327,7 @@ body {
   }
 
   function commitGroupRename(groupId, label) {
-    var groups = db.configs.dest_groups || [];
+    var groups = db.configs[cfgGroupKey()] || [];
     var group = groups.filter(function (g) { return g.id === groupId; })[0];
     if (!group) return;
     label = String(label || '').trim();
@@ -4272,7 +4350,7 @@ body {
     if (!head) return;
     var labelEl = head.querySelector('.cfg-group-label');
     if (!labelEl) return;
-    var groups = db.configs.dest_groups || [];
+    var groups = db.configs[cfgGroupKey()] || [];
     var group = groups.filter(function (g) { return g.id === groupId; })[0];
     if (!group) return;
 
@@ -4300,13 +4378,15 @@ body {
 
   /** 删除分组（组内地点移到未分组） */
   function removeDestGroup(groupId) {
-    var groups = db.configs.dest_groups || [];
+    if (cfgGroupsLocked()) return;
+    var key = cfgGroupKey();
+    var groups = db.configs[key] || [];
     var group = groups.filter(function (g) { return g.id === groupId; })[0];
     if (!group) return;
     var count = (group.members || []).length;
     if (!confirm('删除分组「' + group.label + '」？' +
       (count ? '组内 ' + count + ' 个地点会变为「未分组」，地点本身不会删除。' : '该分组为空。'))) return;
-    db.configs.dest_groups = groups.filter(function (g) { return g.id !== groupId; });
+    db.configs[key] = groups.filter(function (g) { return g.id !== groupId; });
     saveLocal();
     renderCfgTags();
     refreshCfgDependentUI();
@@ -4325,7 +4405,8 @@ body {
       });
     } else {
       // 目的地：按区域分组显示（可拖拽分组）
-      var groups = db.configs.dest_groups || [];
+      var groups = db.configs[cfgGroupKey()] || [];
+      var locked = cfgGroupsLocked();
       var shown = {};
       groups.forEach(function (g, gi) {
         var members = (g.members || []).filter(function (m) { return list.indexOf(m) >= 0; });
@@ -4338,7 +4419,7 @@ body {
           '<span class="cfg-group-desc">' + esc(g.desc || '') + '</span>' +
           '<span class="cfg-group-ops">' +
           '<button type="button" data-group-edit="' + esc(g.id) + '" title="修改分组名称">✎</button>' +
-          '<button type="button" data-group-del="' + esc(g.id) + '" title="删除分组">×</button>' +
+          (locked ? '' : '<button type="button" data-group-del="' + esc(g.id) + '" title="删除分组">×</button>') +
           '</span></div>';
         members.forEach(function (name) {
           var idx = list.indexOf(name);
@@ -4347,15 +4428,17 @@ body {
         if (!members.length) html += '<div class="cfg-group-hint">拖目的地到这里归入此组</div>';
         html += '</div>';
       });
-      // 新增分组：按钮 / 内联表单
-      if (cfgGroupAdding) {
-        html += '<div class="cfg-group-add is-open">' +
-          '<input type="text" id="cfgGroupNewInput" maxlength="16" placeholder="新分组名称，例如 超外系">' +
-          '<button type="button" data-group-create="1">确定</button>' +
-          '<button type="button" data-group-cancel="1">取消</button>' +
-          '</div>';
-      } else {
-        html += '<div class="cfg-group-add"><button type="button" data-group-add="1">＋ 新增分组</button></div>';
+      // 新增分组：仅提还目的地可增删，进目的地固定三组
+      if (!locked) {
+        if (cfgGroupAdding) {
+          html += '<div class="cfg-group-add is-open">' +
+            '<input type="text" id="cfgGroupNewInput" maxlength="16" placeholder="新分组名称，例如 超外系">' +
+            '<button type="button" data-group-create="1">确定</button>' +
+            '<button type="button" data-group-cancel="1">取消</button>' +
+            '</div>';
+        } else {
+          html += '<div class="cfg-group-add"><button type="button" data-group-add="1">＋ 新增分组</button></div>';
+        }
       }
       // 未分组
       var ungrouped = list.filter(function (name) { return !shown[name]; });
@@ -4423,6 +4506,22 @@ body {
       db.configs.coords[newVal] = db.configs.coords[oldVal];
       delete db.configs.coords[oldVal];
     }
+
+    // 同步两套分组里的成员名
+    [db.configs.dest_groups, db.configs.dest_pick_groups].forEach(function (groupList) {
+      (groupList || []).forEach(function (g) {
+        g.members = (g.members || []).map(function (m) { return m === oldVal ? newVal : m; });
+      });
+    });
+
+    // 同步 base_km 里的列名
+    Object.keys(db.configs.base_km || {}).forEach(function (origin) {
+      var row = db.configs.base_km[origin];
+      if (row && row[oldVal] !== undefined) {
+        row[newVal] = row[oldVal];
+        delete row[oldVal];
+      }
+    });
 
     // 同步 trips 的 route_name（从 routes 重新拼，因为 route_name 是冗余快照）
     db.trips.forEach(function (trip) {
@@ -4515,6 +4614,12 @@ body {
     }
     list.splice(idx, 1);
     db.configs[cfgModalKey] = list;
+    // 从两套分组里一并移除，避免分组里残留已删除的地点
+    [db.configs.dest_groups, db.configs.dest_pick_groups].forEach(function (groupList) {
+      (groupList || []).forEach(function (g) {
+        g.members = (g.members || []).filter(function (m) { return m !== value; });
+      });
+    });
     renderCfgTags();
     refreshCfgDependentUI();
   }
@@ -4860,7 +4965,7 @@ body {
   }
 
   function pickGroupColor() {
-    var used = (db.configs.dest_groups || []).map(function (g, i) { return groupColor(g, i); });
+    var used = allDestGroups().map(function (g, i) { return groupColor(g, i); });
     for (var i = 0; i < GROUP_PALETTE.length; i++) {
       if (used.indexOf(GROUP_PALETTE[i]) < 0) return GROUP_PALETTE[i];
     }
@@ -4936,15 +5041,31 @@ body {
     (cfg.dest_in || []).forEach(function (n) { if (dests.indexOf(n) < 0) dests.push(n); });
     (cfg.dest_pick || []).forEach(function (n) { if (dests.indexOf(n) < 0) dests.push(n); });
 
+    // 地图分组 = 提还分组 + 进分组（同 id 合并），提还分组排在前面
+    var merged = [];
+    var seenId = {};
+    (cfg.dest_pick_groups || []).concat(cfg.dest_groups || []).forEach(function (g) {
+      if (seenId[g.id]) {
+        // 同一内置组（外一外二系等）在两套分组里都存在，成员合并
+        var exist = merged.filter(function (m) { return m.id === g.id; })[0];
+        (g.members || []).forEach(function (m) {
+          if ((exist.members || []).indexOf(m) < 0) exist.members.push(m);
+        });
+        return;
+      }
+      seenId[g.id] = true;
+      merged.push({ id: g.id, label: g.label, members: (g.members || []).slice(), color: g.color });
+    });
+
     var assigned = {};
-    (cfg.dest_groups || []).forEach(function (g, gi) {
+    merged.forEach(function (g, gi) {
       // 同一地点若同时存在于多个分组，只归入排在前面的那个分组，避免重复画点、颜色打架
       var names = dests.filter(function (n) {
         return !assigned[n] && (g.members || []).indexOf(n) >= 0;
       });
       names.forEach(function (n) { assigned[n] = true; });
       // 空分组也显示（如刚建的「超外系」），保持与目的地管理同步
-      out.push({ id: g.id, label: g.label, color: groupColor(g, gi), names: names });
+      out.push({ id: g.id, label: g.label, color: groupColor(g, gi), names: sortNamesByName(names) });
     });
     var rest = dests.filter(function (n) { return !assigned[n]; });
     if (rest.length) out.push({ id: 'ungrouped', label: '未分组', color: MAP_COLORS.ungrouped, names: rest });
@@ -4961,6 +5082,9 @@ body {
       if (!cfg) return;
       if (Array.isArray(cfg.dest_groups) && cfg.dest_groups.length) {
         db.configs.dest_groups = cfg.dest_groups;
+      }
+      if (Array.isArray(cfg.dest_pick_groups) && cfg.dest_pick_groups.length) {
+        db.configs.dest_pick_groups = cfg.dest_pick_groups;
       }
       if (cfg.coords && typeof cfg.coords === 'object') db.configs.coords = cfg.coords;
       if (Array.isArray(cfg.dest_in)) db.configs.dest_in = cfg.dest_in;
