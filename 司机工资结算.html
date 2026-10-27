@@ -1603,6 +1603,40 @@ body {
   color: var(--muted);
 }
 
+.map-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 156px;
+  padding: 5px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: 0 14px 32px -12px rgba(16, 24, 40, 0.35);
+}
+
+.map-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-menu button:hover {
+  background: #f3f6fb;
+  color: var(--ink);
+}
+
+.map-menu button.danger {
+  color: var(--danger);
+}
+
 .modal-coord {
   width: 640px;
 }
@@ -1878,7 +1912,7 @@ body {
     <div class="page-head">
       <div>
         <h2>目的地地图</h2>
-        <p class="sub">按区域查看所有始发地与目的地。点「未标注」的地点在左侧列表选中，再点地图即可设定坐标。</p>
+        <p class="sub">按区域查看所有始发地与目的地。左键点「未标注」的地点再点地图即可设定坐标；右键地点（或地图上的圆点）可改用弹窗设置或清除坐标。</p>
       </div>
       <div class="page-actions">
         <button type="button" class="btn btn-ghost" id="mapFitBtn">全览</button>
@@ -2073,6 +2107,13 @@ body {
     </div>
   </div>
 
+  <!-- ========== 右键菜单 ========== -->
+  <div class="map-menu is-hidden" id="mapMenu">
+    <button type="button" data-map-menu="pick">在地图上点选</button>
+    <button type="button" data-map-menu="modal">用弹窗精确设置</button>
+    <button type="button" data-map-menu="clear">清除坐标</button>
+  </div>
+
 </main>
 
 <div class="toast" id="toast"></div>
@@ -2087,8 +2128,8 @@ body {
   var SAVING_PRICE = 0.45;
 
   /* ===== 高德地图配置（在这里填你自己的 Key） ===== */
-  var AMAP_KEY = 'YOUR-AMAP-KEY';                 // 高德 JS API Key
-  var AMAP_SECURITY_CODE = 'YOUR-AMAP-SECURITY';  // 高德安全密钥（2022 年后新 Key 必须填）
+  var AMAP_KEY = '35ff17adac7d27b664587854d5538448';                 // 高德 JS API Key
+  var AMAP_SECURITY_CODE = '1ce351cd7b768471d33f0b94c8e6b407';  // 高德安全密钥（2022 年后新 Key 必须填）
 
   var state = { month: '', page: 'settlement', routeSort: 'name', tripMode: 'template' };
   var db;
@@ -2783,6 +2824,14 @@ body {
     });
     $('cfgSaveBtn').addEventListener('click', saveCfgModal);
 
+    // 目的地 / 始发地标签右键：坐标菜单
+    $('cfgTags').addEventListener('contextmenu', function (e) {
+      var tag = e.target.closest('.cfg-tag');
+      if (!tag) return;
+      e.preventDefault();
+      openMapMenu(tag.dataset.cfgName, e.clientX, e.clientY);
+    });
+
     // 目的地标签跨区域拖拽
     $('cfgTags').addEventListener('dragstart', function (e) {
       var tag = e.target.closest('.cfg-tag[draggable="true"]');
@@ -2848,6 +2897,25 @@ body {
         startMapPick(name);
       }
     });
+    $('mapPlaceList').addEventListener('contextmenu', function (e) {
+      var row = e.target.closest('[data-map-place]');
+      if (!row) return;
+      e.preventDefault();
+      openMapMenu(row.dataset.mapPlace, e.clientX, e.clientY);
+    });
+    $('mapMenu').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-map-menu]');
+      if (!btn) return;
+      handleMapMenu(btn.dataset.mapMenu);
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('#mapMenu')) hideMapMenu();
+    });
+    document.addEventListener('contextmenu', function (e) {
+      if (e.target.closest('#mapPlaceList') || e.target.closest('#cfgTags') || e.target.closest('#mapCanvas')) return;
+      hideMapMenu();
+    });
+    window.addEventListener('scroll', hideMapMenu, true);
     $('mapFitBtn').addEventListener('click', function () {
       if (mapState.map) renderMapMarkers(true);
     });
@@ -4287,6 +4355,7 @@ body {
     coordTarget: '',
     coordLatLng: null,
     info: null,
+    menuName: '',
   };
 
   function amapConfigured() {
@@ -4458,6 +4527,12 @@ body {
           zIndex: 10,
         });
         marker.on('click', function () { openPlaceInfo(name, group); });
+        marker.on('rightclick', function (event) {
+          var oe = event && event.originEvent;
+          openMapMenu(name,
+            oe && oe.clientX ? oe.clientX : window.innerWidth / 2,
+            oe && oe.clientY ? oe.clientY : window.innerHeight / 2);
+        });
         map.add(marker);
         mapState.markers.push(marker);
       });
@@ -4510,6 +4585,47 @@ body {
     $('mapPickTip').textContent = '点击地图，为「' + name + '」设定坐标';
     $('mapPickTip').classList.remove('is-hidden');
     renderMapPlaceList();
+  }
+
+  /** 右键菜单：地点列表 / 目的地标签上右键弹出 */
+  function openMapMenu(name, x, y) {
+    mapState.menuName = name;
+    var menu = $('mapMenu');
+    var pickBtn = menu.querySelector('[data-map-menu="pick"]');
+    var clearBtn = menu.querySelector('[data-map-menu="clear"]');
+    pickBtn.classList.toggle('is-hidden', state.page !== 'map');
+    clearBtn.classList.toggle('is-hidden', !placeCoord(name));
+    menu.classList.remove('is-hidden');
+    var left = Math.max(8, Math.min(x, window.innerWidth - menu.offsetWidth - 8));
+    var top = Math.max(8, Math.min(y, window.innerHeight - menu.offsetHeight - 8));
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+  }
+
+  function hideMapMenu() {
+    mapState.menuName = '';
+    $('mapMenu').classList.add('is-hidden');
+  }
+
+  function handleMapMenu(action) {
+    var name = mapState.menuName;
+    hideMapMenu();
+    if (!name) return;
+    if (action === 'clear') {
+      if (db.configs.coords) delete db.configs.coords[name];
+      saveLocal();
+      renderMapPlaceList();
+      renderMapMarkers(false);
+      if (cfgModalKey) renderCfgTags();
+      toast('已清除「' + name + '」坐标');
+      return;
+    }
+    if (action === 'pick') {
+      if (!mapState.map) { toast('地图还没加载好，请稍后再试', 'error'); return; }
+      startMapPick(name);
+      return;
+    }
+    if (action === 'modal') openCoordModal(name);
   }
 
   function openCoordModal(name) {
