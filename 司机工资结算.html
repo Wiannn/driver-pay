@@ -3455,6 +3455,7 @@ body {
     }
     saveLocal();
     renderCfgTags();
+    refreshCfgDependentUI();
   }
   function findDestGroup(dest) {
     var groups = db.configs.dest_groups || [];
@@ -3547,7 +3548,35 @@ body {
     });
 
     renderCfgTags();
+    refreshCfgDependentUI();
     toast('已改名：' + oldVal + ' → ' + newVal);
+  }
+
+  /** 配置（始发地/目的地）变更后，实时刷新所有相关下拉，无需刷新网页 */
+  function refreshCfgDependentUI() {
+    saveLocal();
+
+    // 保留趟次「直接搭建」里当前已选的动作/目的地（含尚未选目的地的新增行）
+    var tripSteps = [];
+    document.querySelectorAll('#tripBuildSteps .step-row').forEach(function (row) {
+      var a = row.querySelector('[data-role="action"]');
+      var d = row.querySelector('[data-role="dest"]');
+      if (a && d) tripSteps.push({ action: a.value, dest: d.value });
+    });
+    renderTripBuildSteps(tripSteps);
+
+    // 保留路线库里当前已选的动作/目的地
+    var routeSteps = [];
+    document.querySelectorAll('#stepsWrap .step-row').forEach(function (row) {
+      var a = row.querySelector('[data-role="action"]');
+      var d = row.querySelector('[data-role="dest"]');
+      if (a && d) routeSteps.push({ action: a.value, dest: d.value });
+    });
+    renderStepsEditor(routeSteps);
+
+    fillTripBuildOrigin();
+    fillOriginSelect();
+    fillRouteSelect();
   }
 
   function addCfgItem() {
@@ -3564,6 +3593,8 @@ body {
     db.configs[cfgModalKey] = list;
     input.value = '';
     renderCfgTags();
+    refreshCfgDependentUI();
+    input.focus();
   }
 
   function countRoutesUsingCfg(key, value) {
@@ -3595,15 +3626,13 @@ body {
     list.splice(idx, 1);
     db.configs[cfgModalKey] = list;
     renderCfgTags();
+    refreshCfgDependentUI();
   }
 
   function saveCfgModal() {
-    saveLocal();
+    refreshCfgDependentUI();
     closeCfgModal();
-    fillOriginSelect();
-    renderStepsEditor([]);
     renderRouteTable();
-    fillRouteSelect();
     toast(cfgModalLabel + '已保存');
   }
 
