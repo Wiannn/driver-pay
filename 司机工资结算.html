@@ -2886,18 +2886,9 @@ body {
       cfg.dest_pick_groups = mergeSameLabelGroups(cfg.dest_pick_groups);
       // 还原被上一版迁移弄丢的提还分组归属（同时清掉进分组里混入的提还地点）
       restorePickAssignments(cfg);
-      // 修复历史上同一地点被拖进多个分组的情况：保留排在前面的分组，其余移除
-      [cfg.dest_groups, cfg.dest_pick_groups].forEach(function (groupList) {
-        if (!Array.isArray(groupList)) return;
-        var seenMember = {};
-        groupList.forEach(function (g) {
-          g.members = (g.members || []).filter(function (m) {
-            if (seenMember[m]) return false;
-            seenMember[m] = true;
-            return true;
-          });
-        });
-      });
+      // 同一地点只归一个组 + 给分组补固定颜色（顺序怎么变都不影响颜色）
+      enforceSingleOwner(cfg);
+      ensureGroupColors(cfg);
       // 确保 base_km 里包含所有现有目的地
       Object.keys(cfg.base_km).forEach(function (origin) {
         (cfg.dest_in || []).concat(cfg.dest_pick || []).forEach(function (d) {
@@ -5156,7 +5147,7 @@ body {
     '#db2777', '#0891b2', '#65a30d', '#a16207', '#be123c',
   ];
 
-  /** 分组的显示颜色：内置组按 id（或标准名称）取固定色，自定义组按自身 color，兜底按顺序取色 */
+  /** 分组的显示颜色：内置组按 id（或标准名称）取固定色；自建组用自己存的 color，绝不按位置取色 */
   function groupColor(group, idx) {
     if (!group) return MAP_COLORS.ungrouped;
     var byId = MAP_COLORS[group.id];
@@ -5164,7 +5155,90 @@ body {
     // 历史数据里可能残留 id 随机的同名分组（如「超外系」），按名称兜底，保证颜色稳定
     var byLabel = MAP_COLORS[BUILTIN_GROUP_IDS[group.label]];
     if (byLabel) return byLabel;
-    return group.color || GROUP_PALETTE[(idx || 0) % GROUP_PALETTE.length];
+    if (group.color) return group.color;
+    // 没存颜色的老分组：按名称哈希取色，与它在列表里的位置无关
+    return GROUP_PALETTE[colorHash(group.label || group.id) % GROUP_PALETTE.length];
+  }
+
+  /** 名称 → 稳定的数字（用于按名字固定挑色，避免拖动排序后换色） */
+  function colorHash(text) {
+    var s = String(text == null ? '' : text);
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
+    return h;
+  }
+
+  /** 给所有分组补上固定颜色并写回数据（老数据 color 为空时补一次，之后就永远不变） */
+  function ensureGroupColors(cfgIn) {
+    var cfg = cfgIn || (db && db.configs);
+    if (!cfg) return false;
+    var changed = false;
+    var lists = [cfg.dest_pick_groups || [], cfg.dest_groups || []];
+    // 已占用的颜色（内置组 + 已明确指定颜色的组）先登记
+    var used = [];
+    lists.forEach(function (list) {
+      list.forEach(function (g) {
+        var c = groupColor(g, 0);
+        if (c && used.indexOf(c) < 0 && (g.color || MAP_COLORS[g.id] || MAP_COLORS[BUILTIN_GROUP_IDS[g.label]])) {
+          used.push(c);
+        }
+      });
+    });
+    lists.forEach(function (list) {
+      list.forEach(function (g) {
+        var fixed = MAP_COLORS[g.id] || MAP_COLORS[BUILTIN_GROUP_IDS[g.label]];
+        if (fixed) {
+          if (g.color !== fixed) { g.color = fixed; changed = true; }
+          return;
+        }
+        if (g.color) return;
+        // 自建组：按名称哈希挑一个没被占用的颜色，稳定且不会和内置组撞色
+        var start = colorHash(g.label || g.id) % GROUP_PALETTE.length;
+        var pick = '';
+        for (var k = 0; k < GROUP_PALETTE.length; k++) {
+          var cand = GROUP_PALETTE[(start + k) % GROUP_PALETTE.length];
+          if (used.indexOf(cand) < 0) { pick = cand; break; }
+        }
+        if (!pick) pick = GROUP_PALETTE[start];
+        g.color = pick;
+        used.push(pick);
+        changed = true;
+      });
+    });
+    return changed;
+  }
+
+  /** 同一地点只允许归一个组：跨「进 / 提还」两套一起去重，避免同一地点画两个点、颜色互相覆盖 */
+  function enforceSingleOwner(cfgIn) {
+    var cfg = cfgIn || (db && db.configs);
+    if (!cfg) return;
+    var inSet = {};
+    (cfg.dest_in || []).forEach(function (n) { inSet[n] = true; });
+    var pickSet = {};
+    (cfg.dest_pick || []).forEach(function (n) { pickSet[n] = true; });
+    // 进目的地：只看进分组
+    var seenIn = {};
+    (cfg.dest_groups || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) {
+        if (!m || !inSet[m] || seenIn[m]) return false;
+        seenIn[m] = true;
+        return true;
+      });
+    });
+    // 提还目的地：先按组顺序去重，再把进分组里混入的提还专属地点清掉
+    var seenPick = {};
+    (cfg.dest_pick_groups || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) {
+        if (!m || seenPick[m]) return false;
+        seenPick[m] = true;
+        return true;
+      });
+    });
+    (cfg.dest_groups || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) {
+        return !(pickSet[m] && !inSet[m]);
+      });
+    });
   }
 
   function pickGroupColor() {
@@ -5293,6 +5367,9 @@ body {
       if (Array.isArray(cfg.dest_in)) db.configs.dest_in = cfg.dest_in;
       if (Array.isArray(cfg.dest_pick)) db.configs.dest_pick = cfg.dest_pick;
       if (Array.isArray(cfg.origins)) db.configs.origins = cfg.origins;
+      // 从存储同步后再做一次归一（防止旧标签页写回的脏数据）
+      enforceSingleOwner();
+      ensureGroupColors();
     } catch (e) { /* 解析失败就沿用内存数据 */ }
   }
 
@@ -5399,6 +5476,9 @@ body {
 
   /** 拖动后的统一收尾：落盘 + 重绘筛选条 / 地点列表 / 地图圆点 */
   function afterMapGroupChange(targetGroupId) {
+    // 先保证数据里没有跨组重复、每个分组都有固定颜色，再重绘
+    enforceSingleOwner();
+    ensureGroupColors();
     saveLocal();
     if (targetGroupId) mapState.collapsed[targetGroupId] = false;
     renderMapFilters();
