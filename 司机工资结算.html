@@ -2917,8 +2917,9 @@ body {
     });
     $('cfgSaveBtn').addEventListener('click', saveCfgModal);
 
-    // 目的地 / 始发地标签右键：坐标菜单
+    // 目的地 / 始发地标签右键：坐标菜单（提/还目的地不需要定位）
     $('cfgTags').addEventListener('contextmenu', function (e) {
+      if (cfgModalKey === 'dest_pick') return;
       var tag = e.target.closest('.cfg-tag');
       if (!tag) return;
       e.preventDefault();
@@ -3999,10 +4000,12 @@ body {
 
   function renderCfgTag(name, idx) {
     var hasCoord = !!placeCoord(name);
+    var coordBtn = cfgModalKey === 'dest_pick' ? '' :
+      '<button type="button" data-cfg-coord="' + idx + '" class="' + (hasCoord ? 'has-coord' : '') +
+      '" aria-label="设置坐标" title="' + (hasCoord ? '已设置坐标，点击修改' : '设置地图坐标') + '">📍</button>';
     return '<span class="cfg-tag" draggable="true" data-cfg-name="' + esc(name) + '" data-cfg-idx="' + idx + '">' +
       esc(name) +
-      '<button type="button" data-cfg-coord="' + idx + '" class="' + (hasCoord ? 'has-coord' : '') +
-      '" aria-label="设置坐标" title="' + (hasCoord ? '已设置坐标，点击修改' : '设置地图坐标') + '">📍</button>' +
+      coordBtn +
       '<button type="button" data-cfg-edit="' + idx + '" aria-label="编辑" title="改名">✎</button>' +
       '<button type="button" data-cfg-del="' + idx + '" aria-label="删除">×</button>' +
       '</span>';
