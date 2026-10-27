@@ -1507,6 +1507,14 @@ body {
   box-shadow: 0 14px 32px -12px rgba(16, 24, 40, 0.35);
 }
 
+.map-search-sec {
+  padding: 7px 11px 4px;
+  font-size: 11px;
+  color: var(--muted);
+  background: #fafbfd;
+  border-bottom: 1px solid #f1f4f9;
+}
+
 .map-search-item {
   padding: 8px 11px;
   border-bottom: 1px solid #f1f4f9;
@@ -2067,7 +2075,7 @@ body {
     <div class="map-layout">
       <div class="map-main">
         <div class="map-search" id="mapSearchWrap">
-          <input type="text" id="mapSearchInput" placeholder="搜索路名 / 堆场名，例如：外高桥六期">
+          <input type="text" id="mapSearchInput" placeholder="搜已保存的地点或路名，例如：外一 / 外高桥六期">
           <button type="button" class="btn btn-ghost" id="mapSearchBtn">搜索</button>
           <div class="map-search-list is-hidden" id="mapSearchList"></div>
         </div>
@@ -3069,10 +3077,17 @@ body {
 
     // 地点搜索
     $('mapSearchBtn').addEventListener('click', runMapSearch);
+    $('mapSearchInput').addEventListener('input', updateMapSearchInput);
     $('mapSearchInput').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); runMapSearch(); }
+      if (e.key === 'Escape') $('mapSearchList').classList.add('is-hidden');
     });
     $('mapSearchList').addEventListener('click', function (e) {
+      var local = e.target.closest('[data-search-local]');
+      if (local) {
+        applyLocalSearch(Number(local.dataset.searchLocal));
+        return;
+      }
       var item = e.target.closest('[data-search-idx]');
       if (item) applySearchOnMain(Number(item.dataset.searchIdx));
     });
@@ -4840,11 +4855,86 @@ body {
     listEl.classList.remove('is-hidden');
   }
 
+  /** 在已保存的始发地/目的地里按名称匹配 */
+  function searchLocalPlaces(keyword) {
+    var kw = String(keyword || '').trim().toLowerCase();
+    var out = [];
+    if (!kw) return out;
+    getPlaceGroups().forEach(function (group) {
+      sortNamesByName(group.names).forEach(function (name) {
+        if (name.toLowerCase().indexOf(kw) < 0) return;
+        out.push({
+          name: name,
+          groupId: group.id,
+          groupLabel: group.label,
+          coord: placeCoord(name),
+        });
+      });
+    });
+    return out;
+  }
+
+  /** 主地图搜索结果：我的地点 + 地图上的位置 */
+  function renderMapSearchResults(local, pois) {
+    var listEl = $('mapSearchList');
+    listEl._local = local || [];
+    listEl._pois = pois || [];
+    var html = '';
+    if (listEl._local.length) {
+      html += '<div class="map-search-sec">我的地点</div>';
+      listEl._local.forEach(function (item, i) {
+        html += '<div class="map-search-item" data-search-local="' + i + '">' +
+          '<b>' + esc(item.name) + '</b>' +
+          '<span>' + esc(item.groupLabel) + ' · ' + (item.coord ? '已标注' : '未标注') + '</span></div>';
+      });
+    }
+    if (listEl._pois.length) {
+      html += '<div class="map-search-sec">地图上的位置</div>';
+      listEl._pois.forEach(function (p, i) {
+        html += '<div class="map-search-item" data-search-idx="' + i + '">' +
+          '<b>' + esc(p.name) + '</b><span>' + esc(p.address) + '</span></div>';
+      });
+    }
+    if (!html) html = '<div class="map-search-empty">没找到，换个关键词试试</div>';
+    listEl.innerHTML = html;
+    listEl.classList.remove('is-hidden');
+  }
+
+  /** 输入时就地过滤本地地点，不请求高德 */
+  function updateMapSearchInput() {
+    var kw = $('mapSearchInput').value;
+    if (!String(kw).trim()) {
+      $('mapSearchList').classList.add('is-hidden');
+      return;
+    }
+    renderMapSearchResults(searchLocalPlaces(kw), []);
+  }
+
   /** 主地图搜索 */
   function runMapSearch() {
-    searchPoi($('mapSearchInput').value, function (pois) {
-      renderSearchList($('mapSearchList'), pois);
+    var kw = $('mapSearchInput').value;
+    if (!String(kw).trim()) return;
+    var local = searchLocalPlaces(kw);
+    renderMapSearchResults(local, []);
+    searchPoi(kw, function (pois) {
+      renderMapSearchResults(local, pois);
     });
+  }
+
+  /** 选中「我的地点」：有坐标就定位，没有就进入选点 */
+  function applyLocalSearch(idx) {
+    var listEl = $('mapSearchList');
+    var item = (listEl._local || [])[idx];
+    if (!item) return;
+    listEl.classList.add('is-hidden');
+    if (!item.coord) {
+      startMapPick(item.name);
+      return;
+    }
+    mapState.collapsed[item.groupId] = false;
+    renderMapPlaceList();
+    if (mapState.map) mapState.map.setZoomAndCenter(15, [item.coord.lng, item.coord.lat]);
+    openPlaceInfo(item.name, { label: item.groupLabel });
   }
 
   function applySearchOnMain(idx) {
@@ -4854,7 +4944,7 @@ body {
     listEl.classList.add('is-hidden');
     if (mapState.map) mapState.map.setZoomAndCenter(15, [poi.lng, poi.lat]);
     if (!mapState.pickName) {
-      toast('已定位到「' + poi.name + '」。要把它设成地点坐标：先点未标注的地点（或右键选「在地图上点选」），再搜索重搜一次。');
+      toast('已定位到「' + poi.name + '」。要存为地点坐标：右键地点选「在地图上点选」后再搜这个位置。');
       return;
     }
     var name = mapState.pickName;
