@@ -1427,6 +1427,207 @@ body {
   color: var(--danger);
 }
 
+.cfg-tag button[data-cfg-coord] {
+  color: #98a2b3;
+  font-size: 11px;
+  margin-right: 2px;
+}
+
+.cfg-tag button[data-cfg-coord]:hover {
+  color: var(--primary);
+}
+
+.cfg-tag button[data-cfg-coord].has-coord {
+  color: #17a673;
+}
+
+/* ===== 地图 ===== */
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+}
+
+.map-main {
+  position: relative;
+}
+
+.map-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.map-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.map-chip input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.map-chip i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.map-chip.is-off {
+  opacity: 0.45;
+}
+
+.map-canvas {
+  position: relative;
+  height: 560px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #f4f6fa;
+  overflow: hidden;
+}
+
+.map-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 2;
+}
+
+.map-pick-tip {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  background: rgba(16, 24, 40, 0.88);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  z-index: 5;
+}
+
+.map-side {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 596px;
+}
+
+.map-side-head {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.map-side-count {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.map-side-list {
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.map-place {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.map-place:hover {
+  background: #f5f7fb;
+}
+
+.map-place.is-picking {
+  background: #eef3ff;
+}
+
+.map-place i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.map-place span {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-place em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.map-place em.warn {
+  color: var(--warn);
+}
+
+.map-empty {
+  padding: 12px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.modal-coord {
+  width: 640px;
+}
+
+.coord-map {
+  position: relative;
+  height: 320px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: #f4f6fa;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.coord-map .map-hint {
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+.coord-value {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 .cfg-input-row {
   display: flex;
   gap: 8px;
@@ -1471,6 +1672,7 @@ body {
     <button type="button" class="nav-btn" data-page="trips">趟次录入</button>
     <button type="button" class="nav-btn" data-page="fuel">加油录入</button>
     <button type="button" class="nav-btn" data-page="attendance">出勤登记</button>
+    <button type="button" class="nav-btn" data-page="map">地图</button>
     <button type="button" class="nav-btn" data-page="drivers">司机信息</button>
     <button type="button" class="nav-btn" data-page="routes">线路价目</button>
   </nav>
@@ -1671,6 +1873,34 @@ body {
     <div class="calendar-wrap" id="calendarWrap"></div>
   </section>
 
+  <!-- ========== 地图 ========== -->
+  <section class="page" id="page-map">
+    <div class="page-head">
+      <div>
+        <h2>目的地地图</h2>
+        <p class="sub">按区域查看所有始发地与目的地。点「未标注」的地点在左侧列表选中，再点地图即可设定坐标。</p>
+      </div>
+      <div class="page-actions">
+        <button type="button" class="btn btn-ghost" id="mapFitBtn">全览</button>
+      </div>
+    </div>
+
+    <div class="map-layout">
+      <div class="map-main">
+        <div class="map-filters" id="mapFilters"></div>
+        <div class="map-canvas" id="mapCanvas"></div>
+        <div class="map-pick-tip is-hidden" id="mapPickTip"></div>
+      </div>
+      <aside class="map-side">
+        <div class="map-side-head">
+          <span>地点列表</span>
+          <span class="map-side-count" id="mapSideCount"></span>
+        </div>
+        <div class="map-side-list" id="mapPlaceList"></div>
+      </aside>
+    </div>
+  </section>
+
   <!-- ========== 司机信息 ========== -->
   <section class="page" id="page-drivers">
     <div class="page-head">
@@ -1824,6 +2054,24 @@ body {
       </div>
     </div>
   </div>
+  <!-- ========== 坐标设置弹窗 ========== -->
+  <div class="modal-mask is-hidden" id="coordModal">
+    <div class="modal modal-coord">
+      <div class="modal-head">
+        <h3 id="coordModalTitle">设置坐标</h3>
+        <button type="button" class="modal-close" id="coordModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="cfg-hint">在地图上点击该地点的实际位置，然后点保存。</div>
+        <div class="coord-map" id="coordMap"></div>
+        <div class="coord-value" id="coordValue">尚未选择位置</div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="coordClearBtn">清除坐标</button>
+        <button type="button" class="btn btn-primary" id="coordSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
 
 </main>
 
@@ -1837,6 +2085,10 @@ body {
   var DAILY_WAGE = 200;
   var FUEL_PER_KM = 0.34;
   var SAVING_PRICE = 0.45;
+
+  /* ===== 高德地图配置（在这里填你自己的 Key） ===== */
+  var AMAP_KEY = 'YOUR-AMAP-KEY';                 // 高德 JS API Key
+  var AMAP_SECURITY_CODE = 'YOUR-AMAP-SECURITY';  // 高德安全密钥（2022 年后新 Key 必须填）
 
   var state = { month: '', page: 'settlement', routeSort: 'name', tripMode: 'template' };
   var db;
@@ -1970,6 +2222,8 @@ body {
             '沧海路': 190, '德威八分': 70, '外通': 70, '东森': 70,
           },
         },
+        // 地点坐标：{ 地点名: { lat, lng } }，用于地图标注
+        coords: {},
       },
       drivers: [],
       routes: [],
@@ -2096,6 +2350,7 @@ body {
       var cfg = Object.assign({}, def.configs, parsed.configs || {});
       if (!cfg.base_km) cfg.base_km = def.configs.base_km;
       if (!cfg.dest_groups) cfg.dest_groups = def.configs.dest_groups;
+      if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
       // 确保 base_km 里包含所有现有目的地
       Object.keys(cfg.base_km).forEach(function (origin) {
         (cfg.dest_in || []).concat(cfg.dest_pick || []).forEach(function (d) {
@@ -2510,7 +2765,15 @@ body {
       if (editBtn) { e.stopPropagation(); editCfgItem(Number(editBtn.dataset.cfgEdit)); return; }
       // 删除 tag
       var delBtn = e.target.closest('[data-cfg-del]');
-      if (delBtn) { e.stopPropagation(); removeCfgItem(Number(delBtn.dataset.cfgDel)); }
+      if (delBtn) { e.stopPropagation(); removeCfgItem(Number(delBtn.dataset.cfgDel)); return; }
+      // 设置坐标
+      var coordBtn = e.target.closest('[data-cfg-coord]');
+      if (coordBtn) {
+        e.stopPropagation();
+        var coordList = db.configs[cfgModalKey] || [];
+        var coordName = coordList[Number(coordBtn.dataset.cfgCoord)];
+        if (coordName) openCoordModal(coordName);
+      }
     });
     $('cfgAddBtn').addEventListener('click', addCfgItem);
     $('cfgNewInput').addEventListener('keydown', function (e) {
@@ -2560,6 +2823,42 @@ body {
     // 出勤登记
     $('attMonth').addEventListener('change', renderAttCalendar);
     $('attDriver').addEventListener('change', renderAttCalendar);
+
+    // 地图
+    $('mapFilters').addEventListener('change', function (e) {
+      var input = e.target.closest('[data-map-filter]');
+      if (!input) return;
+      mapState.filter[input.dataset.mapFilter] = input.checked;
+      renderMapFilters();
+      renderMapPlaceList();
+      renderMapMarkers(false);
+    });
+    $('mapPlaceList').addEventListener('click', function (e) {
+      var row = e.target.closest('[data-map-place]');
+      if (!row) return;
+      var name = row.dataset.mapPlace;
+      var coord = placeCoord(name);
+      if (coord) {
+        var group = getPlaceGroups().filter(function (g) { return g.names.indexOf(name) >= 0; })[0];
+        if (mapState.map) mapState.map.setZoomAndCenter(13, [coord.lng, coord.lat]);
+        if (group) openPlaceInfo(name, group);
+      } else {
+        startMapPick(name);
+      }
+    });
+    $('mapFitBtn').addEventListener('click', function () {
+      if (mapState.map) renderMapMarkers(true);
+    });
+    $('coordModalClose').addEventListener('click', closeCoordModal);
+    $('coordSaveBtn').addEventListener('click', saveCoordModal);
+    $('coordClearBtn').addEventListener('click', function () {
+      mapState.coordLatLng = null;
+      drawCoordMarker();
+      updateCoordValue();
+    });
+    $('coordModal').addEventListener('click', function (e) {
+      if (e.target.id === 'coordModal') closeCoordModal();
+    });
 
     $('backupBtn').addEventListener('click', exportBackup);
     $('restoreBtn').addEventListener('click', function () {
@@ -2648,7 +2947,7 @@ body {
     document.querySelectorAll('.page').forEach(function (section) {
       section.classList.toggle('is-active', section.id === 'page-' + page);
     });
-    $('monthBox').classList.toggle('is-hidden', page === 'drivers' || page === 'routes' || page === 'attendance');
+    $('monthBox').classList.toggle('is-hidden', page === 'drivers' || page === 'routes' || page === 'attendance' || page === 'map');
     renderPage();
   }
 
@@ -2658,6 +2957,7 @@ body {
       if (state.page === 'trips') return renderTrips();
       if (state.page === 'fuel') return renderFuel();
       if (state.page === 'attendance') return renderAttCalendar();
+      if (state.page === 'map') return renderMapPage();
       if (state.page === 'drivers') return renderDriverTable();
       if (state.page === 'routes') return renderRouteTable();
     } catch (error) {
@@ -3507,8 +3807,11 @@ body {
   }
 
   function renderCfgTag(name, idx) {
+    var hasCoord = !!placeCoord(name);
     return '<span class="cfg-tag" draggable="true" data-cfg-name="' + esc(name) + '" data-cfg-idx="' + idx + '">' +
       esc(name) +
+      '<button type="button" data-cfg-coord="' + idx + '" class="' + (hasCoord ? 'has-coord' : '') +
+      '" aria-label="设置坐标" title="' + (hasCoord ? '已设置坐标，点击修改' : '设置地图坐标') + '">📍</button>' +
       '<button type="button" data-cfg-edit="' + idx + '" aria-label="编辑" title="改名">✎</button>' +
       '<button type="button" data-cfg-del="' + idx + '" aria-label="删除">×</button>' +
       '</span>';
@@ -3540,6 +3843,13 @@ body {
         });
       }
     });
+
+    // 同步坐标
+    db.configs.coords = db.configs.coords || {};
+    if (db.configs.coords[oldVal]) {
+      db.configs.coords[newVal] = db.configs.coords[oldVal];
+      delete db.configs.coords[oldVal];
+    }
 
     // 同步 trips 的 route_name（从 routes 重新拼，因为 route_name 是冗余快照）
     db.trips.forEach(function (trip) {
@@ -3944,6 +4254,342 @@ body {
       refreshData();
       renderPage();
     } catch (error) { toast(error.message, 'error'); }
+  }
+
+  /* ================= 地图 ================= */
+  var MAP_COLORS = {
+    origin: '#111827',
+    'zone-ab': '#2563eb',
+    'zone-cd': '#16a34a',
+    'zone-ys': '#f59e0b',
+    ungrouped: '#94a3b8',
+  };
+
+  var mapState = {
+    map: null,
+    markers: [],
+    loading: false,
+    queue: [],
+    filter: {},
+    pickName: '',
+    coordMap: null,
+    coordMarker: null,
+    coordTarget: '',
+    coordLatLng: null,
+    info: null,
+  };
+
+  function amapConfigured() {
+    return !!AMAP_KEY && AMAP_KEY.indexOf('YOUR-AMAP') < 0;
+  }
+
+  function loadAMapApi(done, fail) {
+    if (window.AMap) { done(); return; }
+    if (!amapConfigured()) { if (fail) fail('nokey'); return; }
+    mapState.queue.push({ done: done, fail: fail });
+    if (mapState.loading || document.getElementById('amapScript')) return;
+    mapState.loading = true;
+    if (AMAP_SECURITY_CODE && AMAP_SECURITY_CODE.indexOf('YOUR-AMAP') < 0) {
+      window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY_CODE };
+    }
+    var script = document.createElement('script');
+    script.id = 'amapScript';
+    script.async = true;
+    script.src = 'https://webapi.amap.com/maps?v=2.0&key=' + encodeURIComponent(AMAP_KEY);
+    script.onload = function () { mapState.loading = false; flushAmapQueue(true); };
+    script.onerror = function () { mapState.loading = false; flushAmapQueue(false); };
+    document.head.appendChild(script);
+  }
+
+  function flushAmapQueue(ok) {
+    var queue = mapState.queue;
+    mapState.queue = [];
+    queue.forEach(function (item) {
+      if (ok) item.done();
+      else if (item.fail) item.fail('loadfail');
+    });
+  }
+
+  function placeCoord(name) {
+    var coords = (db.configs && db.configs.coords) || {};
+    var c = coords[name];
+    if (!c || typeof c.lat !== 'number' || typeof c.lng !== 'number') return null;
+    return c;
+  }
+
+  function round6(value) {
+    return Math.round(Number(value) * 1e6) / 1e6;
+  }
+
+  /** 地点按区域归组：[{id,label,color,names}] */
+  function getPlaceGroups() {
+    var cfg = db.configs;
+    var out = [];
+    out.push({ id: 'origin', label: '始发地', color: MAP_COLORS.origin, names: (cfg.origins || []).slice() });
+
+    var dests = [];
+    (cfg.dest_in || []).forEach(function (n) { if (dests.indexOf(n) < 0) dests.push(n); });
+    (cfg.dest_pick || []).forEach(function (n) { if (dests.indexOf(n) < 0) dests.push(n); });
+
+    var assigned = {};
+    (cfg.dest_groups || []).forEach(function (g) {
+      var names = dests.filter(function (n) { return (g.members || []).indexOf(n) >= 0; });
+      names.forEach(function (n) { assigned[n] = true; });
+      if (names.length) {
+        out.push({ id: g.id, label: g.label, color: MAP_COLORS[g.id] || MAP_COLORS.ungrouped, names: names });
+      }
+    });
+    var rest = dests.filter(function (n) { return !assigned[n]; });
+    if (rest.length) out.push({ id: 'ungrouped', label: '未分组', color: MAP_COLORS.ungrouped, names: rest });
+    return out;
+  }
+
+  function countRoutesUsing(name) {
+    var count = 0;
+    (db.routes || []).forEach(function (route) {
+      if (route.origin === name) count++;
+      (route.steps || []).forEach(function (step) {
+        if (step.dest === name) count++;
+      });
+    });
+    return count;
+  }
+
+  function renderMapPage() {
+    renderMapFilters();
+    renderMapPlaceList();
+
+    if (!amapConfigured()) {
+      $('mapCanvas').innerHTML =
+        '<div class="map-hint"><div>地图需要高德 Key<br>' +
+        '1. 打开 <b>console.amap.com</b> 申请「Web端（JS API）」Key<br>' +
+        '2. 把 Key 和安全密钥填入 HTML 里 <b>AMAP_KEY</b> 与 <b>AMAP_SECURITY_CODE</b> 两行<br>' +
+        '3. 刷新网页即可</div></div>';
+      return;
+    }
+    loadAMapApi(initMainMap, function (reason) {
+      $('mapCanvas').innerHTML = '<div class="map-hint"><div>' + (reason === 'nokey'
+        ? '未配置高德 Key'
+        : '地图加载失败，请检查网络或 Key 是否正确') + '</div></div>';
+    });
+  }
+
+  function renderMapFilters() {
+    var html = '';
+    getPlaceGroups().forEach(function (group) {
+      if (mapState.filter[group.id] === undefined) mapState.filter[group.id] = true;
+      html += '<label class="map-chip' + (mapState.filter[group.id] ? '' : ' is-off') + '">' +
+        '<input type="checkbox" data-map-filter="' + esc(group.id) + '"' +
+        (mapState.filter[group.id] ? ' checked' : '') + '>' +
+        '<i style="background:' + group.color + '"></i>' + esc(group.label) + '</label>';
+    });
+    $('mapFilters').innerHTML = html;
+  }
+
+  function renderMapPlaceList() {
+    var groups = getPlaceGroups();
+    var html = '';
+    var missing = 0;
+    var total = 0;
+    groups.forEach(function (group) {
+      if (!mapState.filter[group.id]) return;
+      group.names.forEach(function (name) {
+        total++;
+        var has = !!placeCoord(name);
+        if (!has) missing++;
+        html += '<div class="map-place' + (mapState.pickName === name ? ' is-picking' : '') +
+          '" data-map-place="' + esc(name) + '">' +
+          '<i style="background:' + group.color + '"></i>' +
+          '<span>' + esc(name) + '</span>' +
+          '<em class="' + (has ? '' : 'warn') + '">' + (has ? countRoutesUsing(name) + ' 条路线' : '未标注') + '</em>' +
+          '</div>';
+      });
+    });
+    if (!html) html = '<div class="map-empty">没有可显示的地点</div>';
+    $('mapPlaceList').innerHTML = html;
+    $('mapSideCount').textContent = total ? (total - missing) + '/' + total + ' 已标注' : '';
+  }
+
+  function initMainMap() {
+    if (!mapState.map) {
+      $('mapCanvas').innerHTML = '';
+      mapState.map = new AMap.Map('mapCanvas', {
+        zoom: 11,
+        center: [121.72, 30.88],
+        viewMode: '2D',
+        resizeEnable: true,
+      });
+      mapState.map.on('click', onMainMapClick);
+    } else {
+      mapState.map.resize();
+    }
+    renderMapMarkers(true);
+  }
+
+  function renderMapMarkers(fit) {
+    var map = mapState.map;
+    if (!map) return;
+    map.remove(mapState.markers);
+    mapState.markers = [];
+
+    getPlaceGroups().forEach(function (group) {
+      if (!mapState.filter[group.id]) return;
+      group.names.forEach(function (name) {
+        var coord = placeCoord(name);
+        if (!coord) return;
+        var marker = new AMap.CircleMarker({
+          center: [coord.lng, coord.lat],
+          radius: 8,
+          strokeColor: '#fff',
+          strokeWeight: 2,
+          fillColor: group.color,
+          fillOpacity: 1,
+          cursor: 'pointer',
+          zIndex: 10,
+        });
+        marker.on('click', function () { openPlaceInfo(name, group); });
+        map.add(marker);
+        mapState.markers.push(marker);
+      });
+    });
+
+    if (fit && mapState.markers.length) {
+      map.setFitView(mapState.markers, false, [70, 70, 70, 70]);
+    }
+  }
+
+  function openPlaceInfo(name, group) {
+    var coord = placeCoord(name);
+    if (!coord || !mapState.map) return;
+    var html = '<div style="padding:4px 8px;font-size:12px;line-height:1.8">' +
+      '<b>' + esc(name) + '</b><br>' +
+      '<span style="color:#667085">' + esc(group.label) + '</span><br>' +
+      '关联路线：' + countRoutesUsing(name) + ' 条</div>';
+    if (mapState.info) mapState.info.close();
+    mapState.info = new AMap.InfoWindow({
+      content: html,
+      offset: new AMap.Pixel(0, -10),
+      isCustom: false,
+    });
+    mapState.info.open(mapState.map, [coord.lng, coord.lat]);
+  }
+
+  function onMainMapClick(event) {
+    if (!mapState.pickName) return;
+    var name = mapState.pickName;
+    db.configs.coords = db.configs.coords || {};
+    db.configs.coords[name] = {
+      lat: round6(event.lnglat.getLat()),
+      lng: round6(event.lnglat.getLng()),
+    };
+    saveLocal();
+    mapState.pickName = '';
+    $('mapPickTip').classList.add('is-hidden');
+    renderMapPlaceList();
+    if (cfgModalKey) renderCfgTags();
+    renderMapMarkers(false);
+    toast('已设置「' + name + '」坐标');
+  }
+
+  function startMapPick(name) {
+    if (!amapConfigured()) {
+      toast('未配置高德 Key，无法在地图上取点', 'error');
+      return;
+    }
+    mapState.pickName = name;
+    $('mapPickTip').textContent = '点击地图，为「' + name + '」设定坐标';
+    $('mapPickTip').classList.remove('is-hidden');
+    renderMapPlaceList();
+  }
+
+  function openCoordModal(name) {
+    mapState.coordTarget = name;
+    mapState.coordLatLng = placeCoord(name);
+    $('coordModalTitle').textContent = '设置坐标 · ' + name;
+    $('coordModal').classList.remove('is-hidden');
+    updateCoordValue();
+    loadAMapApi(initCoordMap, function () {
+      $('coordMap').innerHTML = '<div class="map-hint"><div>未配置高德 Key，暂时无法用地图取点<br>请先填写 AMAP_KEY 后刷新网页</div></div>';
+    });
+  }
+
+  function initCoordMap() {
+    var existing = placeCoord(mapState.coordTarget);
+    if (!mapState.coordMap) {
+      $('coordMap').innerHTML = '';
+      mapState.coordMap = new AMap.Map('coordMap', {
+        zoom: existing ? 14 : 11,
+        center: existing ? [existing.lng, existing.lat] : [121.72, 30.88],
+        resizeEnable: true,
+      });
+      mapState.coordMap.on('click', function (event) {
+        mapState.coordLatLng = {
+          lat: round6(event.lnglat.getLat()),
+          lng: round6(event.lnglat.getLng()),
+        };
+        drawCoordMarker();
+        updateCoordValue();
+      });
+    } else {
+      mapState.coordMap.resize();
+      if (mapState.coordLatLng) {
+        mapState.coordMap.setZoomAndCenter(14, [mapState.coordLatLng.lng, mapState.coordLatLng.lat]);
+      }
+    }
+    drawCoordMarker();
+  }
+
+  function drawCoordMarker() {
+    var map = mapState.coordMap;
+    if (!map) return;
+    if (mapState.coordMarker) {
+      map.remove(mapState.coordMarker);
+      mapState.coordMarker = null;
+    }
+    if (!mapState.coordLatLng) return;
+    var marker = new AMap.CircleMarker({
+      center: [mapState.coordLatLng.lng, mapState.coordLatLng.lat],
+      radius: 8,
+      strokeColor: '#fff',
+      strokeWeight: 2,
+      fillColor: '#2563eb',
+      fillOpacity: 1,
+      zIndex: 12,
+    });
+    map.add(marker);
+    mapState.coordMarker = marker;
+  }
+
+  function updateCoordValue() {
+    $('coordValue').textContent = mapState.coordLatLng
+      ? '纬度 ' + mapState.coordLatLng.lat + ' ，经度 ' + mapState.coordLatLng.lng
+      : '尚未选择位置（在地图上点击即可）';
+  }
+
+  function closeCoordModal() {
+    $('coordModal').classList.add('is-hidden');
+    mapState.coordTarget = '';
+    mapState.coordLatLng = null;
+  }
+
+  function saveCoordModal() {
+    if (!mapState.coordTarget) return;
+    var name = mapState.coordTarget;
+    db.configs.coords = db.configs.coords || {};
+    if (mapState.coordLatLng) {
+      db.configs.coords[name] = {
+        lat: round6(mapState.coordLatLng.lat),
+        lng: round6(mapState.coordLatLng.lng),
+      };
+    } else {
+      delete db.configs.coords[name];
+    }
+    saveLocal();
+    if (cfgModalKey) renderCfgTags();
+    renderMapPlaceList();
+    renderMapMarkers(false);
+    closeCoordModal();
+    toast('「' + name + '」坐标已保存');
   }
 
   /* ================= 备份 ================= */
