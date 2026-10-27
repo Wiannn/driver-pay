@@ -1764,21 +1764,43 @@ body {
 .map-group-head {
   display: flex;
   align-items: center;
+  border-radius: 7px;
+  background: #f6f8fc;
+}
+
+.map-group-head:hover {
+  background: #eef2f9;
+}
+
+.map-group-grip {
+  flex: 0 0 auto;
+  padding: 0 1px 0 6px;
+  color: #b3bfd0;
+  font-size: 12px;
+  letter-spacing: -1px;
+  cursor: grab;
+  user-select: none;
+}
+
+.map-group-grip:active {
+  cursor: grabbing;
+}
+
+.map-group-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
   gap: 8px;
-  width: 100%;
+  min-width: 0;
   padding: 7px 8px;
   border: 0;
   border-radius: 7px;
-  background: #f6f8fc;
+  background: transparent;
   font-family: inherit;
   font-size: 12.5px;
   color: var(--ink-soft);
   cursor: pointer;
   text-align: left;
-}
-
-.map-group-head:hover {
-  background: #eef2f9;
 }
 
 .map-group-head i {
@@ -1865,6 +1887,32 @@ body {
 
 .map-place em.warn {
   color: var(--warn);
+}
+
+/* 拖动换组 / 拖动排序 */
+.map-place[draggable="true"] {
+  cursor: grab;
+}
+
+.map-place.dragging {
+  opacity: 0.35;
+}
+
+.map-group.is-dragging {
+  opacity: 0.45;
+}
+
+.map-group.drag-over > .map-group-head {
+  background: #e8f0ff;
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.map-group.drop-before {
+  box-shadow: 0 -2px 0 var(--primary);
+}
+
+.map-group.drop-after {
+  box-shadow: 0 2px 0 var(--primary);
 }
 
 .map-empty {
@@ -2621,19 +2669,44 @@ body {
         usedId[want] = true;
       }
     });
-    // 内置组按固定顺序排（超外系在最前），自建组保持原相对顺序排在后面；
-    // 地图归组时排在前面的分组优先，顺序固定就不会被旧成员抢走颜色
-    var builtinOrder = ['zone-cw', 'zone-ab', 'zone-cd', 'zone-wn', 'zone-ys'];
-    var posMap = {};
-    out.forEach(function (g, i) { posMap[g.id] = i; });
-    out.sort(function (a, b) {
-      var ra = builtinOrder.indexOf(a.id);
-      var rb = builtinOrder.indexOf(b.id);
-      if (ra < 0) ra = builtinOrder.length + posMap[a.id];
-      if (rb < 0) rb = builtinOrder.length + posMap[b.id];
-      return ra - rb;
-    });
+    // 不再强制排序：顺序由用户在地图/管理里拖动决定，刷新后必须原样保留
     return out;
+  }
+
+  function nameSet(list) {
+    var set = {};
+    (list || []).forEach(function (n) { set[n] = true; });
+    return set;
+  }
+
+  /** 恢复上一版迁移弄丢的提还分组归属：
+   *  旧版迁移把「进+提还」合并分组的成员全灌进了 dest_groups，提还分组却被默认值顶掉。
+   *  这里把不属于进目的地的成员，按原分组 id 还原进提还分组（只补当前未分组的），
+   *  并把 dest_groups 里残留的提还地点清掉。跑过一次后数据已干净，再执行不会有变化。 */
+  function restorePickAssignments(cfg) {
+    var inSet = nameSet(cfg.dest_in);
+    var pickSet = nameSet(cfg.dest_pick);
+    var pickHas = {};
+    (cfg.dest_pick_groups || []).forEach(function (g) {
+      (g.members || []).forEach(function (m) { if (m && !pickHas[m]) pickHas[m] = g.id; });
+    });
+    (cfg.dest_groups || []).forEach(function (g) {
+      var keep = [];
+      var restore = [];
+      (g.members || []).forEach(function (m) {
+        if (!m) return;
+        if (inSet[m]) { keep.push(m); return; }
+        if (pickSet[m] && !pickHas[m]) restore.push(m);
+      });
+      g.members = keep;
+      var target = (cfg.dest_pick_groups || []).filter(function (pg) { return pg.id === g.id; })[0];
+      if (!target) return;
+      target.members = target.members || [];
+      restore.forEach(function (m) {
+        if (target.members.indexOf(m) < 0) target.members.push(m);
+        pickHas[m] = target.id;
+      });
+    });
   }
 
   /** 进 + 提还两套分组一起查（地图与公里判断都要用到） */
@@ -2774,17 +2847,19 @@ body {
       }
       // 深度合并 configs：保留用户已有值，补齐新增字段
       var def = defaultDb();
-      var cfg = Object.assign({}, def.configs, parsed.configs || {});
+      var rawCfg = parsed.configs || {};
+      var cfg = Object.assign({}, def.configs, rawCfg);
       if (!cfg.base_km) cfg.base_km = def.configs.base_km;
       // 旧版只有一套 dest_groups（进 + 提还共用）：
       // 迁移时把它整体搬成提还分组，进分组只保留固定的三组
-      if (!Array.isArray(cfg.dest_pick_groups)) {
-        cfg.dest_pick_groups = Array.isArray(cfg.dest_groups) && cfg.dest_groups.length
-          ? JSON.parse(JSON.stringify(cfg.dest_groups))
+      // 必须看存储原文：合并后的 cfg 会被默认 dest_pick_groups 填上，判断会失效
+      if (!Array.isArray(rawCfg.dest_pick_groups)) {
+        cfg.dest_pick_groups = Array.isArray(rawCfg.dest_groups) && rawCfg.dest_groups.length
+          ? JSON.parse(JSON.stringify(rawCfg.dest_groups))
           : JSON.parse(JSON.stringify(def.configs.dest_pick_groups));
       }
       var builtinInIds = def.configs.dest_groups.map(function (g) { return g.id; });
-      var oldGroups = Array.isArray(cfg.dest_groups) ? cfg.dest_groups : [];
+      var oldGroups = Array.isArray(rawCfg.dest_groups) ? rawCfg.dest_groups : [];
       cfg.dest_groups = builtinInIds.map(function (id, i) {
         var old = oldGroups.filter(function (g) { return g.id === id; })[0];
         var fresh = def.configs.dest_groups[i];
@@ -2809,6 +2884,8 @@ body {
       // 同名分组归并（历史上自建过「超外系」等同名组会残留，导致地图圆点取到兜底色）
       cfg.dest_groups = mergeSameLabelGroups(cfg.dest_groups);
       cfg.dest_pick_groups = mergeSameLabelGroups(cfg.dest_pick_groups);
+      // 还原被上一版迁移弄丢的提还分组归属（同时清掉进分组里混入的提还地点）
+      restorePickAssignments(cfg);
       // 修复历史上同一地点被拖进多个分组的情况：保留排在前面的分组，其余移除
       [cfg.dest_groups, cfg.dest_pick_groups].forEach(function (groupList) {
         if (!Array.isArray(groupList)) return;
@@ -3372,6 +3449,63 @@ body {
       if (!row) return;
       e.preventDefault();
       openMapMenu(row.dataset.mapPlace, e.clientX, e.clientY);
+    });
+
+    // 右侧列表拖动：地点换组 / 分组排序
+    $('mapPlaceList').addEventListener('dragstart', function (e) {
+      var grip = e.target.closest('.map-group-grip');
+      if (grip) {
+        var card = grip.closest('[data-map-group]');
+        if (!card) return;
+        mapDrag = { type: 'group', name: '', groupId: card.dataset.mapGroup };
+        card.classList.add('is-dragging');
+      } else {
+        var row = e.target.closest('[data-map-place]');
+        if (!row) return;
+        mapDrag = { type: 'place', name: row.dataset.mapPlace, groupId: '' };
+        row.classList.add('dragging');
+      }
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', mapDrag.name || ('group:' + mapDrag.groupId));
+    });
+    $('mapPlaceList').addEventListener('dragend', function () {
+      mapDrag = { type: '', name: '', groupId: '' };
+      clearMapDragMarks();
+    });
+    $('mapPlaceList').addEventListener('dragover', function (e) {
+      if (!mapDrag.type) return;
+      var card = e.target.closest('[data-map-group]');
+      if (!card) return;
+      var gid = card.dataset.mapGroup;
+      if (mapDrag.type === 'place' && gid === 'origin') return;
+      if (mapDrag.type === 'group' && (gid === mapDrag.groupId || gid === 'origin' || gid === 'ungrouped')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearMapDropMarks();
+      if (mapDrag.type === 'place') {
+        card.classList.add('drag-over');
+      } else {
+        var rect = card.getBoundingClientRect();
+        card.classList.add((e.clientY - rect.top) < rect.height / 2 ? 'drop-before' : 'drop-after');
+      }
+    });
+    $('mapPlaceList').addEventListener('drop', function (e) {
+      if (!mapDrag.type) return;
+      var card = e.target.closest('[data-map-group]');
+      if (!card) return;
+      var gid = card.dataset.mapGroup;
+      var drag = mapDrag;
+      var rect = card.getBoundingClientRect();
+      var before = (e.clientY - rect.top) < rect.height / 2;
+      e.preventDefault();
+      mapDrag = { type: '', name: '', groupId: '' };
+      clearMapDragMarks();
+      if (drag.type === 'place') {
+        if (gid === 'origin') return;
+        mapMovePlaceToGroup(drag.name, gid === 'ungrouped' ? '__none__' : gid);
+      } else if (gid && gid !== drag.groupId && gid !== 'origin' && gid !== 'ungrouped') {
+        mapReorderGroups(drag.groupId, gid, before);
+      }
     });
 
     // 地点搜索
@@ -5206,8 +5340,13 @@ body {
     var html = '';
     var missing = 0;
     var total = 0;
+    // 能在提还分组里重排的分组（始发地、未分组不算）
+    var pickIds = {};
+    (db.configs.dest_pick_groups || []).forEach(function (g) { pickIds[g.id] = true; });
     groups.forEach(function (group) {
       if (!mapState.filter[group.id]) return;
+      var isOrigin = group.id === 'origin';
+      var canReorder = !isOrigin && group.id !== 'ungrouped' && !!pickIds[group.id];
       var ok = 0;
       var rows = '';
       sortNamesByName(group.names).forEach(function (name) {
@@ -5217,25 +5356,100 @@ body {
         rows += '<div class="map-place' +
           (mapState.pickName === name ? ' is-picking' : '') +
           (mapState.highlight === name ? ' is-highlight' : '') +
-          '" data-map-place="' + esc(name) + '">' +
+          '" data-map-place="' + esc(name) + '"' +
+          (isOrigin ? '' : ' draggable="true"') + '>' +
           '<span>' + esc(name) + '</span>' +
           (has ? '' : '<em class="warn">未标注</em>') +
           '</div>';
       });
       var collapsed = !!mapState.collapsed[group.id];
-      html += '<div class="map-group' + (collapsed ? ' is-collapsed' : '') + '">' +
-        '<button type="button" class="map-group-head" data-group-toggle="' + esc(group.id) + '">' +
+      html += '<div class="map-group' + (collapsed ? ' is-collapsed' : '') +
+        '" data-map-group="' + esc(group.id) + '">' +
+        '<div class="map-group-head">' +
+        (canReorder ? '<span class="map-group-grip" draggable="true" title="拖动调整分组顺序">⠿</span>' : '') +
+        '<button type="button" class="map-group-toggle" data-group-toggle="' + esc(group.id) + '">' +
         '<i style="background:' + group.color + '"></i>' +
         '<span class="map-group-name">' + esc(group.label) + '</span>' +
         '<em>' + ok + '/' + group.names.length + '</em>' +
         '<b class="map-group-caret">▾</b>' +
         '</button>' +
+        '</div>' +
         '<div class="map-group-body">' + rows + '</div>' +
         '</div>';
     });
     if (!html) html = '<div class="map-empty">没有可显示的地点</div>';
     $('mapPlaceList').innerHTML = html;
     $('mapSideCount').textContent = total ? (total - missing) + '/' + total + ' 已标注' : '';
+  }
+
+  /* ---- 地图页拖动：地点换组 / 分组排序（都写进提还分组，与管理弹窗同步） ---- */
+
+  var mapDrag = { type: '', name: '', groupId: '' };
+
+  function clearMapDropMarks() {
+    document.querySelectorAll('#mapPlaceList .drag-over, #mapPlaceList .drop-before, #mapPlaceList .drop-after')
+      .forEach(function (el) { el.classList.remove('drag-over', 'drop-before', 'drop-after'); });
+  }
+
+  function clearMapDragMarks() {
+    document.querySelectorAll('#mapPlaceList .dragging, #mapPlaceList .is-dragging')
+      .forEach(function (el) { el.classList.remove('dragging', 'is-dragging'); });
+    clearMapDropMarks();
+  }
+
+  /** 拖动后的统一收尾：落盘 + 重绘筛选条 / 地点列表 / 地图圆点 */
+  function afterMapGroupChange(targetGroupId) {
+    saveLocal();
+    if (targetGroupId) mapState.collapsed[targetGroupId] = false;
+    renderMapFilters();
+    renderMapPlaceList();
+    renderMapMarkers(false);
+    if (cfgModalKey) renderCfgTags();
+  }
+
+  /** 把地点拖到提还分组；targetGroupId 为 '__none__' 表示移到未分组 */
+  function mapMovePlaceToGroup(name, targetGroupId) {
+    if (!name) return;
+    if ((db.configs.dest_pick || []).indexOf(name) < 0) {
+      toast('「' + name + '」只在进目的地里，不能拖到提还分组', 'error');
+      return;
+    }
+    var groups = db.configs.dest_pick_groups || [];
+    var target = null;
+    if (targetGroupId !== '__none__') {
+      target = groups.filter(function (g) { return g.id === targetGroupId; })[0];
+      if (!target) { toast('目标分组不存在', 'error'); return; }
+    }
+    groups.forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) { return m !== name; });
+    });
+    // 进分组里若残留同名地点一并清掉（仅限非进目的地，避免影响公里判断）
+    if ((db.configs.dest_in || []).indexOf(name) < 0) {
+      (db.configs.dest_groups || []).forEach(function (g) {
+        g.members = (g.members || []).filter(function (m) { return m !== name; });
+      });
+    }
+    if (target) {
+      target.members = target.members || [];
+      target.members.push(name);
+    }
+    afterMapGroupChange(targetGroupId === '__none__' ? '' : targetGroupId);
+    toast(target ? '「' + name + '」已移入「' + target.label + '」' : '「' + name + '」已移到未分组');
+  }
+
+  /** 拖动分组调整顺序：把 dragId 插到 targetId 前面（before=true）或后面 */
+  function mapReorderGroups(dragId, targetId, before) {
+    if (!dragId || !targetId || dragId === targetId) return;
+    var groups = db.configs.dest_pick_groups || [];
+    var from = -1;
+    groups.forEach(function (g, i) { if (g.id === dragId) from = i; });
+    if (from < 0) return;
+    var moved = groups.splice(from, 1)[0];
+    var to = -1;
+    groups.forEach(function (g, i) { if (g.id === targetId) to = i; });
+    if (to < 0) { groups.splice(from, 0, moved); return; }
+    groups.splice(before ? to : to + 1, 0, moved);
+    afterMapGroupChange('');
   }
 
   /** 限制地图只能在上海市域范围内平移（含洋山港） */
