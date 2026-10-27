@@ -2406,6 +2406,8 @@ body {
         dest_pick: ['洋山', '沧海路', '德威八分', '外通', '东森', '外一', '外二', '外四', '外五'],
         // 区域分组：目的地按区域归类（公里相同的归一组）
         dest_groups: [
+          { id: 'zone-cw', label: '超外系', desc: '超外区域的目的地',
+            members: [] },
           { id: 'zone-ab', label: '外一外二系', desc: '靠近外一外二的目的地',
             members: ['外一', '外二', '德威八分', '外通', '东森'] },
           { id: 'zone-cd', label: '外四外五系', desc: '靠近外四外五的目的地',
@@ -2556,6 +2558,9 @@ body {
       var cfg = Object.assign({}, def.configs, parsed.configs || {});
       if (!cfg.base_km) cfg.base_km = def.configs.base_km;
       if (!cfg.dest_groups) cfg.dest_groups = def.configs.dest_groups;
+      else if (!cfg.dest_groups.some(function (g) { return g.id === 'zone-cw'; })) {
+        cfg.dest_groups.unshift({ id: 'zone-cw', label: '超外系', desc: '超外区域的目的地', members: [] });
+      }
       if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
       // 确保 base_km 里包含所有现有目的地
       Object.keys(cfg.base_km).forEach(function (origin) {
@@ -4544,6 +4549,7 @@ body {
   /* ================= 地图 ================= */
   var MAP_COLORS = {
     origin: '#111827',
+    'zone-cw': '#7c3aed',
     'zone-ab': '#2563eb',
     'zone-cd': '#16a34a',
     'zone-ys': '#f59e0b',
@@ -4622,9 +4628,8 @@ body {
     (cfg.dest_groups || []).forEach(function (g) {
       var names = dests.filter(function (n) { return (g.members || []).indexOf(n) >= 0; });
       names.forEach(function (n) { assigned[n] = true; });
-      if (names.length) {
-        out.push({ id: g.id, label: g.label, color: MAP_COLORS[g.id] || MAP_COLORS.ungrouped, names: names });
-      }
+      // 空分组也显示（如刚建的「超外系」），保持与目的地管理同步
+      out.push({ id: g.id, label: g.label, color: MAP_COLORS[g.id] || MAP_COLORS.ungrouped, names: names });
     });
     var rest = dests.filter(function (n) { return !assigned[n]; });
     if (rest.length) out.push({ id: 'ungrouped', label: '未分组', color: MAP_COLORS.ungrouped, names: rest });
