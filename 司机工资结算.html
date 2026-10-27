@@ -2575,6 +2575,67 @@ body {
     return typeof v === 'number' ? v : null;
   }
 
+  /** 标准分组名称 → 内置 id：同名分组一律合并到内置组，颜色才不会乱 */
+  var BUILTIN_GROUP_IDS = {
+    '超外系': 'zone-cw',
+    '外一外二系': 'zone-ab',
+    '外四外五系': 'zone-cd',
+    '外内系': 'zone-wn',
+    '洋山系': 'zone-ys',
+  };
+
+  /** 合并同名分组：保留第一个，其余成员并入；内置名称的组统一改用内置 id */
+  function mergeSameLabelGroups(list) {
+    if (!Array.isArray(list)) return [];
+    var out = [];
+    var byLabel = {};
+    var usedId = {};
+    list.forEach(function (g) {
+      if (!g || typeof g !== 'object') return;
+      var label = String(g.label || '').trim();
+      if (!label) return;
+      if (byLabel[label]) {
+        // 历史上用户自建过同名分组 → 成员并入，丢掉重复的那个
+        (g.members || []).forEach(function (m) {
+          if (m && byLabel[label].members.indexOf(m) < 0) byLabel[label].members.push(m);
+        });
+        return;
+      }
+      var copy = {
+        id: g.id || ('zone-' + Math.random().toString(36).slice(2, 8)),
+        label: label,
+        desc: g.desc || '',
+        members: (g.members || []).slice(),
+        color: g.color || '',
+      };
+      byLabel[label] = copy;
+      usedId[copy.id] = true;
+      out.push(copy);
+    });
+    // 名称是标准名、id 却不是内置 id → 改回内置 id（地图取色按 id，紫色/蓝色等才稳定）
+    out.forEach(function (g) {
+      var want = BUILTIN_GROUP_IDS[g.label];
+      if (want && g.id !== want && !usedId[want]) {
+        delete usedId[g.id];
+        g.id = want;
+        usedId[want] = true;
+      }
+    });
+    // 内置组按固定顺序排（超外系在最前），自建组保持原相对顺序排在后面；
+    // 地图归组时排在前面的分组优先，顺序固定就不会被旧成员抢走颜色
+    var builtinOrder = ['zone-cw', 'zone-ab', 'zone-cd', 'zone-wn', 'zone-ys'];
+    var posMap = {};
+    out.forEach(function (g, i) { posMap[g.id] = i; });
+    out.sort(function (a, b) {
+      var ra = builtinOrder.indexOf(a.id);
+      var rb = builtinOrder.indexOf(b.id);
+      if (ra < 0) ra = builtinOrder.length + posMap[a.id];
+      if (rb < 0) rb = builtinOrder.length + posMap[b.id];
+      return ra - rb;
+    });
+    return out;
+  }
+
   /** 进 + 提还两套分组一起查（地图与公里判断都要用到） */
   function allDestGroups() {
     var cfg = db.configs || {};
@@ -2745,6 +2806,9 @@ body {
         }
       });
       if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
+      // 同名分组归并（历史上自建过「超外系」等同名组会残留，导致地图圆点取到兜底色）
+      cfg.dest_groups = mergeSameLabelGroups(cfg.dest_groups);
+      cfg.dest_pick_groups = mergeSameLabelGroups(cfg.dest_pick_groups);
       // 修复历史上同一地点被拖进多个分组的情况：保留排在前面的分组，其余移除
       [cfg.dest_groups, cfg.dest_pick_groups].forEach(function (groupList) {
         if (!Array.isArray(groupList)) return;
@@ -4958,10 +5022,15 @@ body {
     '#db2777', '#0891b2', '#65a30d', '#a16207', '#be123c',
   ];
 
-  /** 分组的显示颜色：内置组按 id，自定义组按自身 color，兜底按顺序取色 */
+  /** 分组的显示颜色：内置组按 id（或标准名称）取固定色，自定义组按自身 color，兜底按顺序取色 */
   function groupColor(group, idx) {
     if (!group) return MAP_COLORS.ungrouped;
-    return MAP_COLORS[group.id] || group.color || GROUP_PALETTE[(idx || 0) % GROUP_PALETTE.length];
+    var byId = MAP_COLORS[group.id];
+    if (byId) return byId;
+    // 历史数据里可能残留 id 随机的同名分组（如「超外系」），按名称兜底，保证颜色稳定
+    var byLabel = MAP_COLORS[BUILTIN_GROUP_IDS[group.label]];
+    if (byLabel) return byLabel;
+    return group.color || GROUP_PALETTE[(idx || 0) % GROUP_PALETTE.length];
   }
 
   function pickGroupColor() {
