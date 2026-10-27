@@ -2919,16 +2919,19 @@ body {
           members: (old && Array.isArray(old.members)) ? old.members : fresh.members.slice(),
         };
       });
-      // 提还分组补齐内置组（超外系 / 外内系等）
-      def.configs.dest_pick_groups.forEach(function (dg, idx) {
-        if (!cfg.dest_pick_groups.some(function (g) { return g.id === dg.id; })) {
-          var pos = cfg.dest_pick_groups.map(function (g) { return g.id; }).indexOf('zone-ys');
-          if (dg.id === 'zone-cw') pos = 0;
-          else if (dg.id === 'zone-wn' && pos < 0) pos = cfg.dest_pick_groups.length;
-          cfg.dest_pick_groups.splice(pos < 0 ? cfg.dest_pick_groups.length : pos, 0,
-            JSON.parse(JSON.stringify(dg)));
-        }
-      });
+      // 仅在「旧版本升级到有提还分组」时补一次默认内置组（超外系 / 外内系）。
+      // 之后用户删掉了就删掉，绝不能在每次加载时再补回来。
+      if (!Array.isArray(rawCfg.dest_pick_groups)) {
+        def.configs.dest_pick_groups.forEach(function (dg) {
+          if (!cfg.dest_pick_groups.some(function (g) { return g.id === dg.id; })) {
+            var pos = cfg.dest_pick_groups.map(function (g) { return g.id; }).indexOf('zone-ys');
+            if (dg.id === 'zone-cw') pos = 0;
+            else if (dg.id === 'zone-wn' && pos < 0) pos = cfg.dest_pick_groups.length;
+            cfg.dest_pick_groups.splice(pos < 0 ? cfg.dest_pick_groups.length : pos, 0,
+              JSON.parse(JSON.stringify(dg)));
+          }
+        });
+      }
       if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
       // 同名分组归并（历史上自建过「超外系」等同名组会残留，导致地图圆点取到兜底色）
       cfg.dest_groups = mergeSameLabelGroups(cfg.dest_groups);
