@@ -4562,7 +4562,10 @@ body {
     loadAMapApi(initMainMap, function (reason) {
       $('mapCanvas').innerHTML = '<div class="map-hint"><div>' + (reason === 'nokey'
         ? '未配置高德 Key'
-        : '地图加载失败，请检查网络或 Key 是否正确') + '</div></div>';
+        : '地图加载失败。若已在高德控制台设置了域名白名单：<br>' +
+          '双击打开的 file:// 页面没有域名，会被拒绝。<br>' +
+          '解决办法：把 <b>localhost</b> 和 <b>127.0.0.1</b> 也加进白名单，<br>' +
+          '再用 http://localhost 打开；或直接使用 GitHub Pages 地址。') + '</div></div>';
     });
   }
 
@@ -4605,12 +4608,20 @@ body {
   function initMainMap() {
     if (!mapState.map) {
       $('mapCanvas').innerHTML = '';
-      mapState.map = new AMap.Map('mapCanvas', {
-        zoom: 11,
-        center: [121.72, 30.88],
-        viewMode: '2D',
-        resizeEnable: true,
-      });
+      try {
+        mapState.map = new AMap.Map('mapCanvas', {
+          zoom: 11,
+          center: [121.72, 30.88],
+          viewMode: '2D',
+          resizeEnable: true,
+        });
+      } catch (err) {
+        mapState.map = null;
+        $('mapCanvas').innerHTML = '<div class="map-hint"><div>地图初始化失败：' +
+          esc((err && err.message) || err) +
+          '<br>若设置了域名白名单，请把 <b>localhost</b> / <b>127.0.0.1</b> 加进白名单，并用 http://localhost 打开。</div></div>';
+        return;
+      }
       mapState.map.on('click', onMainMapClick);
     } else {
       mapState.map.resize();

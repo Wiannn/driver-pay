@@ -71,6 +71,10 @@
 ### 本地使用（最简单）
 直接双击 `司机工资结算.html`，任何现代浏览器都行。
 
+> 如果给高德 Key 设置了**域名白名单**，双击打开的 `file://` 页面没有域名，会被高德拒绝，地图页会提示加载失败。
+> 这时把 `localhost` 和 `127.0.0.1` 也加进白名单，然后用本地服务（`http://localhost:端口/司机工资结算.html`）打开；
+> 或者直接使用下面的 GitHub Pages 地址。
+
 ### GitHub Pages 在线使用
 打开：`https://wiannn.github.io/driver-pay/司机工资结算.html`
 
