@@ -1726,6 +1726,13 @@ body {
   background: #eef3ff;
 }
 
+.map-place.is-highlight {
+  background: #fff7e6;
+  box-shadow: inset 3px 0 0 #f59e0b;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .map-place i {
   width: 8px;
   height: 8px;
@@ -4570,6 +4577,7 @@ body {
     queue: [],
     filter: {},
     collapsed: {},
+    highlight: '',
     pickName: '',
     coordMap: null,
     coordMarker: null,
@@ -4646,6 +4654,7 @@ body {
   function renderMapPage() {
     // 每次进入地图页，分组默认收起
     mapState.collapsed = {};
+    mapState.highlight = '';
     getPlaceGroups().forEach(function (g) { mapState.collapsed[g.id] = true; });
     renderMapFilters();
     renderMapPlaceList();
@@ -4693,7 +4702,9 @@ body {
         total++;
         var has = !!placeCoord(name);
         if (has) ok++; else missing++;
-        rows += '<div class="map-place' + (mapState.pickName === name ? ' is-picking' : '') +
+        rows += '<div class="map-place' +
+          (mapState.pickName === name ? ' is-picking' : '') +
+          (mapState.highlight === name ? ' is-highlight' : '') +
           '" data-map-place="' + esc(name) + '">' +
           '<span>' + esc(name) + '</span>' +
           (has ? '' : '<em class="warn">未标注</em>') +
@@ -4829,7 +4840,17 @@ body {
     mapState.pickName = name;
     $('mapPickTip').textContent = '点击地图，为「' + name + '」设定坐标';
     $('mapPickTip').classList.remove('is-hidden');
+    focusPlaceInList(name);
+  }
+
+  /** 展开所在分组、高亮并滚动到该地点 */
+  function focusPlaceInList(name) {
+    var group = getPlaceGroups().filter(function (g) { return g.names.indexOf(name) >= 0; })[0];
+    if (group) mapState.collapsed[group.id] = false;
+    mapState.highlight = name;
     renderMapPlaceList();
+    var row = document.querySelector('[data-map-place="' + name + '"]');
+    if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
   }
 
   /** 高德 POI 搜索，回调 [{name,address,lng,lat}] */
@@ -4947,10 +4968,9 @@ body {
       startMapPick(item.name);
       return;
     }
-    mapState.collapsed[item.groupId] = false;
-    renderMapPlaceList();
     if (mapState.map) mapState.map.setZoomAndCenter(15, [item.coord.lng, item.coord.lat]);
     openPlaceInfo(item.name, { label: item.groupLabel });
+    focusPlaceInList(item.name);
   }
 
   function applySearchOnMain(idx) {
