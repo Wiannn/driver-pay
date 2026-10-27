@@ -2419,6 +2419,8 @@ body {
             members: ['外一', '外二', '德威八分', '外通', '东森'] },
           { id: 'zone-cd', label: '外四外五系', desc: '靠近外四外五的目的地',
             members: ['外四', '外五'] },
+          { id: 'zone-wn', label: '外内系', desc: '外内区域的目的地',
+            members: [] },
           { id: 'zone-ys', label: '洋山系', desc: '独立计算公里的洋山区域',
             members: ['洋山', '洋山（查验）', '沧海路'] },
         ],
@@ -2567,6 +2569,12 @@ body {
       if (!cfg.dest_groups) cfg.dest_groups = def.configs.dest_groups;
       else if (!cfg.dest_groups.some(function (g) { return g.id === 'zone-cw'; })) {
         cfg.dest_groups.unshift({ id: 'zone-cw', label: '超外系', desc: '超外区域的目的地', members: [] });
+      }
+      if (cfg.dest_groups.every(function (g) { return g.id !== 'zone-wn'; })) {
+        // 外内系：补在外四外五系之后、洋山系之前
+        var pos = cfg.dest_groups.map(function (g) { return g.id; }).indexOf('zone-ys');
+        cfg.dest_groups.splice(pos < 0 ? cfg.dest_groups.length : pos, 0,
+          { id: 'zone-wn', label: '外内系', desc: '外内区域的目的地', members: [] });
       }
       if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
       // 确保 base_km 里包含所有现有目的地
@@ -4566,6 +4574,7 @@ body {
     'zone-cw': '#7c3aed',
     'zone-ab': '#2563eb',
     'zone-cd': '#16a34a',
+    'zone-wn': '#0d9488',
     'zone-ys': '#f59e0b',
     ungrouped: '#94a3b8',
   };
