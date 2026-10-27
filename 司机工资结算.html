@@ -2577,6 +2577,17 @@ body {
           { id: 'zone-wn', label: '外内系', desc: '外内区域的目的地', members: [] });
       }
       if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
+      // 修复历史上同一地点被拖进多个分组的情况：保留排在前面的分组，其余移除
+      if (Array.isArray(cfg.dest_groups)) {
+        var seenMember = {};
+        cfg.dest_groups.forEach(function (g) {
+          g.members = (g.members || []).filter(function (m) {
+            if (seenMember[m]) return false;
+            seenMember[m] = true;
+            return true;
+          });
+        });
+      }
       // 确保 base_km 里包含所有现有目的地
       Object.keys(cfg.base_km).forEach(function (origin) {
         (cfg.dest_in || []).concat(cfg.dest_pick || []).forEach(function (d) {
@@ -4650,7 +4661,10 @@ body {
 
     var assigned = {};
     (cfg.dest_groups || []).forEach(function (g) {
-      var names = dests.filter(function (n) { return (g.members || []).indexOf(n) >= 0; });
+      // 同一地点若同时存在于多个分组，只归入排在前面的那个分组，避免重复画点、颜色打架
+      var names = dests.filter(function (n) {
+        return !assigned[n] && (g.members || []).indexOf(n) >= 0;
+      });
       names.forEach(function (n) { assigned[n] = true; });
       // 空分组也显示（如刚建的「超外系」），保持与目的地管理同步
       out.push({ id: g.id, label: g.label, color: MAP_COLORS[g.id] || MAP_COLORS.ungrouped, names: names });
