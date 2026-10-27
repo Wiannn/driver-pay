@@ -1459,6 +1459,89 @@ body {
   margin-bottom: 10px;
 }
 
+/* ===== 地点搜索 ===== */
+.map-search {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.map-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.map-search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.12);
+}
+
+.map-search .btn {
+  height: 34px;
+  padding: 0 14px;
+  flex: 0 0 auto;
+}
+
+.map-search-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40px;
+  z-index: 30;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: 0 14px 32px -12px rgba(16, 24, 40, 0.35);
+}
+
+.map-search-item {
+  padding: 8px 11px;
+  border-bottom: 1px solid #f1f4f9;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.map-search-item:last-child {
+  border-bottom: 0;
+}
+
+.map-search-item:hover {
+  background: #f5f7fb;
+}
+
+.map-search-item b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.map-search-item span {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.map-search-empty {
+  padding: 10px 11px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .map-chip {
   display: inline-flex;
   align-items: center;
@@ -1921,6 +2004,11 @@ body {
 
     <div class="map-layout">
       <div class="map-main">
+        <div class="map-search" id="mapSearchWrap">
+          <input type="text" id="mapSearchInput" placeholder="搜索路名 / 堆场名，例如：外高桥六期">
+          <button type="button" class="btn btn-ghost" id="mapSearchBtn">搜索</button>
+          <div class="map-search-list is-hidden" id="mapSearchList"></div>
+        </div>
         <div class="map-filters" id="mapFilters"></div>
         <div class="map-canvas" id="mapCanvas"></div>
         <div class="map-pick-tip is-hidden" id="mapPickTip"></div>
@@ -2096,7 +2184,12 @@ body {
         <button type="button" class="modal-close" id="coordModalClose">×</button>
       </div>
       <div class="modal-body">
-        <div class="cfg-hint">在地图上点击该地点的实际位置，然后点保存。</div>
+        <div class="cfg-hint">在地图上点击该地点的实际位置，或先用下面的搜索定位到大致位置，再点地图微调。</div>
+        <div class="map-search" id="coordSearchWrap">
+          <input type="text" id="coordSearchInput" placeholder="搜索路名 / 堆场名，例如：外高桥六期">
+          <button type="button" class="btn btn-ghost" id="coordSearchBtn">搜索</button>
+          <div class="map-search-list is-hidden" id="coordSearchList"></div>
+        </div>
         <div class="coord-map" id="coordMap"></div>
         <div class="coord-value" id="coordValue">尚未选择位置</div>
       </div>
@@ -2903,6 +2996,24 @@ body {
       e.preventDefault();
       openMapMenu(row.dataset.mapPlace, e.clientX, e.clientY);
     });
+
+    // 地点搜索
+    $('mapSearchBtn').addEventListener('click', runMapSearch);
+    $('mapSearchInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); runMapSearch(); }
+    });
+    $('mapSearchList').addEventListener('click', function (e) {
+      var item = e.target.closest('[data-search-idx]');
+      if (item) applySearchOnMain(Number(item.dataset.searchIdx));
+    });
+    $('coordSearchBtn').addEventListener('click', runCoordSearch);
+    $('coordSearchInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); runCoordSearch(); }
+    });
+    $('coordSearchList').addEventListener('click', function (e) {
+      var item = e.target.closest('[data-search-idx]');
+      if (item) applySearchInCoord(Number(item.dataset.searchIdx));
+    });
     $('mapMenu').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-map-menu]');
       if (!btn) return;
@@ -2910,6 +3021,8 @@ body {
     });
     document.addEventListener('click', function (e) {
       if (!e.target.closest('#mapMenu')) hideMapMenu();
+      if (!e.target.closest('#mapSearchWrap')) $('mapSearchList').classList.add('is-hidden');
+      if (!e.target.closest('#coordSearchWrap')) $('coordSearchList').classList.add('is-hidden');
     });
     document.addEventListener('contextmenu', function (e) {
       if (e.target.closest('#mapPlaceList') || e.target.closest('#cfgTags') || e.target.closest('#mapCanvas')) return;
@@ -4587,6 +4700,92 @@ body {
     renderMapPlaceList();
   }
 
+  /** 高德 POI 搜索，回调 [{name,address,lng,lat}] */
+  function searchPoi(keyword, done) {
+    keyword = String(keyword || '').trim();
+    if (!keyword) return;
+    if (!amapConfigured()) {
+      toast('未配置高德 Key，无法搜索', 'error');
+      return;
+    }
+    loadAMapApi(function () {
+      AMap.plugin('AMap.PlaceSearch', function () {
+        var search = new AMap.PlaceSearch({ city: '上海', citylimit: false, pageSize: 8 });
+        search.search(keyword, function (status, result) {
+          var pois = (status === 'complete' && result && result.poiList && result.poiList.pois) || [];
+          done(pois.filter(function (p) { return p.location; }).map(function (p) {
+            return {
+              name: p.name,
+              address: [p.pname, p.cityname, p.adname, p.address].filter(Boolean).join(' '),
+              lng: p.location.getLng(),
+              lat: p.location.getLat(),
+            };
+          }));
+        });
+      });
+    }, function () { toast('地图未加载，无法搜索', 'error'); });
+  }
+
+  function renderSearchList(listEl, pois) {
+    listEl._pois = pois || [];
+    if (!pois || !pois.length) {
+      listEl.innerHTML = '<div class="map-search-empty">没找到，换个关键词试试（例如「外高桥」「洋山深水港」）</div>';
+    } else {
+      listEl.innerHTML = pois.map(function (p, i) {
+        return '<div class="map-search-item" data-search-idx="' + i + '">' +
+          '<b>' + esc(p.name) + '</b><span>' + esc(p.address) + '</span></div>';
+      }).join('');
+    }
+    listEl.classList.remove('is-hidden');
+  }
+
+  /** 主地图搜索 */
+  function runMapSearch() {
+    searchPoi($('mapSearchInput').value, function (pois) {
+      renderSearchList($('mapSearchList'), pois);
+    });
+  }
+
+  function applySearchOnMain(idx) {
+    var listEl = $('mapSearchList');
+    var poi = (listEl._pois || [])[idx];
+    if (!poi) return;
+    listEl.classList.add('is-hidden');
+    if (mapState.map) mapState.map.setZoomAndCenter(15, [poi.lng, poi.lat]);
+    if (!mapState.pickName) {
+      toast('已定位到「' + poi.name + '」。要把它设成地点坐标：先点未标注的地点（或右键选「在地图上点选」），再搜索重搜一次。');
+      return;
+    }
+    var name = mapState.pickName;
+    db.configs.coords = db.configs.coords || {};
+    db.configs.coords[name] = { lat: round6(poi.lat), lng: round6(poi.lng) };
+    saveLocal();
+    mapState.pickName = '';
+    $('mapPickTip').classList.add('is-hidden');
+    renderMapPlaceList();
+    renderMapMarkers(false);
+    if (cfgModalKey) renderCfgTags();
+    toast('已用「' + poi.name + '」定位「' + name + '」');
+  }
+
+  /** 坐标弹窗里的搜索 */
+  function runCoordSearch() {
+    searchPoi($('coordSearchInput').value, function (pois) {
+      renderSearchList($('coordSearchList'), pois);
+    });
+  }
+
+  function applySearchInCoord(idx) {
+    var listEl = $('coordSearchList');
+    var poi = (listEl._pois || [])[idx];
+    if (!poi) return;
+    listEl.classList.add('is-hidden');
+    mapState.coordLatLng = { lat: round6(poi.lat), lng: round6(poi.lng) };
+    if (mapState.coordMap) mapState.coordMap.setZoomAndCenter(16, [poi.lng, poi.lat]);
+    drawCoordMarker();
+    updateCoordValue();
+  }
+
   /** 右键菜单：地点列表 / 目的地标签上右键弹出 */
   function openMapMenu(name, x, y) {
     mapState.menuName = name;
@@ -4633,6 +4832,8 @@ body {
     mapState.coordLatLng = placeCoord(name);
     $('coordModalTitle').textContent = '设置坐标 · ' + name;
     $('coordModal').classList.remove('is-hidden');
+    $('coordSearchList').classList.add('is-hidden');
+    $('coordSearchInput').value = '';
     updateCoordValue();
     loadAMapApi(initCoordMap, function () {
       $('coordMap').innerHTML = '<div class="map-hint"><div>未配置高德 Key，暂时无法用地图取点<br>请先填写 AMAP_KEY 后刷新网页</div></div>';
