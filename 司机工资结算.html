@@ -1746,7 +1746,7 @@ body {
       <div class="page-actions">
         <button type="button" class="btn btn-ghost" id="cfgOriginsBtn">管理始发地</button>
         <button type="button" class="btn btn-ghost" id="cfgDestInBtn">管理进目的地</button>
-        <button type="button" class="btn btn-ghost" id="cfgDestPickBtn">管理提目的地</button>
+        <button type="button" class="btn btn-ghost" id="cfgDestPickBtn">管理提/还目的地</button>
       </div>
     </div>
 
@@ -2036,21 +2036,23 @@ body {
 
     var first = valid[0];
     var firstGroup = getDestGroupId(first.dest); // zone-ab / zone-cd / zone-ys
+    // 「还」与「提」提成规则完全一致
+    var isPick = function (s) { return s.action === '提' || s.action === '还'; };
 
     // 纯进1段
     if (valid.length === 1 && first.action === '进') {
       if (firstGroup === 'zone-ys') return 0;   // 进洋山 = 0
       return 10;                                  // 进外系 = 10
     }
-    // 纯提1段
-    if (valid.length === 1 && first.action === '提') {
-      if (firstGroup === 'zone-ys') return 100;   // 提洋山 = 100
-      return 10;                                  // 提外系 = 10
+    // 纯提 / 纯还 1段
+    if (valid.length === 1 && isPick(first)) {
+      if (firstGroup === 'zone-ys') return 100;   // 提（还）洋山 = 100
+      return 10;                                  // 提（还）外系 = 10
     }
-    // 进+提（2段）
-    if (valid.length === 2 && valid[0].action === '进' && valid[1].action === '提') {
+    // 进 + 提 / 进 + 还（2段）
+    if (valid.length === 2 && valid[0].action === '进' && isPick(valid[1])) {
       var secondGroup = getDestGroupId(valid[1].dest);
-      // 进洋山 + 提洋山系 / 进外系 + 提外系（同区域组合）→ 30
+      // 进洋山 + 提（还）洋山系 / 进外系 + 提（还）外系（同区域组合）→ 30
       if (firstGroup === secondGroup) return 30;
       // 进外系 + 提洋山 或 进洋山 + 提外系 → 暂不存在，按 0
       return 0;
@@ -2064,7 +2066,7 @@ body {
     var parts = [route.origin];
     route.steps.forEach(function (s) {
       if (!s) return;
-      var label = s.action === '提' ? '提' : '进';
+      var label = s.action === '提' ? '提' : (s.action === '还' ? '还' : '进');
       parts.push(label + (s.dest || ''));
     });
     return parts.join(' → ');
@@ -2897,6 +2899,7 @@ body {
         '<select class="step-action" data-role="action">' +
           '<option value="进"' + (step.action === '进' ? ' selected' : '') + '>进</option>' +
           '<option value="提"' + (step.action === '提' ? ' selected' : '') + '>提</option>' +
+          '<option value="还"' + (step.action === '还' ? ' selected' : '') + '>还</option>' +
         '</select>' +
         '<select class="step-dest" data-role="dest">' + destHtml + '</select>' +
         '<button type="button" class="step-del" data-role="del" title="删除">×</button>' +
@@ -3197,6 +3200,7 @@ body {
         '<select class="step-action" data-role="action">' +
           '<option value="进"' + (step.action === '进' ? ' selected' : '') + '>进</option>' +
           '<option value="提"' + (step.action === '提' ? ' selected' : '') + '>提</option>' +
+          '<option value="还"' + (step.action === '还' ? ' selected' : '') + '>还</option>' +
         '</select>' +
         '<select class="step-dest" data-role="dest">' + destHtml + '</select>' +
         '<button type="button" class="step-del" data-role="del" title="删除此段">×</button>' +
@@ -3207,7 +3211,8 @@ body {
   }
 
   function getDestOptionsForAction(action) {
-    if (action === '提') return db.configs.dest_pick || [];
+    // 「提」和「还」共用同一份提空箱目的地
+    if (action === '提' || action === '还') return db.configs.dest_pick || [];
     return db.configs.dest_in || [];
   }
 
@@ -3421,7 +3426,7 @@ body {
     cfgModalKey = key;
     if (key === 'origins') { cfgModalLabel = '始发地列表'; $('cfgHint').textContent = '行驶的起点，例如：新库、东库'; }
     else if (key === 'dest_in') { cfgModalLabel = '「进」的目的地'; $('cfgHint').textContent = '纯进或进段的目的地，例如：外五、洋山'; }
-    else { cfgModalLabel = '「提空箱」的目的地'; $('cfgHint').textContent = '提空箱段的目的地，例如：洋山、沧海路'; }
+    else { cfgModalLabel = '「提 / 还」的目的地'; $('cfgHint').textContent = '「提」和「还」共用的空箱目的地，例如：洋山、沧海路'; }
 
     $('cfgModalTitle').textContent = cfgModalLabel;
     $('cfgNewInput').value = '';
