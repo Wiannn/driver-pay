@@ -4024,6 +4024,13 @@ body {
     return String(name == null ? '' : name).replace(/[一二三四五六七八九]/g, function (ch) { return digits[ch]; });
   }
 
+  /** 按名称排序（中文按拼音，一/二/四/五 按数字） */
+  function sortNamesByName(names) {
+    return names.slice().sort(function (a, b) {
+      return cnSortKey(a).localeCompare(cnSortKey(b), 'zh-CN');
+    });
+  }
+
   function renderCfgTags() {
     if (!cfgModalKey) return;
     var list = db.configs[cfgModalKey] || [];
@@ -4041,7 +4048,7 @@ body {
       groups.forEach(function (g) {
         var members = (g.members || []).filter(function (m) { return list.indexOf(m) >= 0; });
         // 组内按名称排序，不按加入顺序
-        members.sort(function (a, b) { return cnSortKey(a).localeCompare(cnSortKey(b), 'zh-CN'); });
+        members = sortNamesByName(members);
         html += '<div class="cfg-group" data-group-id="' + g.id + '">' +
           '<div class="cfg-group-head">' + esc(g.label) +
           '<span class="cfg-group-desc">' + esc(g.desc || '') + '</span></div>';
@@ -4652,7 +4659,7 @@ body {
       if (!mapState.filter[group.id]) return;
       var ok = 0;
       var rows = '';
-      group.names.forEach(function (name) {
+      sortNamesByName(group.names).forEach(function (name) {
         total++;
         var has = !!placeCoord(name);
         if (has) ok++; else missing++;
