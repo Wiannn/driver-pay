@@ -1638,6 +1638,68 @@ body {
   padding: 6px;
 }
 
+/* 分组折叠 */
+.map-group {
+  margin-bottom: 4px;
+}
+
+.map-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: #f6f8fc;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: left;
+}
+
+.map-group-head:hover {
+  background: #eef2f9;
+}
+
+.map-group-head i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.map-group-name {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+
+.map-group-head em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.map-group-caret {
+  font-size: 10px;
+  color: #9aa7b8;
+  transition: transform 0.15s;
+}
+
+.map-group.is-collapsed .map-group-caret {
+  transform: rotate(-90deg);
+}
+
+.map-group.is-collapsed .map-group-body {
+  display: none;
+}
+
+.map-group-body {
+  padding: 2px 0 4px 10px;
+}
+
 .map-place {
   display: flex;
   align-items: center;
@@ -2979,6 +3041,13 @@ body {
       renderMapMarkers(false);
     });
     $('mapPlaceList').addEventListener('click', function (e) {
+      var head = e.target.closest('[data-group-toggle]');
+      if (head) {
+        var gid = head.dataset.groupToggle;
+        mapState.collapsed[gid] = !mapState.collapsed[gid];
+        renderMapPlaceList();
+        return;
+      }
       var row = e.target.closest('[data-map-place]');
       if (!row) return;
       var name = row.dataset.mapPlace;
@@ -4465,6 +4534,7 @@ body {
     loading: false,
     queue: [],
     filter: {},
+    collapsed: {},
     pickName: '',
     coordMap: null,
     coordMarker: null,
@@ -4539,17 +4609,6 @@ body {
     return out;
   }
 
-  function countRoutesUsing(name) {
-    var count = 0;
-    (db.routes || []).forEach(function (route) {
-      if (route.origin === name) count++;
-      (route.steps || []).forEach(function (step) {
-        if (step.dest === name) count++;
-      });
-    });
-    return count;
-  }
-
   function renderMapPage() {
     renderMapFilters();
     renderMapPlaceList();
@@ -4591,17 +4650,28 @@ body {
     var total = 0;
     groups.forEach(function (group) {
       if (!mapState.filter[group.id]) return;
+      var ok = 0;
+      var rows = '';
       group.names.forEach(function (name) {
         total++;
         var has = !!placeCoord(name);
-        if (!has) missing++;
-        html += '<div class="map-place' + (mapState.pickName === name ? ' is-picking' : '') +
+        if (has) ok++; else missing++;
+        rows += '<div class="map-place' + (mapState.pickName === name ? ' is-picking' : '') +
           '" data-map-place="' + esc(name) + '">' +
-          '<i style="background:' + group.color + '"></i>' +
           '<span>' + esc(name) + '</span>' +
-          '<em class="' + (has ? '' : 'warn') + '">' + (has ? countRoutesUsing(name) + ' 条路线' : '未标注') + '</em>' +
+          (has ? '' : '<em class="warn">未标注</em>') +
           '</div>';
       });
+      var collapsed = !!mapState.collapsed[group.id];
+      html += '<div class="map-group' + (collapsed ? ' is-collapsed' : '') + '">' +
+        '<button type="button" class="map-group-head" data-group-toggle="' + esc(group.id) + '">' +
+        '<i style="background:' + group.color + '"></i>' +
+        '<span class="map-group-name">' + esc(group.label) + '</span>' +
+        '<em>' + ok + '/' + group.names.length + '</em>' +
+        '<b class="map-group-caret">▾</b>' +
+        '</button>' +
+        '<div class="map-group-body">' + rows + '</div>' +
+        '</div>';
     });
     if (!html) html = '<div class="map-empty">没有可显示的地点</div>';
     $('mapPlaceList').innerHTML = html;
@@ -4696,8 +4766,7 @@ body {
     if (!coord || !mapState.map) return;
     var html = '<div style="padding:4px 8px;font-size:12px;line-height:1.8">' +
       '<b>' + esc(name) + '</b><br>' +
-      '<span style="color:#667085">' + esc(group.label) + '</span><br>' +
-      '关联路线：' + countRoutesUsing(name) + ' 条</div>';
+      '<span style="color:#667085">' + esc(group.label) + '</span></div>';
     if (mapState.info) mapState.info.close();
     mapState.info = new AMap.InfoWindow({
       content: html,
