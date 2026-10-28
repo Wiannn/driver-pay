@@ -2485,9 +2485,12 @@ definePage('trips', {
 .data-table .container-no {
   color: var(--primary);
   cursor: text;
-  min-width: 110px;
+  min-width: 140px;
   font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
   font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
 }
 
 .data-table .container-no:empty::before {
@@ -2495,6 +2498,18 @@ definePage('trips', {
   color: #ccc;
   font-family: inherit;
   font-size: inherit;
+}
+
+.data-table .container-no .container-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: nowrap;
 }
 
 .data-table .container-no input.inline-edit {
@@ -2931,8 +2946,8 @@ function renderTrips() {
         '<td>' + esc(driver ? driver.name : '—') + '</td>' +
         '<td class="route-name trip-route" data-trip="' + trip.id + '" title="双击更换路线">' +
           esc(trip.route_name) + '</td>' +
-        '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 仅字母数字">' +
-          esc(trip.container_no || '') + '</td>' +
+        '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 多个用逗号或空格隔开">' +
+          renderContainerChips(trip.container_no) + '</td>' +
         '<td class="num trip-km" data-trip="' + trip.id + '" title="双击编辑公里数">' +
           fmt2(trip.km) + '</td>' +
         '<td class="num trip-commission" data-trip="' + trip.id + '" title="双击编辑提成">' +
@@ -3106,7 +3121,25 @@ function editTripRoute(cell) {
   });
 }
 
-/** 双击箱号单元格 → 内联编辑（仅允许字母和数字） */
+/** 把 container_no 字符串拆成数组（按逗号/分号/中文逗号/顿号/空格分隔），清洗后大写 */
+function splitContainerNos(raw) {
+  if (!raw) return [];
+  return String(raw)
+    .split(/[,;，、\s]+/)
+    .map(function (s) { return s.trim().toUpperCase(); })
+    .filter(function (s) { return s.length > 0; });
+}
+
+/** 把多个箱号渲染成 chip 标签 */
+function renderContainerChips(raw) {
+  var nos = splitContainerNos(raw);
+  if (!nos.length) return '';
+  return nos.map(function (n) {
+    return '<span class="container-chip">' + esc(n) + '</span>';
+  }).join('');
+}
+
+/** 双击箱号单元格 → 内联编辑（支持多个箱号，逗号/空格分隔） */
 function editContainerNo(cell) {
   var tripId = Number(cell.dataset.trip);
   var trip = db.trips.find(function (t) { return t.id === tripId; });
@@ -3118,14 +3151,7 @@ function editContainerNo(cell) {
   input.value = current;
   input.className = 'inline-edit';
   input.style.width = '100%';
-  input.placeholder = '仅字母数字';
-  // 输入时实时过滤（只保留 A-Z a-z 0-9）
-  input.addEventListener('input', function () {
-    var cleaned = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    if (cleaned !== input.value) {
-      input.value = cleaned;
-    }
-  });
+  input.placeholder = '多个箱号用逗号或空格隔开';
 
   cell.innerHTML = '';
   cell.appendChild(input);
@@ -3133,7 +3159,9 @@ function editContainerNo(cell) {
   input.select();
 
   function finish() {
-    var v = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    // 清洗：按分隔符拆分 → 去重 → 大写 → 用 ", " 拼回
+    var cleaned = splitContainerNos(input.value);
+    var v = cleaned.join(', ');
     if (v !== (trip.container_no || '')) trip.updated_at = tripStamp();
     trip.container_no = v;
     saveLocal();
