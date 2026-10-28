@@ -35,27 +35,7 @@
 
     // 月度结算页（含数据备份）的事件绑定在 pages/settlement.js 里
 
-    $('tripForm').addEventListener('submit', saveTrip);
-    // 选司机 = 只看这个司机的趟次；不选 = 当月全部
-    $('tripDriver').addEventListener('change', function () {
-      state.tripPage = 1;
-      renderTrips();
-    });
-    $('tripPrevBtn').addEventListener('click', function () {
-      if (state.tripPage > 1) gotoTripPage(state.tripPage - 1);
-    });
-    $('tripNextBtn').addEventListener('click', function () {
-      gotoTripPage(state.tripPage + 1);
-    });
-    $('tripRoute').addEventListener('change', syncRouteFields);
-    $('tripModeSwitch').addEventListener('click', switchTripMode);
-    $('tripBuildAddStep').addEventListener('click', addTripBuildStep);
-    $('tripBuildOrigin').addEventListener('change', updateAutoTripKm);
-    if ($('tripBuildSteps')) {
-      $('tripBuildSteps').addEventListener('click', onTripBuildStepChange);
-      $('tripBuildSteps').addEventListener('change', onTripBuildStepChange);
-    }
-
+    // 趟次录入页的事件绑定在 pages/trips.js 里
     // 出勤登记、地图等页面的事件绑定分别在 pages/attendance.js、js/map.js 就绪后由各自文件处理
 
     // 线路价目页（含始发地 / 进港区 / 提还堆场管理弹窗）的事件绑定在 pages/routes.js 里
@@ -207,20 +187,6 @@
     });
 
     document.addEventListener('click', handleRowAction);
-    document.addEventListener('dblclick', function (e) {
-      var cell = e.target.closest('.container-no[data-trip]');
-      if (cell) { e.preventDefault(); editContainerNo(cell); return; }
-      var note = e.target.closest('.trip-note[data-trip]');
-      if (note) { e.preventDefault(); editTripNote(note); return; }
-      var dateCell = e.target.closest('.trip-date[data-trip]');
-      if (dateCell) { e.preventDefault(); editTripDate(dateCell); return; }
-      var routeCell = e.target.closest('.trip-route[data-trip]');
-      if (routeCell) { e.preventDefault(); editTripRoute(routeCell); return; }
-      var kmCell = e.target.closest('.trip-km[data-trip]');
-      if (kmCell) { e.preventDefault(); editTripNumber(kmCell, 'km'); return; }
-      var commissionCell = e.target.closest('.trip-commission[data-trip]');
-      if (commissionCell) { e.preventDefault(); editTripNumber(commissionCell, 'commission'); }
-    });
 
     refreshData();
     applyTripMode();
