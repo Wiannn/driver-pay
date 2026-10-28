@@ -33,13 +33,7 @@
       shiftMonth(1);
     });
 
-    $('settleRefresh').addEventListener('click', function () {
-      loadDb();
-      refreshData();
-      renderPage();
-      toast('数据已刷新');
-    });
-    $('exportBtn').addEventListener('click', exportExcel);
+    // 月度结算页（含数据备份）的事件绑定在 pages/settlement.js 里
 
     $('tripForm').addEventListener('submit', saveTrip);
     // 选司机 = 只看这个司机的趟次；不选 = 当月全部
@@ -211,12 +205,6 @@
     $('coordModal').addEventListener('click', function (e) {
       if (e.target.id === 'coordModal') closeCoordModal();
     });
-
-    $('backupBtn').addEventListener('click', exportBackup);
-    $('restoreBtn').addEventListener('click', function () {
-      $('restoreFile').click();
-    });
-    $('restoreFile').addEventListener('change', importBackup);
 
     document.addEventListener('click', handleRowAction);
     document.addEventListener('dblclick', function (e) {
