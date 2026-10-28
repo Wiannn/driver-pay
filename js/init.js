@@ -366,6 +366,7 @@
     });
 
     refreshData();
+    applyTripMode();
     renderPage();
   }
 

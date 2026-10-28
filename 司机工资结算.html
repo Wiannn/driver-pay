@@ -81,18 +81,18 @@
       <div class="field field-wide">
         <label>
           路线
-          <button type="button" class="btn btn-ghost mode-switch-btn" id="tripModeSwitch">切换为直接搭建</button>
+          <button type="button" class="btn btn-ghost mode-switch-btn" id="tripModeSwitch">切换为模板</button>
         </label>
 
         <!-- 模式A：模板 -->
-        <div id="tripModeTemplate">
+        <div id="tripModeTemplate" class="is-hidden">
           <div class="field-inline">
             <select id="tripRoute"></select>
           </div>
         </div>
 
         <!-- 模式B：直接搭建 -->
-        <div id="tripModeBuild" class="is-hidden">
+        <div id="tripModeBuild">
           <div class="field-inline" style="margin-bottom:8px">
             <select id="tripBuildOrigin"></select>
             <button type="button" class="btn btn-ghost" id="tripBuildAddStep">+ 添加步骤</button>

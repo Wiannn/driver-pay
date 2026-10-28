@@ -77,6 +77,11 @@
 
   function switchTripMode() {
     state.tripMode = state.tripMode === 'template' ? 'build' : 'template';
+    applyTripMode();
+  }
+
+  /** 按当前的 state.tripMode 把两种模式切换到界面上 */
+  function applyTripMode() {
     var build = state.tripMode === 'build';
     $('tripModeTemplate').classList.toggle('is-hidden', build);
     $('tripModeBuild').classList.toggle('is-hidden', !build);
@@ -191,6 +196,7 @@
       $('tripCommission').value = '';
       renderPage();
       if (state.tripMode === 'template') $('tripRoute').focus();
+      else $('tripBuildOrigin').focus();
     } catch (error) {
       toast(error.message, 'error');
     }
