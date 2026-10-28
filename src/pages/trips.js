@@ -556,7 +556,7 @@ function renderTrips() {
         '<tr><td class="trip-date" data-trip="' + trip.id + '" title="双击修改日期">' +
           esc(trip.date) + '</td>' +
         '<td>' + esc(driver ? driver.name : '—') + '</td>' +
-        '<td class="route-name trip-route" data-trip="' + trip.id + '" title="双击更换路线">' +
+        '<td class="route-name trip-route" data-trip="' + trip.id + '" title="双击编辑线路名">' +
           esc(trip.route_name) + '</td>' +
         '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 箱号或提单号多个用逗号/空格隔开">' +
           renderContainerChips(trip.container_no) + '</td>' +
@@ -669,66 +669,38 @@ function editTripDate(cell) {
   });
 }
 
-/** 双击线路单元格 → 下拉换一条路线，公里与提成按新路线重算 */
+/** 双击线路单元格 → 直接改线路名字符 */
 function editTripRoute(cell) {
   var tripId = Number(cell.dataset.trip);
   var trip = db.trips.find(function (t) { return t.id === tripId; });
   if (!trip) return;
-  if (!db.routes.length) {
-    toast('路线库还没有路线，先去「线路价目」添加', 'error');
-    return;
-  }
 
-  var select = document.createElement('select');
-  select.className = 'inline-edit';
-  select.style.width = '100%';
-  select.innerHTML = db.routes.map(function (r) {
-    return '<option value="' + r.id + '">' + esc(buildRouteName(r)) + '</option>';
-  }).join('');
-  if (trip.route_id) select.value = String(trip.route_id);
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'inline-edit';
+  input.style.width = '100%';
+  input.value = trip.route_name || '';
 
   cell.innerHTML = '';
-  cell.appendChild(select);
-  select.focus();
+  cell.appendChild(input);
+  input.focus();
+  input.select();
 
   var done = false;
   function apply() {
     if (done) return;
     done = true;
-    var route = db.routes.find(function (r) { return String(r.id) === select.value; });
-    if (!route) { renderTrips(); return; }
-    var newName = buildRouteName(route);
-    if (String(trip.route_id) === String(route.id) && newName === trip.route_name) {
-      renderTrips();
-      return;
-    }
-    trip.route_id = route.id;
-    trip.route_origin = route.origin;
-    trip.route_steps = JSON.parse(JSON.stringify(route.steps || []));
+    var newName = input.value.trim();
+    if (!newName) { renderTrips(); return; }
+    if (newName === trip.route_name) { renderTrips(); return; }
     trip.route_name = newName;
-    // 换路线后公里/提成按新路线重算；原来手填过就让你决定是否保留
-    var autoKm = computeAutoKm(route.origin, trip.route_steps);
-    var autoCommission = computeAutoCommission(trip.route_steps);
-    var keepOld = false;
-    if ((trip.km || trip.km === 0) && String(trip.km) !== String(autoKm === null ? '' : autoKm)) {
-      keepOld = confirm(
-        '原公里 ' + fmt2(trip.km) + '，按新路线应为 ' + (autoKm === null ? '留空' : fmt2(autoKm)) +
-        '\n\n点「确定」保留原来的公里和提成，点「取消」按新路线重算'
-      );
-    }
-    if (!keepOld) {
-      trip.km = autoKm === null ? 0 : autoKm;
-      trip.commission = autoCommission;
-    }
     trip.updated_at = tripStamp();
     saveLocal();
     renderPage();
-    toast('线路已改为「' + newName + '」');
   }
-  select.addEventListener('change', apply);
-  select.addEventListener('blur', function () { if (!done) renderTrips(); });
-  select.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); apply(); }
+  input.addEventListener('blur', apply);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
     if (e.key === 'Escape') { done = true; renderTrips(); }
   });
 }
