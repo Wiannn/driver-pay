@@ -974,6 +974,7 @@ body {
         desc: g.desc || '',
         members: (g.members || []).slice(),
         color: g.color || '',
+        km: g.km ? JSON.parse(JSON.stringify(g.km)) : undefined,
       };
       byLabel[label] = copy;
       usedId[copy.id] = true;
@@ -1097,15 +1098,17 @@ body {
     return base;
   }
 
-  /** 某段的实际公里：自己登记的（非 0）优先，没填则跟随所在分组的基准地点 */
+  /** 某段的实际公里：分组设了公里就统一跟随（新成员自动继承）；
+   *  分组没设时才回退到目的地自己的 base_km，再没则用内置组的基准地点，否则留空手填 */
   function resolveDestKm(origin, dest) {
-    var own = lookupBaseKm(origin, dest);
-    if (typeof own === 'number' && own > 0) return own;
     var gid = getDestGroupId(dest);
     var group = gid ? findGroupById(gid) : null;
-    // 分组自己设了公里（如「新库130」组：新库 130 / 东库自动 120）
+    // 分组自己设了公里（如「新库130」组：新库 130 / 东库自动 120）——组内所有成员统一跟随
     var groupKm = groupKmValue(origin, group);
     if (groupKm !== null) return groupKm;
+    // 分组没设 → 用目的地自己登记的公里
+    var own = lookupBaseKm(origin, dest);
+    if (typeof own === 'number' && own > 0) return own;
     // 非内置区域（自建组）没有基准，留空手填
     if (!gid || KM_GROUP_IDS.indexOf(gid) < 0) return null;
     return groupAnchorKm(origin, gid);
@@ -1261,6 +1264,8 @@ body {
           label: (old && old.label) || fresh.label,
           desc: (old && old.desc) || fresh.desc,
           members: (old && Array.isArray(old.members)) ? old.members : fresh.members.slice(),
+          color: (old && old.color) || '',
+          km: (old && old.km) ? JSON.parse(JSON.stringify(old.km)) : undefined,
         };
       });
       // 仅在「旧版本升级到有提还分组」时补一次默认内置组。
