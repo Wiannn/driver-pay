@@ -204,19 +204,26 @@
 
   function renderTrips() {
     var month = state.month;
-    var rows = db.trips
-      .filter(function (item) {
-        return String(item.date).slice(0, 7) === month;
-      })
-      .sort(function (a, b) {
-        return b.date.localeCompare(a.date) || b.id - a.id;
-      });
+    var driverId = $('tripDriver').value;
+    var monthRows = db.trips.filter(function (item) {
+      return String(item.date).slice(0, 7) === month;
+    });
+    var rows = (driverId
+      ? monthRows.filter(function (item) {
+          return String(item.driver_id) === String(driverId);
+        })
+      : monthRows
+    ).sort(function (a, b) {
+      return b.date.localeCompare(a.date) || b.id - a.id;
+    });
 
     var tbody = $('tripRows');
     if (!rows.length) {
-      var hint = db.trips.length
-        ? '本月还没有趟次记录 · 试试切换月份（共有 ' + db.trips.length + ' 笔历史数据）'
-        : '还没有趟次记录';
+      var hint = driverId
+        ? '本月这个司机还没有趟次记录'
+        : db.trips.length
+          ? '本月还没有趟次记录 · 试试切换月份（共有 ' + db.trips.length + ' 笔历史数据）'
+          : '还没有趟次记录';
       tbody.innerHTML = '<tr><td colspan="9" class="empty-cell">' + hint + '</td></tr>';
       $('tripSummary').textContent = '共 0 趟';
       return;

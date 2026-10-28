@@ -41,6 +41,8 @@
     $('exportBtn').addEventListener('click', exportExcel);
 
     $('tripForm').addEventListener('submit', saveTrip);
+    // 选司机 = 只看这个司机的趟次；不选 = 当月全部
+    $('tripDriver').addEventListener('change', renderTrips);
     $('tripRoute').addEventListener('change', syncRouteFields);
     $('tripModeSwitch').addEventListener('click', switchTripMode);
     $('tripBuildAddStep').addEventListener('click', addTripBuildStep);
