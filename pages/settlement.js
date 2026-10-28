@@ -9,27 +9,15 @@ definePage('settlement', {
         <p class="sub" id="settleHint">按月自动汇总每位司机的工资</p>
       </div>
       <div class="page-actions">
+        <button type="button" class="btn btn-ghost" id="backupBtn" title="数据只保存在这台电脑的浏览器里，换电脑前请先导出备份">导出备份</button>
+        <button type="button" class="btn btn-ghost" id="restoreBtn" title="恢复备份会覆盖当前全部数据">恢复备份</button>
+        <input type="file" id="restoreFile" accept=".json,application/json" hidden>
         <button type="button" class="btn btn-ghost" id="settleRefresh">刷新</button>
         <button type="button" class="btn btn-primary" id="exportBtn">导出 Excel</button>
       </div>
     </div>
     <div class="rule-bar" id="ruleBar"></div>
     <div class="driver-grid" id="settleList"></div>
-
-    <div class="table-card">
-      <div class="table-head">
-        <h3>数据备份</h3>
-        <span class="table-sum">数据只保存在这台电脑的浏览器里</span>
-      </div>
-      <div class="backup-body">
-        <p class="backup-tip">换电脑、重装系统或清理浏览器数据前，请先导出备份。恢复备份会覆盖当前全部数据。</p>
-        <div class="backup-actions">
-          <button type="button" class="btn btn-ghost" id="backupBtn">导出备份（JSON）</button>
-          <button type="button" class="btn btn-ghost" id="restoreBtn">恢复备份</button>
-          <input type="file" id="restoreFile" accept=".json,application/json" hidden>
-        </div>
-      </div>
-    </div>
   `,
 
   css: `
@@ -251,23 +239,6 @@ definePage('settlement', {
   color: var(--muted);
   background: #fbfcfe;
   border-top: 1px solid var(--line);
-}
-
-/* ---------- 数据备份 ---------- */
-.backup-body {
-  padding: 16px 20px 18px;
-}
-
-.backup-tip {
-  margin: 0 0 12px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.backup-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 /* ---------- 窄屏 ---------- */
