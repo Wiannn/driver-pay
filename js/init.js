@@ -23,6 +23,7 @@
     $('monthSelect').addEventListener('change', function (event) {
       if (!event.target.value) return;
       state.month = event.target.value;
+      state.tripPage = 1;
       renderPage();
     });
     $('monthPrev').addEventListener('click', function () {
@@ -42,7 +43,16 @@
 
     $('tripForm').addEventListener('submit', saveTrip);
     // 选司机 = 只看这个司机的趟次；不选 = 当月全部
-    $('tripDriver').addEventListener('change', renderTrips);
+    $('tripDriver').addEventListener('change', function () {
+      state.tripPage = 1;
+      renderTrips();
+    });
+    $('tripPrevBtn').addEventListener('click', function () {
+      if (state.tripPage > 1) gotoTripPage(state.tripPage - 1);
+    });
+    $('tripNextBtn').addEventListener('click', function () {
+      gotoTripPage(state.tripPage + 1);
+    });
     $('tripRoute').addEventListener('change', syncRouteFields);
     $('tripModeSwitch').addEventListener('click', switchTripMode);
     $('tripBuildAddStep').addEventListener('click', addTripBuildStep);
@@ -405,6 +415,7 @@
     });
     if (!exists) return;
     state.month = value;
+    state.tripPage = 1;
     $('monthSelect').value = value;
     renderPage();
   }
@@ -413,6 +424,7 @@
     var month = String(dateString).slice(0, 7);
     if (!month || month === state.month) return;
     state.month = month;
+    state.tripPage = 1;
     var select = $('monthSelect');
     var exists = Array.prototype.some.call(select.options, function (option) {
       return option.value === month;

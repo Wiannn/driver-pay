@@ -674,3 +674,54 @@
   gap: 10px;
 }
 
+/* ---------- 分页条 ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.pager[hidden] {
+  display: none;
+}
+
+.pager-total {
+  margin-right: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.pager-info {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.pager-btn {
+  appearance: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.pager-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.pager-btn:disabled {
+  color: #b6c0cd;
+  background: #f7f9fc;
+  cursor: not-allowed;
+}
+

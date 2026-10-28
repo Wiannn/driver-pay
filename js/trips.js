@@ -226,10 +226,18 @@
           : '还没有趟次记录';
       tbody.innerHTML = '<tr><td colspan="9" class="empty-cell">' + hint + '</td></tr>';
       $('tripSummary').textContent = '共 0 趟';
+      updateTripPager(0, 0);
       return;
     }
 
-    tbody.innerHTML = rows
+    // 分页：每页固定 15 条
+    var totalPages = Math.ceil(rows.length / TRIP_PAGE_SIZE);
+    if (state.tripPage > totalPages) state.tripPage = totalPages;
+    if (state.tripPage < 1) state.tripPage = 1;
+    var start = (state.tripPage - 1) * TRIP_PAGE_SIZE;
+    var pageRows = rows.slice(start, start + TRIP_PAGE_SIZE);
+
+    tbody.innerHTML = pageRows
       .map(function (trip) {
         var driver = db.drivers.find(function (item) {
           return item.id === trip.driver_id;
@@ -263,6 +271,29 @@
     }, 0);
     $('tripSummary').innerHTML =
       '共 <b>' + rows.length + '</b> 趟 · ' + fmt2(km) + ' km · ' + yuan(commission);
+
+    updateTripPager(rows.length, totalPages);
+  }
+
+  /** 刷新分页条：总条数、当前页/总页数、按钮可用状态 */
+  function updateTripPager(total, totalPages) {
+    var pager = $('tripPager');
+    var prev = $('tripPrevBtn');
+    var next = $('tripNextBtn');
+    if (!totalPages) {
+      pager.hidden = true;
+      return;
+    }
+    pager.hidden = totalPages <= 1;
+    $('tripPagerTotal').textContent = '共 ' + total + ' 条';
+    $('tripPagerInfo').textContent = state.tripPage + ' / ' + totalPages;
+    prev.disabled = state.tripPage <= 1;
+    next.disabled = state.tripPage >= totalPages;
+  }
+
+  function gotoTripPage(page) {
+    state.tripPage = page;
+    renderTrips();
   }
 
 
