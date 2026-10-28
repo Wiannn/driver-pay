@@ -59,6 +59,8 @@ definePage('fuel', {
 
   init: function () {
     $('fuelForm').addEventListener('submit', saveFuel);
+    // 选司机 = 只看这个司机的加油；不选 = 当月全部
+    $('fuelDriver').addEventListener('change', renderFuel);
   },
 });
 
@@ -83,19 +85,26 @@ function saveFuel(event) {
 
 function renderFuel() {
   var month = state.month;
-  var rows = db.fuel
-    .filter(function (item) {
-      return String(item.date).slice(0, 7) === month;
-    })
-    .sort(function (a, b) {
-      return b.date.localeCompare(a.date) || b.id - a.id;
-    });
+  var driverId = $('fuelDriver').value;
+  var allRows = db.fuel.filter(function (item) {
+    return String(item.date).slice(0, 7) === month;
+  });
+  var rows = driverId
+    ? allRows.filter(function (item) {
+        return String(item.driver_id) === String(driverId);
+      })
+    : allRows;
+  rows = rows.sort(function (a, b) {
+    return b.date.localeCompare(a.date) || b.id - a.id;
+  });
 
   var tbody = $('fuelRows');
   if (!rows.length) {
-    var hint = db.fuel.length
-      ? '本月还没有加油记录 · 试试切换月份（共有 ' + db.fuel.length + ' 笔历史数据）'
-      : '还没有加油记录';
+    var hint = driverId
+      ? '本月这个司机还没有加油记录'
+      : db.fuel.length
+        ? '本月还没有加油记录 · 试试切换月份（共有 ' + db.fuel.length + ' 笔历史数据）'
+        : '还没有加油记录';
     tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">' + hint + '</td></tr>';
     $('fuelSummary').textContent = '共 0 笔';
     return;
