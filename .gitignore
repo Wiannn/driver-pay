@@ -1,1 +1,3 @@
-﻿.trae-html-share-packages/
+﻿node_modules/
+dist/
+.trae-html-share-packages/
