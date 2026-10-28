@@ -1,0 +1,355 @@
+/* 弹窗：配置管理 / 坐标 */
+
+/* ---------- 配置弹窗 ---------- */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+}
+
+.modal {
+  width: 480px;
+  max-width: 92vw;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 50px -18px rgba(16, 24, 40, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.modal-close:hover {
+  background: #f3f6fb;
+  color: var(--ink);
+}
+
+.modal-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.cfg-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.cfg-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  min-height: 36px;
+  padding: 10px;
+  background: #f8fafd;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.cfg-group {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #f7f8fa;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.cfg-group-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cfg-group-desc {
+  font-weight: 400;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.cfg-group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex: 0 0 auto;
+}
+
+.cfg-group-ops {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.cfg-group-ops button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #b3bcc9;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cfg-group-ops button:hover {
+  color: var(--primary);
+  background: #fff;
+}
+
+.cfg-group-ops button[data-group-del]:hover {
+  color: var(--danger);
+}
+
+/* 分组公里：标题右侧的小按钮 + 展开的编辑行 */
+.cfg-group-ops button.cfg-group-km-btn {
+  width: auto;
+  padding: 0 7px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cfg-group-ops button.cfg-group-km-btn.has-km {
+  color: var(--primary);
+  border-color: #b9cbff;
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+
+.cfg-km-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 0 0 8px;
+  background: #f8fafd;
+  border: 1px solid #dbe4f2;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cfg-km-editor label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cfg-km-editor .cfg-km-input {
+  width: 78px;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: none;
+}
+
+.cfg-km-editor .cfg-km-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(42, 91, 224, 0.12);
+}
+
+.cfg-km-editor button {
+  appearance: none;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cfg-km-editor button[data-km-save] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.cfg-group-add {
+  margin-bottom: 12px;
+}
+
+.cfg-group-add button {
+  appearance: none;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px dashed #c8d2e2;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.cfg-group-add button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* 新增分组的内联表单 */
+.cfg-group-add.is-open {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cfg-group-add.is-open input {
+  flex: 1;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.12);
+}
+
+.cfg-group-add.is-open button {
+  width: auto;
+  padding: 0 14px;
+  border-style: solid;
+  border-color: var(--primary);
+}
+
+.cfg-group-add.is-open button[data-group-cancel] {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.cfg-group-add.is-open button[data-group-cancel]:hover {
+  background: #f5f7fa;
+  color: var(--ink-soft);
+}
+
+/* 分组改名输入框 */
+.cfg-group-name-input {
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--primary);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  outline: none;
+  max-width: 150px;
+}
+
+.cfg-group.drag-over {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 100, 235, 0.15);
+}
+
+.cfg-group-hint {
+  font-size: 11px;
+  color: #bbb;
+  padding: 4px 0;
+  font-style: italic;
+}
+
+.cfg-tag[draggable="true"] {
+  cursor: grab;
+}
+
+.cfg-tag[draggable="true"].dragging {
+  opacity: 0.4;
+}
+
+.cfg-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: 16px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.cfg-tag button {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 2px;
+}
+
+.cfg-tag button[data-cfg-edit] {
+  color: var(--muted);
+  font-size: 11px;
+  margin-right: 2px;
+}
+
+.cfg-tag button[data-cfg-edit]:hover {
+  color: var(--primary);
+}
+
+.cfg-tag button[data-cfg-del]:hover {
+  color: var(--danger);
+}
+
+.cfg-tag button[data-cfg-coord] {
+  color: #98a2b3;
+  font-size: 11px;
+  margin-right: 2px;
+}
+
+.cfg-tag button[data-cfg-coord]:hover {
+  color: var(--primary);
+}
+
+.cfg-tag button[data-cfg-coord].has-coord {
+  color: #17a673;
+}
+

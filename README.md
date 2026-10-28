@@ -78,6 +78,9 @@
 ### 本地使用（最简单）
 直接双击 `司机工资结算.html`，任何现代浏览器都行。
 
+> 双击打开时需要同目录下的 `css/` 和 `js/` 文件夹一起存在，**不要单独拷贝 html 文件**；
+> 想只带一个文件走，用 `司机工资结算.单文件备份.html`（功能完全一样）。
+
 > 如果给高德 Key 设置了**域名白名单**，双击打开的 `file://` 页面没有域名，会被高德拒绝，地图页会提示加载失败。
 > 这时把 `localhost` 和 `127.0.0.1` 也加进白名单，然后用本地服务（`http://localhost:端口/司机工资结算.html`）打开；
 > 或者直接使用下面的 GitHub Pages 地址。
@@ -91,8 +94,30 @@
 
 | 文件 | 说明 |
 |------|------|
-| `司机工资结算.html` | 主程序（单文件，HTML+CSS+JS 全在里面） |
+| `司机工资结算.html` | 入口页面（只放页面骨架 + 按顺序引入 css / js） |
+| `css/base.css` | 变量、顶栏、页面容器、规则条 |
+| `css/pages.css` | 结算卡片、表单、表格等通用样式 |
+| `css/routes.css` | 线路价目的步骤编辑器 |
+| `css/attendance.css` | 出勤月历 |
+| `css/modal.css` | 配置管理、坐标弹窗 |
+| `css/map.css` | 地图页 |
+| `js/core.js` | 常量、工具函数、localStorage 读写与数据迁移 |
+| `js/data.js` | 数据增删改查 |
+| `js/settlement.js` | 提成/公里/节油计算 + 月度结算页 |
+| `js/trips.js` | 趟次录入 + 表格行内编辑 |
+| `js/fuel.js` | 加油录入 |
+| `js/drivers.js` | 司机信息 |
+| `js/routes.js` | 线路价目 |
+| `js/configs.js` | 管理始发地 / 进港区 / 提还堆场 |
+| `js/attendance.js` | 出勤登记 |
+| `js/map.js` | 地图页（高德） |
+| `js/backup.js` | 备份导出 / 恢复 |
+| `js/xlsx.js` | Excel(xlsx) 导出 |
+| `js/init.js` | 初始化、月份、页面切换（最后加载） |
+| `司机工资结算.单文件备份.html` | 拆分前的单文件版本，兜底用，平时不用改 |
 | `supabase_setup.sql` | Supabase 建表脚本（上云时用，目前不用） |
+
+> 拆分规则：`js/` 里的文件共用同一个全局作用域，`init.js` 必须最后加载；新增页面就新建一个 `js/页面.js` 并在 html 里加一行 `<script>`（放在 `init.js` 之前）。
 
 ## 🔧 管理目的地/始发地/基础公里
 

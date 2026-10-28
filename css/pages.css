@@ -1,0 +1,676 @@
+/* 业务页面：结算卡片 / 表单 / 表格 / 通用 */
+
+/* ---------- 司机结算卡片 ---------- */
+.driver-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(540px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.driver-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03), 0 14px 32px -28px rgba(16, 24, 40, 0.4);
+  overflow: hidden;
+}
+
+.dc-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 20px 15px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 17px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dc-id {
+  flex: 1;
+  min-width: 0;
+}
+
+.dc-id h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.dc-id p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dc-id .dot {
+  color: #c3cee0;
+}
+
+.plate {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: #f3f6fb;
+  border: 1px solid #e6ebf4;
+  color: var(--ink-soft);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.dc-pay {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.dc-pay span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.dc-pay strong {
+  display: block;
+  margin-top: 1px;
+  font-size: 23px;
+  font-weight: 600;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.stat {
+  background: #fbfcfe;
+  padding: 11px 14px;
+}
+
+.stat label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+}
+
+.stat strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stat.warn strong {
+  color: var(--warn);
+}
+
+.stat.good strong {
+  color: var(--good);
+}
+
+.dc-detail summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.dc-detail summary:hover {
+  background: #f8fafd;
+}
+
+.dc-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+.dc-detail summary::before {
+  content: "▸";
+  color: #9aa7b8;
+  font-size: 11px;
+  transition: transform 0.15s;
+}
+
+.dc-detail[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.dc-detail summary em {
+  font-style: normal;
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.dc-detail .detail-body {
+  padding: 4px 0 0;
+}
+
+.mini-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.mini-table th {
+  text-align: left;
+  padding: 8px 20px;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 11.5px;
+  background: #fbfcfe;
+  border-bottom: 1px solid var(--line);
+}
+
+.mini-table td {
+  padding: 8px 20px;
+  border-bottom: 1px solid #eff2f7;
+  color: var(--ink-soft);
+}
+
+.mini-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.mini-table .route-name {
+  color: var(--ink);
+}
+
+.mini-table .num,
+.mini-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-table .op,
+.mini-table th.op {
+  text-align: right;
+  width: 78px;
+  padding-left: 4px;
+  padding-right: 20px;
+  white-space: nowrap;
+}
+
+.mini-total {
+  padding: 9px 20px 13px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--muted);
+  background: #fbfcfe;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- 录入表单 ---------- */
+.entry-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 18px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field label {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+}
+
+.field input,
+.field select {
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field input::placeholder {
+  color: #a8b3c2;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
+}
+
+.field select {
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.field input[type="date"],
+.field input[type="month"] {
+  padding-right: 6px;
+}
+
+.field-wide {
+  flex: 1 1 380px;
+  min-width: 280px;
+}
+
+.field-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.field-inline input {
+  flex: 0 1 150px;
+  min-width: 88px;
+}
+
+.field-inline select {
+  flex: 1 1 auto;
+  min-width: 180px;
+}
+
+.field-submit {
+  flex-direction: row;
+  gap: 8px;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+/* ---------- 表格卡片 ---------- */
+.table-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+}
+
+.table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.table-head h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.table-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.table-tools input {
+  height: 32px;
+  width: 200px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+  background: #fff;
+}
+
+.table-tools input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
+}
+
+.table-sum {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.table-sum b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 10px 20px;
+  background: #f8fafd;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 11px 20px;
+  border-bottom: 1px solid #eff2f7;
+  color: var(--ink-soft);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:hover td {
+  background: #fafcff;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table .num,
+.data-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table .op,
+.data-table th.op {
+  text-align: right;
+  width: 110px;
+  white-space: nowrap;
+}
+
+.data-table .route-name {
+  color: var(--ink);
+  min-width: 220px;
+}
+
+.data-table .container-no {
+  color: var(--primary);
+  cursor: text;
+  min-width: 110px;
+  font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.data-table .container-no:empty::before {
+  content: '—';
+  color: #ccc;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.data-table .container-no input.inline-edit {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+  outline: none;
+  background: #fff;
+}
+
+.data-table .trip-note {
+  color: var(--ink);
+  cursor: text;
+  min-width: 120px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-table .trip-note:empty::before {
+  content: '—';
+  color: #ccc;
+}
+
+.data-table .trip-note input.inline-edit {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: inherit;
+  color: var(--ink);
+  outline: none;
+  background: #fff;
+}
+
+.data-table .trip-updated {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.data-table .trip-date,
+.data-table .trip-route,
+.data-table .trip-km,
+.data-table .trip-commission {
+  cursor: text;
+}
+
+.data-table .trip-date input.inline-edit,
+.data-table .trip-route select.inline-edit,
+.data-table .trip-km input.inline-edit,
+.data-table .trip-commission input.inline-edit {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+  outline: none;
+  background: #fff;
+}
+
+.data-table .empty-cell {
+  text-align: center;
+  padding: 34px 20px;
+  color: #9aa7b8;
+  font-size: 13px;
+}
+
+/* ---------- 文字按钮 ---------- */
+.link,
+.link-danger {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 3px 4px;
+  margin-left: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: var(--primary);
+  border-radius: 5px;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.link:hover {
+  background: var(--primary-soft);
+}
+
+.link-danger {
+  color: var(--danger);
+}
+
+.link-danger:hover {
+  background: #fdeceb;
+}
+
+/* ---------- 空状态 ---------- */
+.empty {
+  padding: 60px 20px;
+  text-align: center;
+  color: #9aa7b8;
+  background: #fff;
+  border: 1px dashed #dbe3ef;
+  border-radius: var(--radius);
+  font-size: 13.5px;
+}
+
+.empty.small {
+  padding: 22px 20px;
+  border: 0;
+  border-radius: 0;
+  font-size: 12.5px;
+}
+
+.muted {
+  color: #a8b3c2;
+}
+
+/* ---------- 提示 ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 34px;
+  transform: translate(-50%, 16px);
+  padding: 11px 20px;
+  border-radius: 10px;
+  background: #1b2634;
+  color: #fff;
+  font-size: 13.5px;
+  box-shadow: 0 12px 30px -12px rgba(16, 24, 40, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 50;
+  max-width: 80vw;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.toast.error {
+  background: #b3261e;
+}
+
+.toast.success {
+  background: #0a8f5c;
+}
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 1180px) {
+  .topbar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 12px 18px;
+    gap: 10px 18px;
+  }
+
+  .nav {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .wrap {
+    padding: 20px 18px 56px;
+  }
+
+  .driver-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .field-wide {
+    flex-basis: 100%;
+  }
+
+  .field-inline {
+    flex-wrap: wrap;
+  }
+
+  .table-tools input {
+    width: 130px;
+  }
+}
+
+/* ---------- 数据备份 ---------- */
+.backup-body {
+  padding: 16px 20px 18px;
+}
+
+.backup-tip {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
