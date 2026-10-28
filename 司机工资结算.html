@@ -2566,7 +2566,7 @@ body {
   var STORAGE_KEY = 'driver-salary-v1';
   var DAILY_WAGE = 200;
   var FUEL_PER_KM = 0.34;
-  var SAVING_PRICE = 0.45;
+  var SAVING_PRICE = 4.5;
 
   /* ===== 高德地图配置（在这里填你自己的 Key） ===== */
   var AMAP_KEY = '35ff17adac7d27b664587854d5538448';                 // 高德 JS API Key
@@ -6783,7 +6783,7 @@ body {
     summary.rows.push([
       S(
         '计算规则：工资 = 上班天数 × 200 + 提成合计 + 节油；' +
-          '应加油量 = 总公里数 × 0.34；节油 =（应加油量 − 实际加油量）× 0.45'
+          '应加油量 = 总公里数 × 0.34；节油 =（应加油量 − 实际加油量）× 4.5'
       ),
     ]);
     sheets.push(summary);
