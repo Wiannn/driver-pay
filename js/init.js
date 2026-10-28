@@ -41,7 +41,6 @@
 
     $('tripForm').addEventListener('submit', saveTrip);
     $('tripRoute').addEventListener('change', syncRouteFields);
-    $('tripRouteSearch').addEventListener('input', fillRouteSelect);
     $('tripModeSwitch').addEventListener('click', switchTripMode);
     $('tripBuildAddStep').addEventListener('click', addTripBuildStep);
     $('tripBuildOrigin').addEventListener('change', updateAutoTripKm);

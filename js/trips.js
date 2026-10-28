@@ -20,7 +20,6 @@
 
   function fillRouteSelect() {
     var select = $('tripRoute');
-    var keyword = $('tripRouteSearch').value.trim().toLowerCase();
     var current = select.value;
 
     if (!db.routes.length) {
@@ -28,10 +27,7 @@
       return;
     }
 
-    var routes = db.routes.filter(function (route) {
-      var name = buildRouteName(route);
-      return !keyword || name.toLowerCase().indexOf(keyword) >= 0;
-    }).sort(function (a, b) {
+    var routes = db.routes.slice().sort(function (a, b) {
       return buildRouteName(a).localeCompare(buildRouteName(b), 'zh-CN');
     });
     var html = '<option value="">请选择线路</option>';
@@ -187,7 +183,6 @@
       ensureMonth(trip.date);
       toast('趟次已保存');
       // reset
-      $('tripRouteSearch').value = '';
       fillRouteSelect();
       $('tripRoute').value = '';
       $('tripBuildOrigin').value = '';
@@ -195,7 +190,7 @@
       $('tripKm').value = '';
       $('tripCommission').value = '';
       renderPage();
-      if (state.tripMode === 'template') $('tripRouteSearch').focus();
+      if (state.tripMode === 'template') $('tripRoute').focus();
     } catch (error) {
       toast(error.message, 'error');
     }
