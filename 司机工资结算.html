@@ -145,35 +145,8 @@
   <section class="page" id="page-fuel"></section>
 
   <!-- ========== 出勤登记 ========== -->
-  <section class="page" id="page-attendance">
-    <div class="page-head">
-      <div>
-        <h2>出勤登记</h2>
-        <p class="sub">明确登记每位司机每一天的状态（正常上班 / 休息 / 台风）。结算时的「上班天数」以此为准，路线记录作为补充对照。</p>
-      </div>
-    </div>
-
-    <div class="attendance-controls">
-      <div class="attendance-control">
-        <label for="attMonth">月份</label>
-        <input type="month" id="attMonth" required>
-      </div>
-      <div class="attendance-control">
-        <label for="attDriver">司机</label>
-        <select id="attDriver" required></select>
-      </div>
-      <div class="attendance-legend">
-        <span class="legend-item"><i class="dot dot-work"></i>正常</span>
-        <span class="legend-item"><i class="dot dot-rest"></i>休息</span>
-        <span class="legend-item"><i class="dot dot-weather"></i>台风/天气</span>
-        <span class="legend-item"><i class="dot dot-empty"></i>未登记</span>
-      </div>
-    </div>
-
-    <div class="attendance-stats" id="attStats"></div>
-
-    <div class="calendar-wrap" id="calendarWrap"></div>
-  </section>
+  <!-- 页面结构与逻辑都在 pages/attendance.js -->
+  <section class="page" id="page-attendance"></section>
 
   <!-- ========== 地图 ========== -->
   <section class="page" id="page-map">
@@ -209,54 +182,8 @@
   </section>
 
   <!-- ========== 司机信息 ========== -->
-  <section class="page" id="page-drivers">
-    <div class="page-head">
-      <div>
-        <h2>司机信息</h2>
-        <p class="sub">一人一车固定对应，结算时按司机归集。</p>
-      </div>
-    </div>
-
-    <form class="entry-card" id="driverForm">
-      <input type="hidden" id="driverId">
-      <div class="field">
-        <label for="driverName">姓名</label>
-        <input type="text" id="driverName" placeholder="张三" required>
-      </div>
-      <div class="field">
-        <label for="driverPlate">车牌号</label>
-        <input type="text" id="driverPlate" placeholder="沪A12345" required>
-      </div>
-      <div class="field">
-        <label for="driverPhone">手机号</label>
-        <input type="text" id="driverPhone" placeholder="13800000000" inputmode="tel">
-      </div>
-      <div class="field field-submit">
-        <button type="submit" class="btn btn-primary" id="driverSubmit">添加司机</button>
-        <button type="button" class="btn btn-ghost is-hidden" id="driverCancel">取消</button>
-      </div>
-    </form>
-
-    <div class="table-card">
-      <div class="table-head">
-        <h3>司机名单</h3>
-        <span class="table-sum" id="driverSummary"></span>
-      </div>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>姓名</th>
-              <th>车牌号</th>
-              <th>手机号</th>
-              <th class="op"></th>
-            </tr>
-          </thead>
-          <tbody id="driverRows"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+  <!-- 页面结构与逻辑都在 pages/drivers.js -->
+  <section class="page" id="page-drivers"></section>
 
     <div class="table-card">
       <div class="table-head">
@@ -401,10 +328,10 @@
   <script src="js/settlement.js"></script>
   <script src="js/trips.js"></script>
   <script src="pages/fuel.js"></script>
-  <script src="js/drivers.js"></script>
+  <script src="pages/drivers.js"></script>
   <script src="js/routes.js"></script>
   <script src="js/configs.js"></script>
-  <script src="js/attendance.js"></script>
+  <script src="pages/attendance.js"></script>
   <script src="js/map.js"></script>
   <script src="js/backup.js"></script>
   <script src="js/xlsx.js"></script>

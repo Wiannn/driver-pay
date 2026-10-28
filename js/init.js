@@ -50,8 +50,7 @@
       $('tripBuildSteps').addEventListener('change', onTripBuildStepChange);
     }
 
-    $('driverForm').addEventListener('submit', saveDriver);
-    $('driverCancel').addEventListener('click', resetDriverForm);
+    // 出勤登记、地图等页面的事件绑定分别在 pages/attendance.js、js/map.js 就绪后由各自文件处理
 
     $('routeForm').addEventListener('submit', saveRoute);
     $('routeCancel').addEventListener('click', resetRouteForm);
@@ -192,10 +191,6 @@
       var targetGroupId = group.dataset.groupId; // 'zone-ab' / 'zone-cd' / 'zone-ys' / '__none__'
       if (targetGroupId) moveDestToGroup(destName, targetGroupId);
     });
-
-    // 出勤登记
-    $('attMonth').addEventListener('change', renderAttCalendar);
-    $('attDriver').addEventListener('change', renderAttCalendar);
 
     // 地图
     $('mapFilters').addEventListener('change', function (e) {
