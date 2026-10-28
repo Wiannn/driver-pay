@@ -1507,18 +1507,6 @@ body {
   color: #fff;
 }
 
-.cfg-tag-km {
-  display: inline-block;
-  margin: 0 3px;
-  padding: 0 4px;
-  border-radius: 3px;
-  background: #eef3ff;
-  color: var(--primary);
-  font-size: 10.5px;
-  font-variant-numeric: tabular-nums;
-  vertical-align: 1px;
-}
-
 .cfg-group-add {
   margin-bottom: 12px;
 }
@@ -4917,16 +4905,8 @@ body {
     var coordBtn = cfgModalKey === 'dest_pick' ? '' :
       '<button type="button" data-cfg-coord="' + idx + '" class="' + (hasCoord ? 'has-coord' : '') +
       '" aria-label="设置坐标" title="' + (hasCoord ? '已设置坐标，点击修改' : '设置地图坐标') + '">📍</button>';
-    // 目的地标签上带出「新库」这一行的实际公里，方便核对分组公里有没有生效
-    var kmBadge = '';
-    if (cfgModalKey !== 'origins') {
-      var kmVal = resolveDestKm('新库', name);
-      if (typeof kmVal === 'number' && kmVal > 0) {
-        kmBadge = '<span class="cfg-tag-km" title="新库始发地的公里数">' + fmt2(kmVal) + '</span>';
-      }
-    }
     return '<span class="cfg-tag" draggable="true" data-cfg-name="' + esc(name) + '" data-cfg-idx="' + idx + '">' +
-      esc(name) + kmBadge +
+      esc(name) +
       coordBtn +
       '<button type="button" data-cfg-edit="' + idx + '" aria-label="编辑" title="改名">✎</button>' +
       '<button type="button" data-cfg-del="' + idx + '" aria-label="删除">×</button>' +
