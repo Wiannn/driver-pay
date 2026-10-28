@@ -85,6 +85,8 @@ definePage('trips', {
         <button type="button" class="pager-btn" id="tripPrevBtn">‹ 上一页</button>
         <span class="pager-info" id="tripPagerInfo"></span>
         <button type="button" class="pager-btn" id="tripNextBtn">下一页 ›</button>
+        <span class="pager-jump">跳至 <input type="text" class="pager-jump-input" id="tripPagerJump" inputmode="numeric"> 页</span>
+        <button type="button" class="pager-btn" id="tripPagerJumpBtn">跳转</button>
       </div>
     </div>
   `,
@@ -179,7 +181,7 @@ definePage('trips', {
 .pager {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 10px;
   padding: 12px 20px;
   border-top: 1px solid var(--line);
@@ -192,7 +194,6 @@ definePage('trips', {
 }
 
 .pager-total {
-  margin-right: auto;
   font-variant-numeric: tabular-nums;
 }
 
@@ -225,6 +226,26 @@ definePage('trips', {
   background: #f7f9fc;
   cursor: not-allowed;
 }
+
+.pager-jump {
+  color: var(--muted);
+}
+
+.pager-jump-input {
+  width: 44px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--ink);
+}
+
+.pager-jump-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
   `,
 
   init: function () {
@@ -239,6 +260,10 @@ definePage('trips', {
     });
     $('tripNextBtn').addEventListener('click', function () {
       gotoTripPage(state.tripPage + 1);
+    });
+    $('tripPagerJumpBtn').addEventListener('click', jumpToTripPage);
+    $('tripPagerJump').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); jumpToTripPage(); }
     });
     $('tripRoute').addEventListener('change', syncRouteFields);
     $('tripModeSwitch').addEventListener('click', switchTripMode);
@@ -466,13 +491,13 @@ function saveTrip(event) {
   }
 }
 
-function renderTrips() {
+function filteredTrips() {
   var month = state.month;
   var driverId = $('tripDriver').value;
   var monthRows = db.trips.filter(function (item) {
     return String(item.date).slice(0, 7) === month;
   });
-  var rows = (driverId
+  return (driverId
     ? monthRows.filter(function (item) {
         return String(item.driver_id) === String(driverId);
       })
@@ -480,6 +505,11 @@ function renderTrips() {
   ).sort(function (a, b) {
     return b.date.localeCompare(a.date) || b.id - a.id;
   });
+}
+
+function renderTrips() {
+  var driverId = $('tripDriver').value;
+  var rows = filteredTrips();
 
   var tbody = $('tripRows');
   if (!rows.length) {
@@ -494,7 +524,7 @@ function renderTrips() {
     return;
   }
 
-  // 分页：每页固定 15 条
+  // 分页：每页固定 12 条
   var totalPages = Math.ceil(rows.length / TRIP_PAGE_SIZE);
   if (state.tripPage > totalPages) state.tripPage = totalPages;
   if (state.tripPage < 1) state.tripPage = 1;
@@ -553,11 +583,26 @@ function updateTripPager(total, totalPages) {
   $('tripPagerInfo').textContent = state.tripPage + ' / ' + totalPages;
   prev.disabled = state.tripPage <= 1;
   next.disabled = state.tripPage >= totalPages;
+  $('tripPagerJump').value = '';
 }
 
 function gotoTripPage(page) {
   state.tripPage = page;
   renderTrips();
+}
+
+/** 跳页输入框：非法或超出范围就提示并恢复原值 */
+function jumpToTripPage() {
+  var rows = filteredTrips();
+  var totalPages = Math.ceil(rows.length / TRIP_PAGE_SIZE);
+  var input = $('tripPagerJump');
+  var page = parseInt(input.value, 10);
+  if (!page || page < 1 || page > totalPages) {
+    input.value = '';
+    toast('请输入 1 ~ ' + totalPages + ' 之间的页码', 'error');
+    return;
+  }
+  gotoTripPage(page);
 }
 
 /* ================= 行内操作 ================= */

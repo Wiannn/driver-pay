@@ -11,7 +11,7 @@
   var AMAP_SECURITY_CODE = '1ce351cd7b768471d33f0b94c8e6b407';  // 高德安全密钥（2022 年后新 Key 必须填）
 
   var state = { month: '', page: 'settlement', routeSort: 'name', tripMode: 'build', tripPage: 1 };
-  var TRIP_PAGE_SIZE = 15;
+  var TRIP_PAGE_SIZE = 12;
   var db;
 
   /* ================= 工具 ================= */
