@@ -3701,7 +3701,8 @@ definePage('routes', {
           <div class="cfg-hint" id="cfgHint">回车添加，点 × 删除</div>
           <div class="cfg-tags" id="cfgTags"></div>
           <div class="cfg-input-row">
-            <input type="text" id="cfgNewInput" placeholder="输入新名称后回车">
+            <input type="text" id="cfgNewInput" list="cfgSuggestList" placeholder="输入新名称后回车（已有地点会提示）">
+            <datalist id="cfgSuggestList"></datalist>
             <button type="button" class="btn btn-primary" id="cfgAddBtn">添加</button>
           </div>
         </div>
@@ -4597,9 +4598,20 @@ function openCfgModal(key) {
 
   $('cfgModalTitle').textContent = cfgModalLabel;
   $('cfgNewInput').value = '';
+  refreshCfgSuggestList();
   renderCfgTags();
   $('cfgModal').classList.remove('is-hidden');
   setTimeout(function () { $('cfgNewInput').focus(); }, 50);
+}
+
+/** 刷新输入框的候选提示（datalist），打开弹窗 / 添加成功后调用 */
+function refreshCfgSuggestList() {
+  var list = db.configs[cfgModalKey] || [];
+  var datalist = $('cfgSuggestList');
+  if (!datalist) return;
+  datalist.innerHTML = list.map(function (item) {
+    return '<option value="' + esc(item) + '">';
+  }).join('');
 }
 
 function closeCfgModal() {
@@ -4987,14 +4999,17 @@ function addCfgItem() {
   var value = String(input.value || '').trim();
   if (!value) return;
   var list = db.configs[cfgModalKey] || [];
+  // 重复检查（精确匹配，trim 后比对）
   if (list.indexOf(value) >= 0) {
-    toast('已存在', 'error');
+    toast('「' + value + '」已存在，不能重复添加', 'error');
+    input.select();
     return;
   }
   list.push(value);
   db.configs[cfgModalKey] = list;
   input.value = '';
   renderCfgTags();
+  refreshCfgSuggestList();
   refreshCfgDependentUI();
   input.focus();
 }
