@@ -2363,7 +2363,7 @@ body {
       <div class="page-actions">
         <button type="button" class="btn btn-ghost" id="cfgOriginsBtn">管理始发地</button>
         <button type="button" class="btn btn-ghost" id="cfgDestInBtn">管理进目的地</button>
-        <button type="button" class="btn btn-ghost" id="cfgDestPickBtn">管理提/还目的地</button>
+        <button type="button" class="btn btn-ghost" id="cfgDestPickBtn">管理提/还/落目的地</button>
       </div>
     </div>
 
@@ -2833,8 +2833,8 @@ body {
 
     var first = valid[0];
     var firstGroup = getDestGroupId(first.dest); // zone-ab / zone-cd / zone-ys
-    // 「还」与「提」提成规则完全一致
-    var isPick = function (s) { return s.action === '提' || s.action === '还'; };
+    // 「还」「落」与「提」提成规则完全一致
+    var isPick = function (s) { return s.action === '提' || s.action === '还' || s.action === '落'; };
     var pickHasYangshan = valid.some(function (s, i) {
       return i > 0 && isPick(s) && getDestGroupId(s.dest) === 'zone-ys';
     });
@@ -2873,7 +2873,8 @@ body {
     var parts = [route.origin];
     route.steps.forEach(function (s) {
       if (!s) return;
-      var label = s.action === '提' ? '提' : (s.action === '还' ? '还' : '进');
+      var label = s.action === '提' ? '提'
+        : (s.action === '还' ? '还' : (s.action === '落' ? '落' : '进'));
       parts.push(label + (s.dest || ''));
     });
     return parts.join(' → ');
@@ -3959,6 +3960,7 @@ body {
           '<option value="进"' + (step.action === '进' ? ' selected' : '') + '>进</option>' +
           '<option value="提"' + (step.action === '提' ? ' selected' : '') + '>提</option>' +
           '<option value="还"' + (step.action === '还' ? ' selected' : '') + '>还</option>' +
+          '<option value="落"' + (step.action === '落' ? ' selected' : '') + '>落</option>' +
         '</select>' +
         '<select class="step-dest" data-role="dest">' + destHtml + '</select>' +
         '<button type="button" class="step-del" data-role="del" title="删除">×</button>' +
@@ -4265,6 +4267,7 @@ body {
           '<option value="进"' + (step.action === '进' ? ' selected' : '') + '>进</option>' +
           '<option value="提"' + (step.action === '提' ? ' selected' : '') + '>提</option>' +
           '<option value="还"' + (step.action === '还' ? ' selected' : '') + '>还</option>' +
+          '<option value="落"' + (step.action === '落' ? ' selected' : '') + '>落</option>' +
         '</select>' +
         '<select class="step-dest" data-role="dest">' + destHtml + '</select>' +
         '<button type="button" class="step-del" data-role="del" title="删除此段">×</button>' +
@@ -4275,16 +4278,16 @@ body {
   }
 
   function getDestOptionsForAction(action) {
-    // 「提」和「还」共用同一份提空箱目的地
-    if (action === '提' || action === '还') return db.configs.dest_pick || [];
+    // 「提」「还」「落」共用同一份提空箱目的地
+    if (action === '提' || action === '还' || action === '落') return db.configs.dest_pick || [];
     return db.configs.dest_in || [];
   }
 
   /** 生成带 <optgroup> 的目的地下拉 HTML，按区域分组 */
   function getDestOptionsGroupedHtml(action, currentVal) {
     var flat = getDestOptionsForAction(action);
-    // 「进」用进分组，「提 / 还」用提还分组
-    var groups = (action === '提' || action === '还')
+    // 「进」用进分组，「提 / 还 / 落」用提还分组
+    var groups = (action === '提' || action === '还' || action === '落')
       ? (db.configs.dest_pick_groups || [])
       : (db.configs.dest_groups || []);
     var shown = {};
@@ -4496,7 +4499,7 @@ body {
     cfgGroupAdding = false;
     if (key === 'origins') { cfgModalLabel = '始发地列表'; $('cfgHint').textContent = '行驶的起点，例如：新库、东库'; }
     else if (key === 'dest_in') { cfgModalLabel = '「进」的目的地'; $('cfgHint').textContent = '纯进或进段的目的地，例如：外五、洋山'; }
-    else { cfgModalLabel = '「提 / 还」的目的地'; $('cfgHint').textContent = '「提」和「还」共用的空箱目的地，例如：洋山、沧海路'; }
+    else { cfgModalLabel = '「提 / 还 / 落」的目的地'; $('cfgHint').textContent = '「提」「还」「落」共用的空箱目的地，例如：洋山、沧海路'; }
 
     $('cfgModalTitle').textContent = cfgModalLabel;
     $('cfgNewInput').value = '';
