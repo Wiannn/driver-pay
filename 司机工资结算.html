@@ -1212,14 +1212,16 @@ body {
 
 .cal-cell {
   position: relative;
-  height: 24px;
-  border-radius: 3px;
+  height: 46px;
+  border-radius: 5px;
   border: 1px solid var(--line);
   background: #fff;
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   font-size: 12px;
   font-weight: 500;
   line-height: 1;
@@ -1247,7 +1249,7 @@ body {
   border-color: rgba(220, 60, 60, 0.4);
 }
 
-.cal-cell.empty {
+.cal-cell.none {
   background: #f9fafc;
 }
 
@@ -1274,12 +1276,13 @@ body {
 
 .cal-status {
   font-size: 10px;
-  margin-top: 4px;
   line-height: 1;
   padding: 1px 4px;
   border-radius: 3px;
   font-weight: 500;
 }
+
+.cal-cell.none .cal-status { color: #bcc6d3; }
 
 .cal-cell.work .cal-status { background: rgba(42,91,224,0.18); color: var(--primary); }
 .cal-cell.rest .cal-status { background: rgba(234,161,53,0.18); color: var(--warn); }
@@ -5149,14 +5152,16 @@ body {
         body += '<div class="cal-cell other-month">' + c.day + '</div>';
       } else {
         var att = attMap[c.date];
-        var status = att ? att.status : 'empty';
+        var status = att ? att.status : 'none';
         var trips = tripsMap[c.date] || [];
         var tip = c.date;
         if (att) tip += ' · ' + ATT_STATUS[att.status];
         if (trips.length) tip += ' · ' + trips.length + '趟';
         body +=
           '<div class="cal-cell ' + status + '" data-date="' + c.date + '" title="' + esc(tip) + '">' +
-          c.day + '</div>';
+          '<div class="cal-day">' + c.day + '</div>' +
+          (att ? '<span class="cal-status">' + ATT_STATUS[att.status] + '</span>' : '<span class="cal-status">未选</span>') +
+          '</div>';
       }
     });
     body += '</div>';
