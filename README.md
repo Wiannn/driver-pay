@@ -76,46 +76,61 @@
 
 ## 🚀 使用方式
 
-### 本地使用（最简单）
-直接双击 `司机工资结算.html`，任何现代浏览器都行。单文件，不需要同目录的其他文件。
-
-> 如果给高德 Key 设置了**域名白名单**，双击打开的 `file://` 页面没有域名，会被高德拒绝，地图页会提示加载失败。
-> 这时把 `localhost` 和 `127.0.0.1` 也加进白名单，然后用本地服务（`http://localhost:端口/司机工资结算.html`）打开；
-> 或者直接使用下面的 GitHub Pages 地址。
-
 ### GitHub Pages 在线使用
-打开：`https://wiannn.github.io/driver-pay/司机工资结算.html`
+打开：https://wiannn.github.io/driver-pay/
 
 **注意**：每个人打开自己的浏览器用自己的数据，因为 localStorage 只存在本地，多人之间不共享。
 
-### 改代码（开发）
-编辑 `src.html`、`css/`、`js/`、`pages/` 下的源码，改完运行 `build.ps1` 重新生成 `司机工资结算.html`，再一起提交。
+### 本地开发
+```bash
+# 安装依赖（首次）
+npm install
+
+# 开发模式，热更新，改完浏览器自动刷新
+npm run dev
+# 然后浏览器打开 http://localhost:5173
+
+# 生产构建，输出单文件 HTML 到 dist/
+npm run build
+```
+
+> 如果给高德 Key 设置了**域名白名单**，把 `localhost` 和 `127.0.0.1` 也加进去，否则本地 dev 模式地图加载不出来。
+
+### 自动部署
+`main` 分支有新 push 时，GitHub Actions 自动执行 `npm ci → npm run build → 部署 dist/`，1 分钟内刷新在线页面。无需手动操作。
 
 ## 📁 项目文件
 
+### 构建配置
 | 文件 | 说明 |
 |------|------|
-| `司机工资结算.html` | **自动生成的单文件**（部署和双击都用它），由 build.ps1 生成，不要直接改 |
-| `src.html` | 页面骨架源码：顶栏、导航、各页空 section、按顺序引入 css/js |
-| `build.ps1` | 打包脚本：把 src.html 引用的 css/js 全部内联成单文件 |
-| `index.html` | 根路径跳转页（`/driver-pay/` → 司机工资结算.html） |
-| `css/base.css` | 全局变量、顶栏、按钮、toast |
-| `css/pages.css` | 多页共用样式：录入表单、表格卡片、空状态等 |
-| `js/core.js` | 常量（工资规则、高德 Key）、工具函数、localStorage 存储与迁移、公里/提成计算规则 |
-| `js/data.js` | 数据增删改查（addTrip / removeDriver 等） |
-| `js/pages.js` | definePage / mountPages 页面挂载框架 |
-| `js/init.js` | 初始化、月份切换、页面切换（最后加载） |
-| `pages/settlement.js` | 月度结算页（含 Excel 导出、数据备份） |
-| `pages/trips.js` | 趟次录入页（分页、双模式搭建、行内编辑） |
-| `pages/fuel.js` | 加油录入页 |
-| `pages/attendance.js` | 出勤登记页 |
-| `pages/map.js` | 地图页（高德） |
-| `pages/drivers.js` | 司机信息页 |
-| `pages/routes.js` | 线路价目页（含始发地 / 进港区 / 提还堆场管理弹窗） |
+| `vite.config.js` | Vite 配置：`root: src/`、`base: ./`（适配 GitHub Pages 子路径） |
+| `package.json` | npm 脚本：`dev`（热更新）、`build`（Vite 构建 + inline 内联） |
+| `scripts/inline.js` | Vite build 后运行：从 `src/` 按顺序合并 11 个 JS + 把 Vite 压缩的 CSS 内联 → `dist/index.html` 单文件 |
+| `.github/workflows/deploy.yml` | push main 自动构建部署到 GitHub Pages |
+| `.gitignore` | 排除 `node_modules/`、`dist/` |
 
-> 拆分规则：所有 js 共用一个全局作用域，`js/init.js` 最后加载。
-> 页面代码「一页一文件」：每个 `pages/页面.js` 用 `definePage('页面id', { html, css, init })` 定义自己的结构、样式和事件，骨架里只留一个空的 `<section class="page" id="page-xxx">`。
-> 新增页面：新建 `pages/页面.js`，在 `src.html` 里加空 section 和一行 `<script src="pages/页面.js">`（放在 `js/init.js` 之前），再跑 `build.ps1`。
+### 源码（`src/`）
+| 文件 | 说明 |
+|------|------|
+| `src/index.html` | 页面骨架：顶栏、导航、各页空 section、按顺序引入 css/js |
+| `src/css/base.css` | 全局变量、顶栏、按钮、toast |
+| `src/css/pages.css` | 多页共用样式：录入表单、表格卡片、空状态等 |
+| `src/js/core.js` | 常量（工资规则、高德 Key）、工具函数、localStorage 存储与迁移、公里/提成计算规则 |
+| `src/js/data.js` | 数据增删改查（addTrip / removeDriver 等） |
+| `src/js/pages.js` | definePage / mountPages 页面挂载框架 |
+| `src/js/init.js` | 初始化、月份切换、页面切换（最后加载） |
+| `src/pages/settlement.js` | 月度结算页（含 Excel 导出、数据备份） |
+| `src/pages/trips.js` | 趟次录入页（分页、双模式搭建、行内编辑） |
+| `src/pages/fuel.js` | 加油录入页 |
+| `src/pages/attendance.js` | 出勤登记页 |
+| `src/pages/map.js` | 地图页（高德） |
+| `src/pages/drivers.js` | 司机信息页 |
+| `src/pages/routes.js` | 线路价目页（含始发地 / 进港区 / 提还堆场管理弹窗） |
+
+> 拆分规则：所有 js 共用一个全局作用域，普通 `<script>` 按顺序加载。
+> 页面代码「一页一文件」：每个 `src/pages/页面.js` 用 `definePage('页面id', { html, css, init })` 定义自己的结构、样式和事件，骨架里只留一个空的 `<section class="page" id="page-xxx">`。
+> 新增页面：新建 `src/pages/页面.js`，在 `src/index.html` 里加空 section 和一行 `<script src="./pages/页面.js">`（放在 `js/init.js` 之前），然后 `npm run dev` 即可预览。
 
 ## 🔧 管理目的地/始发地/基础公里
 
@@ -140,7 +155,7 @@
 2. 「应用管理」→「创建新应用」→ 名称随便填
 3. 在该应用下「添加 Key」→ **服务平台选「Web端（JS API）」**
 4. 复制生成的 **Key** 和 **安全密钥（jscode）**
-5. 打开 `js/core.js`，搜索 `AMAP_KEY`，填写两行：
+5. 打开 `src/js/core.js`，搜索 `AMAP_KEY`，填写两行：
    ```javascript
    var AMAP_KEY = '你的 Key';
    var AMAP_SECURITY_CODE = '你的安全密钥';
@@ -155,12 +170,18 @@
 
 ## 🛠️ 技术栈
 
-- 纯原生 HTML + CSS + JavaScript，无任何第三方依赖
+- 前端：纯原生 HTML + CSS + JavaScript，无任何第三方运行时依赖
 - 数据存储：localStorage
-- 构建：`build.ps1` 把多文件源码内联成单文件（解决 GitHub Pages 国内访问慢）
+- 构建：Vite 6（CSS 压缩）+ Node inline 脚本（JS 按顺序合并内联）→ 输出单文件 HTML（1 次 HTTP 请求，GitHub Pages 国内加载快）
+- 部署：GitHub Actions 自动 workflow（push main → build → deploy）
 
 ## 📝 更新日志
 
+- v1.2 2026-10-28：项目重构为 Vite + GitHub Actions 自动构建部署方案
+  - 旧单文件 `index.html` 拆回 `src/` 分散目录（源码好维护，npm run dev 热更新）
+  - `npm run build` 输出 `dist/index.html` 单文件（CSS 压缩 + JS 合并内联，0 外链）
+  - 新增 `.github/workflows/deploy.yml`：push main 自动部署
+  - 删掉旧 `build.ps1` 手动打包流程
 - v1.1 2026-10-28：代码按「一页一文件」拆分到 `pages/`；新增 `build.ps1` 打包成单文件（解决 GitHub Pages 加载慢）；趟次分页（12 条/页 + 跳页）；备份按钮移到结算页右上角；清理 Supabase 残留
 - v1.0 2026-10-26：初始版本
   - 司机管理、路线管理、趟次录入、加油录入、出勤登记、结算导出
