@@ -23,7 +23,7 @@ definePage('attendance', {
       <div class="attendance-legend">
         <span class="legend-item"><i class="dot dot-work"></i>正常</span>
         <span class="legend-item"><i class="dot dot-rest"></i>休息</span>
-        <span class="legend-item"><i class="dot dot-weather"></i>台风/天气</span>
+        <span class="legend-item"><i class="dot dot-weather"></i>台风</span>
         <span class="legend-item"><i class="dot dot-empty"></i>未登记</span>
       </div>
     </div>
