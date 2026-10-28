@@ -2458,7 +2458,7 @@ definePage('trips', {
               <th>日期</th>
               <th>司机</th>
               <th>线路</th>
-              <th>箱号</th>
+              <th>箱号 / 提单号</th>
               <th class="num">公里数</th>
               <th class="num">提成</th>
               <th>备注</th>
@@ -2946,7 +2946,7 @@ function renderTrips() {
         '<td>' + esc(driver ? driver.name : '—') + '</td>' +
         '<td class="route-name trip-route" data-trip="' + trip.id + '" title="双击更换路线">' +
           esc(trip.route_name) + '</td>' +
-        '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 多个用逗号或空格隔开">' +
+        '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 箱号或提单号多个用逗号/空格隔开">' +
           renderContainerChips(trip.container_no) + '</td>' +
         '<td class="num trip-km" data-trip="' + trip.id + '" title="双击编辑公里数">' +
           fmt2(trip.km) + '</td>' +
@@ -3151,7 +3151,7 @@ function editContainerNo(cell) {
   input.value = current;
   input.className = 'inline-edit';
   input.style.width = '100%';
-  input.placeholder = '多个箱号用逗号或空格隔开';
+  input.placeholder = '箱号或提单号，多个用逗号/空格隔开';
 
   cell.innerHTML = '';
   cell.appendChild(input);
