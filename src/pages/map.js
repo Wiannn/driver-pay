@@ -295,6 +295,17 @@ definePage('map', {
   flex: 0 0 auto;
 }
 
+/* 分组色点：点一下就能改颜色 */
+.map-group-head i.map-color-dot {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.map-group-head i.map-color-dot:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.18);
+}
+
 .map-group-name {
   flex: 1 1 auto;
   font-weight: 600;
@@ -476,6 +487,13 @@ definePage('map', {
       renderMapMarkers(false);
     });
     $('mapPlaceList').addEventListener('click', function (e) {
+      var dot = e.target.closest('[data-group-color]');
+      if (dot) {
+        e.preventDefault();
+        e.stopPropagation();
+        openGroupColorPicker(dot.dataset.groupColor, dot);
+        return;
+      }
       var head = e.target.closest('[data-group-toggle]');
       if (head) {
         var gid = head.dataset.groupToggle;
@@ -637,9 +655,12 @@ var GROUP_PALETTE = [
   '#be123c', // 深红
 ];
 
-/** 分组的显示颜色：内置组按 id（或标准名称）取固定色；自建组用自己存的 color，绝不按位置取色 */
+/** 分组的显示颜色：用户自定义色优先；内置组按 id（或标准名称）取固定色；自建组用自己存的 color */
 function groupColor(group, idx) {
   if (!group) return MAP_COLORS.ungrouped;
+  // 用户在地图页点圆点改过的颜色，优先于一切默认色
+  var custom = db && db.configs && db.configs.group_colors && db.configs.group_colors[group.id];
+  if (custom) return custom;
   var byId = MAP_COLORS[group.id];
   if (byId) return byId;
   // 历史数据里可能残留 id 随机的同名分组（如用户自建过「外一外二系」），按名称兜底，保证颜色稳定
@@ -802,7 +823,7 @@ function round6(value) {
 function getPlaceGroups() {
   var cfg = db.configs;
   var out = [];
-  out.push({ id: 'origin', label: '始发地', color: MAP_COLORS.origin, names: (cfg.origins || []).slice() });
+  out.push({ id: 'origin', label: '始发地', color: groupColor({ id: 'origin', label: '始发地' }), names: (cfg.origins || []).slice() });
 
   var dests = [];
   (cfg.dest_in || []).forEach(function (n) { if (dests.indexOf(n) < 0) dests.push(n); });
@@ -835,7 +856,7 @@ function getPlaceGroups() {
     out.push({ id: g.id, label: g.label, color: groupColor(g, gi), names: sortNamesByName(names) });
   });
   var rest = dests.filter(function (n) { return !assigned[n]; });
-  if (rest.length) out.push({ id: 'ungrouped', label: '未分组', color: MAP_COLORS.ungrouped, names: rest });
+  if (rest.length) out.push({ id: 'ungrouped', label: '未分组', color: groupColor({ id: 'ungrouped', label: '未分组' }), names: rest });
   return out;
 }
 
@@ -857,6 +878,7 @@ function syncConfigsFromStorage() {
     if (Array.isArray(cfg.dest_in)) db.configs.dest_in = cfg.dest_in;
     if (Array.isArray(cfg.dest_pick)) db.configs.dest_pick = cfg.dest_pick;
     if (Array.isArray(cfg.origins)) db.configs.origins = cfg.origins;
+    if (cfg.group_colors && typeof cfg.group_colors === 'object') db.configs.group_colors = cfg.group_colors;
     // 从存储同步后再做一次归一（防止旧标签页写回的脏数据）
     enforceSingleOwner();
     ensureGroupColors();
@@ -902,6 +924,58 @@ function renderMapFilters() {
   $('mapFilters').innerHTML = html;
 }
 
+/** 点击分组圆点 → 打开系统取色盘，选完立即写库并刷新列表、筛选条、地图圆点 */
+function openGroupColorPicker(groupId, anchor) {
+  var group = getPlaceGroups().filter(function (g) { return String(g.id) === String(groupId); })[0];
+  var current = group ? String(group.color || '') : '';
+  var input = document.createElement('input');
+  input.type = 'color';
+  input.value = /^#[0-9a-fA-F]{6}$/.test(current) ? current : '#94a3b8';
+  var rect = anchor.getBoundingClientRect();
+  input.style.cssText = 'position:fixed;left:' + Math.round(rect.left) + 'px;top:' +
+    Math.round(rect.bottom + 6) + 'px;width:1px;height:1px;opacity:0;border:0;padding:0;' +
+    'pointer-events:none;';
+  document.body.appendChild(input);
+
+  var closed = false;
+  function close() {
+    if (closed) return;
+    closed = true;
+    if (input.parentNode) input.parentNode.removeChild(input);
+  }
+  function store(hex) {
+    if (!db.configs.group_colors) db.configs.group_colors = {};
+    db.configs.group_colors[groupId] = hex;
+  }
+  /** 拖取色盘时的即时预览：只改现有色点，不重建列表/地图 */
+  function preview(hex) {
+    var dots = $('mapPlaceList').querySelectorAll('[data-group-color]');
+    for (var i = 0; i < dots.length; i++) {
+      if (dots[i].dataset.groupColor === groupId) dots[i].style.background = hex;
+    }
+    var chips = $('mapFilters').querySelectorAll('[data-map-filter]');
+    for (var j = 0; j < chips.length; j++) {
+      if (chips[j].dataset.mapFilter !== groupId) continue;
+      var chipDot = chips[j].parentNode.querySelector('i');
+      if (chipDot) chipDot.style.background = hex;
+    }
+  }
+  input.addEventListener('input', function () {
+    store(input.value);
+    preview(input.value);
+  });
+  input.addEventListener('change', function () {
+    store(input.value);
+    saveLocal();
+    renderMapFilters();
+    renderMapPlaceList();
+    if (mapState.map) renderMapMarkers(false);
+    setTimeout(close, 0);
+  });
+  input.addEventListener('blur', function () { setTimeout(close, 300); });
+  input.click();
+}
+
 function renderMapPlaceList() {
   var groups = getPlaceGroups();
   var html = '';
@@ -935,7 +1009,8 @@ function renderMapPlaceList() {
       '<div class="map-group-head">' +
       (canReorder ? '<span class="map-group-grip" draggable="true" title="拖动调整分组顺序">⠿</span>' : '') +
       '<button type="button" class="map-group-toggle" data-group-toggle="' + esc(group.id) + '">' +
-      '<i style="background:' + group.color + '"></i>' +
+      '<i class="map-color-dot" data-group-color="' + esc(group.id) + '" style="background:' + group.color +
+        '" title="点击修改分组颜色"></i>' +
       '<span class="map-group-name">' + esc(group.label) + '</span>' +
       '<em>' + ok + '/' + group.names.length + '</em>' +
       '<b class="map-group-caret">▾</b>' +
