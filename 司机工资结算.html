@@ -6,8 +6,6 @@
 <title>司机工资结算</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/pages.css">
-  <link rel="stylesheet" href="css/routes.css">
-  <link rel="stylesheet" href="css/modal.css">
   <link rel="stylesheet" href="css/map.css">
 </head>
 <body>
@@ -206,93 +204,9 @@
   <section class="page" id="page-drivers"></section>
 
   <!-- ========== 线路价目 ========== -->
-  <section class="page" id="page-routes">
-    <div class="page-head">
-      <div>
-        <h2>线路价目</h2>
-        <p class="sub">始发地 + 多段步骤（进/提），最多可 4 段。</p>
-      </div>
-      <div class="page-actions">
-        <button type="button" class="btn btn-ghost" id="cfgOriginsBtn">管理始发地</button>
-        <button type="button" class="btn btn-ghost" id="cfgDestInBtn">管理进港区</button>
-        <button type="button" class="btn btn-ghost" id="cfgDestPickBtn">管理提还堆场</button>
-      </div>
-    </div>
+  <!-- 页面结构、样式、逻辑（含管理弹窗）都在 pages/routes.js -->
+  <section class="page" id="page-routes"></section>
 
-    <form class="entry-card route-form" id="routeForm">
-      <input type="hidden" id="routeId">
-      <div class="field">
-        <label for="routeOrigin">始发地</label>
-        <select id="routeOrigin" required></select>
-      </div>
-
-      <div class="field field-wide">
-        <label>行驶步骤</label>
-        <div id="stepsWrap" class="steps-wrap"></div>
-        <button type="button" class="btn btn-ghost step-add-btn" id="stepAddBtn">+ 添加步骤</button>
-      </div>
-
-      <div class="field">
-        <label for="routeKm">总公里数</label>
-        <input type="number" id="routeKm" step="0.1" min="0" placeholder="50" required>
-      </div>
-      <div class="field">
-        <label for="routeCommission">总提成（元）</label>
-        <input type="number" id="routeCommission" step="0.01" min="0" placeholder="10" required>
-      </div>
-      <div class="field field-submit">
-        <button type="submit" class="btn btn-primary" id="routeSubmit">添加线路</button>
-        <button type="button" class="btn btn-ghost is-hidden" id="routeCancel">取消</button>
-      </div>
-
-      <div class="route-preview" id="routePreview"></div>
-    </form>
-
-    <div class="table-card">
-      <div class="table-head">
-        <h3>线路列表</h3>
-        <div class="table-tools">
-          <input type="text" id="routeSearch" placeholder="搜索线路" autocomplete="off">
-          <button type="button" class="btn btn-ghost" id="routeSortBtn" title="切换排序">按添加</button>
-          <span class="table-sum" id="routeSummary"></span>
-        </div>
-      </div>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>线路</th>
-              <th class="num">总公里数</th>
-              <th class="num">总提成（元）</th>
-              <th class="op"></th>
-            </tr>
-          </thead>
-          <tbody id="routeRows"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== 配置管理弹窗 ========== -->
-  <div class="modal-mask is-hidden" id="cfgModal">
-    <div class="modal">
-      <div class="modal-head">
-        <h3 id="cfgModalTitle">管理列表</h3>
-        <button type="button" class="modal-close" id="cfgModalClose">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="cfg-hint" id="cfgHint">回车添加，点 × 删除</div>
-        <div class="cfg-tags" id="cfgTags"></div>
-        <div class="cfg-input-row">
-          <input type="text" id="cfgNewInput" placeholder="输入新名称后回车">
-          <button type="button" class="btn btn-primary" id="cfgAddBtn">添加</button>
-        </div>
-      </div>
-      <div class="modal-foot">
-        <button type="button" class="btn btn-ghost" id="cfgSaveBtn">保存</button>
-      </div>
-    </div>
-  </div>
   <!-- ========== 坐标设置弹窗 ========== -->
   <div class="modal-mask is-hidden" id="coordModal">
     <div class="modal modal-coord">
@@ -334,8 +248,7 @@
   <script src="js/trips.js"></script>
   <script src="pages/fuel.js"></script>
   <script src="pages/drivers.js"></script>
-  <script src="js/routes.js"></script>
-  <script src="js/configs.js"></script>
+  <script src="pages/routes.js"></script>
   <script src="pages/attendance.js"></script>
   <script src="js/map.js"></script>
   <script src="js/backup.js"></script>
