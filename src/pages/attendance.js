@@ -41,36 +41,36 @@ definePage('attendance', {
 .attendance-legend { display: flex; gap: 14px; margin-left: auto; align-items: center; }
 .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.dot-work { background: var(--primary); }
-.dot-rest { background: var(--warn); }
-.dot-weather { background: var(--danger); }
+.dot-work { background: #0a8f5c; }
+.dot-rest { background: #2a5be0; }
+.dot-weather { background: #c2410c; }
 .dot-empty { background: #e5e7eb; border: 1px dashed #cbd5e1; }
 .attendance-stats { display: flex; gap: 12px; margin-bottom: 12px; font-size: 13px; color: var(--ink); }
 .attendance-stats .stat-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 14px; background: #f3f6fb; }
-.attendance-stats .stat-pill strong { color: var(--primary); font-weight: 600; }
-.attendance-stats .stat-pill.rest strong { color: var(--warn); }
-.attendance-stats .stat-pill.weather strong { color: var(--danger); }
+.attendance-stats .stat-pill strong { color: #0a8f5c; font-weight: 600; }
+.attendance-stats .stat-pill.rest strong { color: #2a5be0; }
+.attendance-stats .stat-pill.weather strong { color: #c2410c; }
 .calendar-wrap { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .calendar-head { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 3px; }
 .calendar-head div { text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); padding: 2px 0; }
 .cal-cell { position: relative; height: 46px; border-radius: 5px; border: 1px solid var(--line); background: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 500; line-height: 1; transition: transform 0.1s, box-shadow 0.1s; user-select: none; }
 .cal-cell:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(16, 24, 40, 0.12); }
-.cal-cell.work { background: rgba(42, 91, 224, 0.08); border-color: rgba(42, 91, 224, 0.35); }
-.cal-cell.rest { background: rgba(234, 161, 53, 0.1); border-color: rgba(234, 161, 53, 0.4); }
-.cal-cell.weather { background: rgba(220, 60, 60, 0.1); border-color: rgba(220, 60, 60, 0.4); }
+.cal-cell.work { background: rgba(10, 143, 92, 0.1); border-color: rgba(10, 143, 92, 0.4); }
+.cal-cell.rest { background: rgba(42, 91, 224, 0.1); border-color: rgba(42, 91, 224, 0.4); }
+.cal-cell.weather { background: rgba(194, 65, 12, 0.1); border-color: rgba(194, 65, 12, 0.4); }
 .cal-cell.none { background: #f9fafc; }
 .cal-cell.other-month { opacity: 0.25; cursor: default; background: transparent; }
 .cal-cell.other-month:hover { transform: none; box-shadow: none; }
 .cal-day { font-size: 15px; font-weight: 600; line-height: 1; }
-.cal-cell.work .cal-day { color: var(--primary); }
-.cal-cell.rest .cal-day { color: var(--warn); }
-.cal-cell.weather .cal-day { color: var(--danger); }
+.cal-cell.work .cal-day { color: #0a8f5c; }
+.cal-cell.rest .cal-day { color: #2a5be0; }
+.cal-cell.weather .cal-day { color: #c2410c; }
 .cal-status { font-size: 10px; line-height: 1; padding: 1px 4px; border-radius: 3px; font-weight: 500; }
 .cal-cell.none .cal-status { color: #bcc6d3; }
-.cal-cell.work .cal-status { background: rgba(42,91,224,0.18); color: var(--primary); }
-.cal-cell.rest .cal-status { background: rgba(234,161,53,0.18); color: var(--warn); }
-.cal-cell.weather .cal-status { background: rgba(220,60,60,0.18); color: var(--danger); }
+.cal-cell.work .cal-status { background: rgba(10,143,92,0.18); color: #0a8f5c; }
+.cal-cell.rest .cal-status { background: rgba(42,91,224,0.18); color: #2a5be0; }
+.cal-cell.weather .cal-status { background: rgba(194,65,12,0.18); color: #c2410c; }
 .cal-trip-mini { position: absolute; bottom: 2px; right: 3px; font-size: 10px; color: var(--muted); max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
   `,
 
