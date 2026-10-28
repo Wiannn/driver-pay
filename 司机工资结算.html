@@ -6,7 +6,6 @@
 <title>司机工资结算</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/pages.css">
-  <link rel="stylesheet" href="css/map.css">
 </head>
 <body>
 
@@ -56,37 +55,8 @@
   <section class="page" id="page-attendance"></section>
 
   <!-- ========== 地图 ========== -->
-  <section class="page" id="page-map">
-    <div class="page-head">
-      <div>
-        <h2>目的地地图</h2>
-        <p class="sub">按区域查看所有始发地与目的地。点地点可定位放大；右键地点（或地图上的圆点）可在地图上点选坐标、用弹窗精确设置或清除坐标。</p>
-      </div>
-      <div class="page-actions">
-        <button type="button" class="btn btn-ghost" id="mapFitBtn">全览</button>
-      </div>
-    </div>
-
-    <div class="map-layout">
-      <div class="map-main">
-        <div class="map-search" id="mapSearchWrap">
-          <input type="text" id="mapSearchInput" placeholder="搜已保存的地点或路名，例如：外一 / 外高桥六期">
-          <button type="button" class="btn btn-ghost" id="mapSearchBtn">搜索</button>
-          <div class="map-search-list is-hidden" id="mapSearchList"></div>
-        </div>
-        <div class="map-filters" id="mapFilters"></div>
-        <div class="map-canvas" id="mapCanvas"></div>
-        <div class="map-pick-tip is-hidden" id="mapPickTip"></div>
-      </div>
-      <aside class="map-side">
-        <div class="map-side-head">
-          <span>地点列表</span>
-          <span class="map-side-count" id="mapSideCount"></span>
-        </div>
-        <div class="map-side-list" id="mapPlaceList"></div>
-      </aside>
-    </div>
-  </section>
+  <!-- 页面结构、样式、逻辑（含坐标弹窗、右键菜单）都在 pages/map.js -->
+  <section class="page" id="page-map"></section>
 
   <!-- ========== 司机信息 ========== -->
   <!-- 页面结构与逻辑都在 pages/drivers.js -->
@@ -139,7 +109,7 @@
   <script src="pages/drivers.js"></script>
   <script src="pages/routes.js"></script>
   <script src="pages/attendance.js"></script>
-  <script src="js/map.js"></script>
+  <script src="pages/map.js"></script>
   <script src="js/xlsx.js"></script>
   <script src="js/init.js"></script>
 </body>

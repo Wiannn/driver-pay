@@ -265,6 +265,34 @@ definePage('routes', {
   border-radius: 9px;
 }
 
+.cfg-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.cfg-input-row input {
+  flex: 1 1 auto;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.cfg-input-row input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
+}
+
+.modal-foot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  text-align: right;
+}
+
 .cfg-group {
   margin-bottom: 12px;
   padding: 10px 12px;
