@@ -1114,7 +1114,8 @@ body {
     return groupAnchorKm(origin, gid);
   }
 
-  /** 自动算总公里；有目的地没有公里规则时返回 null（表示需要手填） */
+  /** 自动算总公里：只统计「进」的目的地公里；提/还/落是顺路回库，不加公里。
+   *  同方向（同进分组 zone-ab/cd/ys）的进目的地不叠加；不同方向叠加。 */
   function computeAutoKm(origin, steps) {
     if (!origin || !Array.isArray(steps)) return 0;
     var sum = 0;
@@ -1122,14 +1123,14 @@ body {
     var unknown = false;
     steps.forEach(function (s) {
       if (!s || !s.dest) return;
-      // 跟前一个同区域 → 不算移动车，不加公里
+      // 提 / 还 / 落 是顺路动作，不加公里，也不更新 prevDest（免得干扰后续进的方向判断）
+      if (s.action !== '进') return;
+      // 跟前一个进同区域 → 同方向顺路，不加
       if (prevDest && sameDestGroup(prevDest, s.dest)) {
         prevDest = s.dest;
         return;
       }
-      // 自己没登记公里就跟随所在分组（例如 创元六 在外四外五系 → 按外四/外五算）
       var km = resolveDestKm(origin, s.dest);
-      // 没有基准的分组（自建组）→ 留白，交给人手填
       if (km === null) {
         unknown = true;
       } else {
