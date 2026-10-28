@@ -817,12 +817,16 @@ body {
 }
 
 .data-table .trip-date,
-.data-table .trip-route {
+.data-table .trip-route,
+.data-table .trip-km,
+.data-table .trip-commission {
   cursor: text;
 }
 
 .data-table .trip-date input.inline-edit,
-.data-table .trip-route select.inline-edit {
+.data-table .trip-route select.inline-edit,
+.data-table .trip-km input.inline-edit,
+.data-table .trip-commission input.inline-edit {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--primary);
@@ -2151,8 +2155,8 @@ body {
               <th>司机</th>
               <th>线路（双击编辑）</th>
               <th>箱号（双击编辑）</th>
-              <th class="num">公里数</th>
-              <th class="num">提成（元）</th>
+              <th class="num">公里数（双击编辑）</th>
+              <th class="num">提成（双击编辑）</th>
               <th>备注（双击编辑）</th>
               <th>更新时间</th>
               <th class="op"></th>
@@ -3620,7 +3624,11 @@ body {
       var dateCell = e.target.closest('.trip-date[data-trip]');
       if (dateCell) { e.preventDefault(); editTripDate(dateCell); return; }
       var routeCell = e.target.closest('.trip-route[data-trip]');
-      if (routeCell) { e.preventDefault(); editTripRoute(routeCell); }
+      if (routeCell) { e.preventDefault(); editTripRoute(routeCell); return; }
+      var kmCell = e.target.closest('.trip-km[data-trip]');
+      if (kmCell) { e.preventDefault(); editTripNumber(kmCell, 'km'); return; }
+      var commissionCell = e.target.closest('.trip-commission[data-trip]');
+      if (commissionCell) { e.preventDefault(); editTripNumber(commissionCell, 'commission'); }
     });
 
     refreshData();
@@ -4066,8 +4074,10 @@ body {
             esc(trip.route_name) + '</td>' +
           '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 仅字母数字">' +
             esc(trip.container_no || '') + '</td>' +
-          '<td class="num">' + fmt2(trip.km) + '</td>' +
-          '<td class="num">' + yuan(trip.commission) + '</td>' +
+          '<td class="num trip-km" data-trip="' + trip.id + '" title="双击编辑公里数">' +
+            fmt2(trip.km) + '</td>' +
+          '<td class="num trip-commission" data-trip="' + trip.id + '" title="双击编辑提成">' +
+            yuan(trip.commission) + '</td>' +
           '<td class="trip-note" data-trip="' + trip.id + '" title="双击编辑">' +
             esc(trip.note || '') + '</td>' +
           '<td class="trip-updated">' + esc(trip.updated_at || '—') + '</td>' +
@@ -5213,6 +5223,48 @@ body {
         input.removeEventListener('blur', finish);
         renderTrips();
       }
+    });
+  }
+
+  /** 双击公里 / 提成单元格 → 内联填数字（留空视为 0） */
+  function editTripNumber(cell, field) {
+    var tripId = Number(cell.dataset.trip);
+    var trip = db.trips.find(function (t) { return t.id === tripId; });
+    if (!trip) return;
+
+    var isKm = field === 'km';
+    var oldValue = Number(trip[field]) || 0;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.inputMode = 'decimal';
+    input.value = String(oldValue);
+    input.className = 'inline-edit';
+    input.style.width = '100%';
+    input.style.textAlign = 'right';
+    input.placeholder = isKm ? '公里' : '提成';
+
+    cell.innerHTML = '';
+    cell.appendChild(input);
+    input.focus();
+    input.select();
+
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      var raw = input.value.replace(/[^0-9.\-]/g, '');
+      var v = raw === '' ? 0 : Number(raw);
+      if (isNaN(v)) v = 0;
+      v = round2(v);
+      if (v !== oldValue) trip.updated_at = tripStamp();
+      trip[field] = v;
+      saveLocal();
+      renderPage();
+    }
+    input.addEventListener('blur', finish);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { done = true; renderTrips(); }
     });
   }
 
