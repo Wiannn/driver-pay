@@ -1222,7 +1222,7 @@ function renderCfgTags() {
     if (!locked) {
       if (cfgGroupAdding) {
         html += '<div class="cfg-group-add is-open">' +
-          '<input type="text" id="cfgGroupNewInput" maxlength="16" placeholder="新分组名称，例如 超外系">' +
+          '<input type="text" id="cfgGroupNewInput" maxlength="16" placeholder="新分组名称，例如 临港系">' +
           '<button type="button" data-group-create="1">确定</button>' +
           '<button type="button" data-group-cancel="1">取消</button>' +
           '</div>';

@@ -132,14 +132,10 @@
         ],
         // 提 / 还目的地的区域分组（可自由增删，主要影响地图分组）
         dest_pick_groups: [
-          { id: 'zone-cw', label: '超外系', desc: '超外区域的目的地',
-            members: [] },
           { id: 'zone-ab', label: '外一外二系', desc: '靠近外一外二的目的地',
             members: ['德威八分', '东森', '外一', '外二', '外通'] },
           { id: 'zone-cd', label: '外四外五系', desc: '靠近外四外五的目的地',
             members: ['外四', '外五'] },
-          { id: 'zone-wn', label: '外内系', desc: '外内区域的目的地',
-            members: [] },
           { id: 'zone-ys', label: '洋山系', desc: '独立计算公里的洋山区域',
             members: ['沧海路', '洋山', '洋山（查验）'] },
         ],
@@ -177,10 +173,8 @@
 
   /** 标准分组名称 → 内置 id：同名分组一律合并到内置组，颜色才不会乱 */
   var BUILTIN_GROUP_IDS = {
-    '超外系': 'zone-cw',
     '外一外二系': 'zone-ab',
     '外四外五系': 'zone-cd',
-    '外内系': 'zone-wn',
     '洋山系': 'zone-ys',
   };
 
@@ -279,7 +273,7 @@
     return false;
   }
 
-  /** 有公里规则的内置区域；其余分组（超外系、外内系、自建组）公里留白 */
+  /** 有公里规则的内置区域；其余分组（自建组）公里留白 */
   var KM_GROUP_IDS = ['zone-ab', 'zone-cd', 'zone-ys'];
 
   /** 内置分组的基准地点：组内没单独登记公里的地点，跟随基准地点的公里 */
@@ -300,11 +294,10 @@
     return null;
   }
 
-  /** 该分组是否按「远 10 公里」处理（洋山系 / 超外系） */
+  /** 该分组是否按「远 10 公里」处理（洋山系） */
   function isFarGroup(group) {
     if (!group) return false;
-    return group.id === 'zone-ys' || group.label === '洋山系' ||
-      group.id === 'zone-cw' || group.label === '超外系';
+    return group.id === 'zone-ys' || group.label === '洋山系';
   }
 
   /** 按 id 找分组（进 / 提还两套一起查） */
@@ -340,7 +333,7 @@
     // 分组自己设了公里（如「新库130」组：新库 130 / 东库自动 120）
     var groupKm = groupKmValue(origin, group);
     if (groupKm !== null) return groupKm;
-    // 非内置区域（超外系 / 外内系 / 自建组）没有基准，留空手填
+    // 非内置区域（自建组）没有基准，留空手填
     if (!gid || KM_GROUP_IDS.indexOf(gid) < 0) return null;
     return groupAnchorKm(origin, gid);
   }
@@ -360,7 +353,7 @@
       }
       // 自己没登记公里就跟随所在分组（例如 创元六 在外四外五系 → 按外四/外五算）
       var km = resolveDestKm(origin, s.dest);
-      // 没有基准的分组（超外系 / 外内系 / 自建组）→ 留白，交给人手填
+      // 没有基准的分组（自建组）→ 留白，交给人手填
       if (km === null) {
         unknown = true;
       } else {
@@ -442,6 +435,22 @@
     return route && !Array.isArray(route.steps) && typeof route.name === 'string';
   }
 
+  /** 清理老版本遗留的空内置组（超外系 zone-cw / 外内系 zone-wn）。
+   *  历史上这两个内置组从来没有默认成员，用户存的数据里大概率也是空的 → 直接删掉。
+   *  如果有人真往里加过成员 → 保留它（当作用户自建组，颜色从 palette 重新挑）。
+   *  只过滤：id 匹配 zone-cw/zone-wn 或 label 匹配超外系/外内系 且 members 为空的。 */
+  function cleanupLegacyEmptyBuiltins(list) {
+    if (!Array.isArray(list)) return [];
+    var legacyIds = ['zone-cw', 'zone-wn'];
+    var legacyLabels = ['超外系', '外内系'];
+    return list.filter(function (g) {
+      if (!g) return false;
+      var isLegacy = legacyIds.indexOf(g.id) >= 0 || legacyLabels.indexOf(g.label) >= 0;
+      if (!isLegacy) return true;
+      return Array.isArray(g.members) && g.members.length > 0;
+    });
+  }
+
   function loadLocalDb() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
@@ -481,23 +490,22 @@
           members: (old && Array.isArray(old.members)) ? old.members : fresh.members.slice(),
         };
       });
-      // 仅在「旧版本升级到有提还分组」时补一次默认内置组（超外系 / 外内系）。
+      // 仅在「旧版本升级到有提还分组」时补一次默认内置组。
       // 之后用户删掉了就删掉，绝不能在每次加载时再补回来。
       if (!Array.isArray(rawCfg.dest_pick_groups)) {
         def.configs.dest_pick_groups.forEach(function (dg) {
           if (!cfg.dest_pick_groups.some(function (g) { return g.id === dg.id; })) {
-            var pos = cfg.dest_pick_groups.map(function (g) { return g.id; }).indexOf('zone-ys');
-            if (dg.id === 'zone-cw') pos = 0;
-            else if (dg.id === 'zone-wn' && pos < 0) pos = cfg.dest_pick_groups.length;
-            cfg.dest_pick_groups.splice(pos < 0 ? cfg.dest_pick_groups.length : pos, 0,
-              JSON.parse(JSON.stringify(dg)));
+            cfg.dest_pick_groups.push(JSON.parse(JSON.stringify(dg)));
           }
         });
       }
       if (!cfg.coords || typeof cfg.coords !== 'object') cfg.coords = {};
-      // 同名分组归并（历史上自建过「超外系」等同名组会残留，导致地图圆点取到兜底色）
+      // 同名分组归并（历史上自建过同名组会残留，导致地图圆点取到兜底色）
       cfg.dest_groups = mergeSameLabelGroups(cfg.dest_groups);
       cfg.dest_pick_groups = mergeSameLabelGroups(cfg.dest_pick_groups);
+      // 清理老版本遗留的空内置组（超外系 / 外内系）：有成员的保留当自建组
+      cfg.dest_pick_groups = cleanupLegacyEmptyBuiltins(cfg.dest_pick_groups);
+      cfg.dest_groups = cleanupLegacyEmptyBuiltins(cfg.dest_groups);
       // 还原被上一版迁移弄丢的提还分组归属（同时清掉进分组里混入的提还地点）
       restorePickAssignments(cfg);
       // 同一地点只归一个组 + 给分组补固定颜色（顺序怎么变都不影响颜色）

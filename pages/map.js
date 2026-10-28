@@ -616,18 +616,24 @@ definePage('map', {
 /* ================= 地图 ================= */
 var MAP_COLORS = {
   origin: '#111827',
-  'zone-cw': '#7c3aed',
   'zone-ab': '#2563eb',
-  'zone-cd': '#16a34a',
-  'zone-wn': '#0d9488',
-  'zone-ys': '#f59e0b',
+  'zone-cd': '#f59e0b',
+  'zone-ys': '#16a34a',
   ungrouped: '#94a3b8',
 };
 
-/** 自定义分组的可选配色（按顺序取未被占用的） */
+/** 自定义分组的可选配色（色相均匀，避免蓝青扎堆；按顺序取未被占用的） */
 var GROUP_PALETTE = [
-  '#7c3aed', '#2563eb', '#16a34a', '#0d9488', '#f59e0b',
-  '#db2777', '#0891b2', '#65a30d', '#a16207', '#be123c',
+  '#ef4444', // 红
+  '#fb923c', // 亮橙
+  '#84cc16', // 黄绿
+  '#22c55e', // 草绿
+  '#14b8a6', // 青绿
+  '#06b6d4', // 亮青
+  '#60a5fa', // 天蓝
+  '#a78bfa', // 亮紫
+  '#ec4899', // 粉
+  '#be123c', // 深红
 ];
 
 /** 分组的显示颜色：内置组按 id（或标准名称）取固定色；自建组用自己存的 color，绝不按位置取色 */
@@ -635,7 +641,7 @@ function groupColor(group, idx) {
   if (!group) return MAP_COLORS.ungrouped;
   var byId = MAP_COLORS[group.id];
   if (byId) return byId;
-  // 历史数据里可能残留 id 随机的同名分组（如「超外系」），按名称兜底，保证颜色稳定
+  // 历史数据里可能残留 id 随机的同名分组（如用户自建过「外一外二系」），按名称兜底，保证颜色稳定
   var byLabel = MAP_COLORS[BUILTIN_GROUP_IDS[group.label]];
   if (byLabel) return byLabel;
   if (group.color) return group.color;
@@ -824,7 +830,7 @@ function getPlaceGroups() {
       return !assigned[n] && (g.members || []).indexOf(n) >= 0;
     });
     names.forEach(function (n) { assigned[n] = true; });
-    // 空分组也显示（如刚建的「超外系」），保持与目的地管理同步
+    // 空分组也显示，保持与目的地管理同步
     out.push({ id: g.id, label: g.label, color: groupColor(g, gi), names: sortNamesByName(names) });
   });
   var rest = dests.filter(function (n) { return !assigned[n]; });
