@@ -5,6 +5,7 @@
   document.addEventListener('DOMContentLoaded', init);
 
   function init() {
+    mountPages();
     loadDb();
 
     var now = new Date();
@@ -48,8 +49,6 @@
       $('tripBuildSteps').addEventListener('click', onTripBuildStepChange);
       $('tripBuildSteps').addEventListener('change', onTripBuildStepChange);
     }
-
-    $('fuelForm').addEventListener('submit', saveFuel);
 
     $('driverForm').addEventListener('submit', saveDriver);
     $('driverCancel').addEventListener('click', resetDriverForm);

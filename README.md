@@ -103,9 +103,10 @@
 | `css/map.css` | 地图页 |
 | `js/core.js` | 常量、工具函数、localStorage 读写与数据迁移 |
 | `js/data.js` | 数据增删改查 |
+| `js/pages.js` | 页面注册与挂载（把 `pages/` 里的结构注入到主页面） |
+| `pages/fuel.js` | 加油录入页（结构 + 逻辑，一页一文件） |
 | `js/settlement.js` | 提成/公里/节油计算 + 月度结算页 |
 | `js/trips.js` | 趟次录入 + 表格行内编辑 |
-| `js/fuel.js` | 加油录入 |
 | `js/drivers.js` | 司机信息 |
 | `js/routes.js` | 线路价目 |
 | `js/configs.js` | 管理始发地 / 进港区 / 提还堆场 |
@@ -117,7 +118,9 @@
 | `司机工资结算.单文件备份.html` | 拆分前的单文件版本，兜底用，平时不用改 |
 | `supabase_setup.sql` | Supabase 建表脚本（上云时用，目前不用） |
 
-> 拆分规则：`js/` 里的文件共用同一个全局作用域，`init.js` 必须最后加载；新增页面就新建一个 `js/页面.js` 并在 html 里加一行 `<script>`（放在 `init.js` 之前）。
+> 拆分规则：`js/` 里的文件共用同一个全局作用域，`init.js` 必须最后加载。
+> 页面代码按「一页一文件」放在 `pages/` 下：每个文件用 `definePage('页面id', { html, css, init })` 定义自己的结构、样式和事件，主 html 里只留一个空的 `<section class="page" id="page-xxx">`。
+> 新增页面就新建 `pages/页面.js` 并在 html 里加一行 `<script src="pages/页面.js">`（放在 `js/init.js` 之前）。目前已完成迁移：加油录入（`pages/fuel.js`）。
 
 ## 🔧 管理目的地/始发地/基础公里
 

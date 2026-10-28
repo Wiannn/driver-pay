@@ -141,60 +141,8 @@
   </section>
 
   <!-- ========== 加油录入 ========== -->
-  <section class="page" id="page-fuel">
-    <div class="page-head">
-      <div>
-        <h2>加油录入</h2>
-        <p class="sub">加油站和仓库的油都计入实际加油量，一起参与节油计算。</p>
-      </div>
-    </div>
-
-    <form class="entry-card" id="fuelForm">
-      <div class="field">
-        <label for="fuelDate">日期</label>
-        <input type="date" id="fuelDate" required>
-      </div>
-      <div class="field">
-        <label for="fuelDriver">司机</label>
-        <select id="fuelDriver" required></select>
-      </div>
-      <div class="field">
-        <label for="fuelPlace">加油地点</label>
-        <select id="fuelPlace" required>
-          <option value="加油站">加油站</option>
-          <option value="仓库">仓库</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="fuelLiters">加油升数（升）</label>
-        <input type="number" id="fuelLiters" step="0.01" min="0.01" placeholder="0.00" required>
-      </div>
-      <div class="field field-submit">
-        <button type="submit" class="btn btn-primary">保存加油</button>
-      </div>
-    </form>
-
-    <div class="table-card">
-      <div class="table-head">
-        <h3>本月加油记录</h3>
-        <span class="table-sum" id="fuelSummary"></span>
-      </div>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>司机</th>
-              <th>地点</th>
-              <th class="num">升数（升）</th>
-              <th class="op"></th>
-            </tr>
-          </thead>
-          <tbody id="fuelRows"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+  <!-- 页面结构与逻辑都在 pages/fuel.js -->
+  <section class="page" id="page-fuel"></section>
 
   <!-- ========== 出勤登记 ========== -->
   <section class="page" id="page-attendance">
@@ -449,9 +397,10 @@
 <div class="toast" id="toast"></div>
   <script src="js/core.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/pages.js"></script>
   <script src="js/settlement.js"></script>
   <script src="js/trips.js"></script>
-  <script src="js/fuel.js"></script>
+  <script src="pages/fuel.js"></script>
   <script src="js/drivers.js"></script>
   <script src="js/routes.js"></script>
   <script src="js/configs.js"></script>
