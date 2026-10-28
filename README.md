@@ -38,6 +38,7 @@
 
 ### 趟次录入
 - 月份筛选 + 司机筛选
+- 分页：每页固定 12 条，支持「跳至 X 页」直接跳转；切换月份/司机自动回第一页
 - 两种模式：选模板 / 直接搭建（随时切）
 - **箱号列**：双击编辑，仅允许字母数字，自动转大写
 - **备注列**：双击编辑，支持任意文字
@@ -56,7 +57,7 @@
 ### 结算与导出
 - 按月份生成每位司机的工资结算卡
 - 自动算：上班天数（优先取出勤登记）、总公里、总提成、总加油、实发工资
-- 一键导出 Excel（CSV）
+- 一键导出 Excel（xlsx）
 - 导出内容含：结算汇总（上班/休息/台风天数）、出勤明细、趟次明细、加油明细、全司机汇总
 
 ### 地图（需高德 Key）
@@ -69,17 +70,14 @@
 - 未配置 Key 时地图页显示申请指引，其余功能不受影响
 
 ### 备份恢复
+- 按钮在「月度结算」页右上角：导出备份 / 恢复备份
 - 导出 JSON 备份文件（包含全部数据，含坐标）
-- 从 JSON 恢复
-- 建议定期导出一份备份
+- 恢复备份会覆盖当前全部数据，建议定期导出
 
 ## 🚀 使用方式
 
 ### 本地使用（最简单）
-直接双击 `司机工资结算.html`，任何现代浏览器都行。
-
-> 双击打开时需要同目录下的 `css/` 和 `js/` 文件夹一起存在，**不要单独拷贝 html 文件**；
-> 想只带一个文件走，用 `司机工资结算.单文件备份.html`（功能完全一样）。
+直接双击 `司机工资结算.html`，任何现代浏览器都行。单文件，不需要同目录的其他文件。
 
 > 如果给高德 Key 设置了**域名白名单**，双击打开的 `file://` 页面没有域名，会被高德拒绝，地图页会提示加载失败。
 > 这时把 `localhost` 和 `127.0.0.1` 也加进白名单，然后用本地服务（`http://localhost:端口/司机工资结算.html`）打开；
@@ -88,39 +86,36 @@
 ### GitHub Pages 在线使用
 打开：`https://wiannn.github.io/driver-pay/司机工资结算.html`
 
-**注意**：每个人打开自己的浏览器用自己的数据，因为 localStorage 只存在本地。多人共享数据需要上云（见下方）。
+**注意**：每个人打开自己的浏览器用自己的数据，因为 localStorage 只存在本地，多人之间不共享。
+
+### 改代码（开发）
+编辑 `src.html`、`css/`、`js/`、`pages/` 下的源码，改完运行 `build.ps1` 重新生成 `司机工资结算.html`，再一起提交。
 
 ## 📁 项目文件
 
 | 文件 | 说明 |
 |------|------|
-| `司机工资结算.html` | 入口页面（只放页面骨架 + 按顺序引入 css / js） |
-| `css/base.css` | 变量、顶栏、页面容器、规则条 |
-| `css/pages.css` | 结算卡片、表单、表格等通用样式 |
-| `css/routes.css` | 线路价目的步骤编辑器 |
-| `css/attendance.css` | 出勤月历 |
-| `css/modal.css` | 配置管理、坐标弹窗 |
-| `css/map.css` | 地图页 |
-| `js/core.js` | 常量、工具函数、localStorage 读写与数据迁移 |
-| `js/data.js` | 数据增删改查 |
-| `js/pages.js` | 页面注册与挂载（把 `pages/` 里的结构注入到主页面） |
-| `pages/fuel.js` | 加油录入页（结构 + 逻辑，一页一文件） |
-| `js/settlement.js` | 提成/公里/节油计算 + 月度结算页 |
-| `js/trips.js` | 趟次录入 + 表格行内编辑 |
-| `js/drivers.js` | 司机信息 |
-| `js/routes.js` | 线路价目 |
-| `js/configs.js` | 管理始发地 / 进港区 / 提还堆场 |
-| `js/attendance.js` | 出勤登记 |
-| `js/map.js` | 地图页（高德） |
-| `js/backup.js` | 备份导出 / 恢复 |
-| `js/xlsx.js` | Excel(xlsx) 导出 |
-| `js/init.js` | 初始化、月份、页面切换（最后加载） |
-| `司机工资结算.单文件备份.html` | 拆分前的单文件版本，兜底用，平时不用改 |
-| `supabase_setup.sql` | Supabase 建表脚本（上云时用，目前不用） |
+| `司机工资结算.html` | **自动生成的单文件**（部署和双击都用它），由 build.ps1 生成，不要直接改 |
+| `src.html` | 页面骨架源码：顶栏、导航、各页空 section、按顺序引入 css/js |
+| `build.ps1` | 打包脚本：把 src.html 引用的 css/js 全部内联成单文件 |
+| `index.html` | 根路径跳转页（`/driver-pay/` → 司机工资结算.html） |
+| `css/base.css` | 全局变量、顶栏、按钮、toast |
+| `css/pages.css` | 多页共用样式：录入表单、表格卡片、空状态等 |
+| `js/core.js` | 常量（工资规则、高德 Key）、工具函数、localStorage 存储与迁移、公里/提成计算规则 |
+| `js/data.js` | 数据增删改查（addTrip / removeDriver 等） |
+| `js/pages.js` | definePage / mountPages 页面挂载框架 |
+| `js/init.js` | 初始化、月份切换、页面切换（最后加载） |
+| `pages/settlement.js` | 月度结算页（含 Excel 导出、数据备份） |
+| `pages/trips.js` | 趟次录入页（分页、双模式搭建、行内编辑） |
+| `pages/fuel.js` | 加油录入页 |
+| `pages/attendance.js` | 出勤登记页 |
+| `pages/map.js` | 地图页（高德） |
+| `pages/drivers.js` | 司机信息页 |
+| `pages/routes.js` | 线路价目页（含始发地 / 进港区 / 提还堆场管理弹窗） |
 
-> 拆分规则：`js/` 里的文件共用同一个全局作用域，`init.js` 必须最后加载。
-> 页面代码按「一页一文件」放在 `pages/` 下：每个文件用 `definePage('页面id', { html, css, init })` 定义自己的结构、样式和事件，主 html 里只留一个空的 `<section class="page" id="page-xxx">`。
-> 新增页面就新建 `pages/页面.js` 并在 html 里加一行 `<script src="pages/页面.js">`（放在 `js/init.js` 之前）。目前已完成迁移：加油录入（`pages/fuel.js`）。
+> 拆分规则：所有 js 共用一个全局作用域，`js/init.js` 最后加载。
+> 页面代码「一页一文件」：每个 `pages/页面.js` 用 `definePage('页面id', { html, css, init })` 定义自己的结构、样式和事件，骨架里只留一个空的 `<section class="page" id="page-xxx">`。
+> 新增页面：新建 `pages/页面.js`，在 `src.html` 里加空 section 和一行 `<script src="pages/页面.js">`（放在 `js/init.js` 之前），再跑 `build.ps1`。
 
 ## 🔧 管理目的地/始发地/基础公里
 
@@ -145,7 +140,7 @@
 2. 「应用管理」→「创建新应用」→ 名称随便填
 3. 在该应用下「添加 Key」→ **服务平台选「Web端（JS API）」**
 4. 复制生成的 **Key** 和 **安全密钥（jscode）**
-5. 打开 `司机工资结算.html`，搜索 `AMAP_KEY`，填写两行：
+5. 打开 `js/core.js`，搜索 `AMAP_KEY`，填写两行：
    ```javascript
    var AMAP_KEY = '你的 Key';
    var AMAP_SECURITY_CODE = '你的安全密钥';
@@ -154,30 +149,19 @@
 
 建议在控制台给 Key 配置 **域名白名单**（`wiannn.github.io`），防止被盗用配额。
 
-## ☁️ 上云（多人共享数据）
+## ☁️ 多人共享数据
 
-当前版本数据只存在浏览器本地。要多人共享同一份数据：
-
-1. 注册 https://supabase.com
-2. 创建项目（Region 选 Singapore，国内延迟低）
-3. SQL Editor → 粘贴 `supabase_setup.sql` → Run
-4. Settings → API → 复制 Project URL 和 anon public key
-5. 打开 `司机工资结算.html`，替换第 1188-1189 行：
-   ```javascript
-   var SUPABASE_URL = 'https://你的项目.supabase.co';
-   var SUPABASE_ANON_KEY = '你的anon key';
-   ```
-
-之后每个人打开同一个 URL 的网页，数据实时同步。
+当前版本数据只存在浏览器本地，没有云端同步（Supabase 方案已从代码中移除）。如以后需要多人共享，再重新引入。
 
 ## 🛠️ 技术栈
 
 - 纯原生 HTML + CSS + JavaScript，无任何第三方依赖
-- 数据存储：localStorage（当前）→ Supabase（可选上云）
-- 构建：无构建步骤，直接用
+- 数据存储：localStorage
+- 构建：`build.ps1` 把多文件源码内联成单文件（解决 GitHub Pages 国内访问慢）
 
 ## 📝 更新日志
 
+- v1.1 2026-10-28：代码按「一页一文件」拆分到 `pages/`；新增 `build.ps1` 打包成单文件（解决 GitHub Pages 加载慢）；趟次分页（12 条/页 + 跳页）；备份按钮移到结算页右上角；清理 Supabase 残留
 - v1.0 2026-10-26：初始版本
   - 司机管理、路线管理、趟次录入、加油录入、出勤登记、结算导出
   - 目的地区域分组、基础公里自动查表、同区域去重算公里
