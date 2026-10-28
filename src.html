@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>司机工资结算</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">薪</span>
+    <div class="brand-text">
+      <h1>司机工资结算</h1>
+      <p>趟次 · 加油 · 月度工资</p>
+    </div>
+  </div>
+  <nav class="nav" id="nav">
+    <button type="button" class="nav-btn is-active" data-page="settlement">月度结算</button>
+    <button type="button" class="nav-btn" data-page="trips">趟次录入</button>
+    <button type="button" class="nav-btn" data-page="fuel">加油录入</button>
+    <button type="button" class="nav-btn" data-page="attendance">出勤登记</button>
+    <button type="button" class="nav-btn" data-page="map">地图</button>
+    <button type="button" class="nav-btn" data-page="drivers">司机信息</button>
+    <button type="button" class="nav-btn" data-page="routes">线路价目</button>
+  </nav>
+  <div class="month-box" id="monthBox">
+    <label for="monthSelect">结算月份</label>
+    <div class="month-control">
+      <button type="button" class="month-step" id="monthPrev" aria-label="上个月">‹</button>
+      <select id="monthSelect" aria-label="结算月份"></select>
+      <button type="button" class="month-step" id="monthNext" aria-label="下个月">›</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ========== 月度结算 ========== -->
+  <!-- 页面结构、样式、逻辑（含 Excel 导出、数据备份）都在 pages/settlement.js -->
+  <section class="page is-active" id="page-settlement"></section>
+
+  <!-- ========== 趟次录入 ========== -->
+  <!-- 页面结构、样式、逻辑（含分页、行内编辑）都在 pages/trips.js -->
+  <section class="page" id="page-trips"></section>
+
+  <!-- ========== 加油录入 ========== -->
+  <!-- 页面结构与逻辑都在 pages/fuel.js -->
+  <section class="page" id="page-fuel"></section>
+
+  <!-- ========== 出勤登记 ========== -->
+  <!-- 页面结构与逻辑都在 pages/attendance.js -->
+  <section class="page" id="page-attendance"></section>
+
+  <!-- ========== 地图 ========== -->
+  <!-- 页面结构、样式、逻辑（含坐标弹窗、右键菜单）都在 pages/map.js -->
+  <section class="page" id="page-map"></section>
+
+  <!-- ========== 司机信息 ========== -->
+  <!-- 页面结构与逻辑都在 pages/drivers.js -->
+  <section class="page" id="page-drivers"></section>
+
+  <!-- ========== 线路价目 ========== -->
+  <!-- 页面结构、样式、逻辑（含管理弹窗）都在 pages/routes.js -->
+  <section class="page" id="page-routes"></section>
+
+  <!-- ========== 坐标设置弹窗 ========== -->
+  <div class="modal-mask is-hidden" id="coordModal">
+    <div class="modal modal-coord">
+      <div class="modal-head">
+        <h3 id="coordModalTitle">设置坐标</h3>
+        <button type="button" class="modal-close" id="coordModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="cfg-hint">在地图上点击该地点的实际位置，或先用下面的搜索定位到大致位置，再点地图微调。</div>
+        <div class="map-search" id="coordSearchWrap">
+          <input type="text" id="coordSearchInput" placeholder="搜索路名 / 堆场名，例如：外高桥六期">
+          <button type="button" class="btn btn-ghost" id="coordSearchBtn">搜索</button>
+          <div class="map-search-list is-hidden" id="coordSearchList"></div>
+        </div>
+        <div class="coord-map" id="coordMap"></div>
+        <div class="coord-value" id="coordValue">尚未选择位置</div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="coordClearBtn">清除坐标</button>
+        <button type="button" class="btn btn-primary" id="coordSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 右键菜单 ========== -->
+  <div class="map-menu is-hidden" id="mapMenu">
+    <button type="button" data-map-menu="pick">在地图上点选</button>
+    <button type="button" data-map-menu="modal">用弹窗精确设置</button>
+    <button type="button" data-map-menu="clear">清除坐标</button>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+  <script src="js/core.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/pages.js"></script>
+  <script src="pages/settlement.js"></script>
+  <script src="pages/trips.js"></script>
+  <script src="pages/fuel.js"></script>
+  <script src="pages/drivers.js"></script>
+  <script src="pages/routes.js"></script>
+  <script src="pages/attendance.js"></script>
+  <script src="pages/map.js"></script>
+  <script src="js/init.js"></script>
+</body>
+</html>
