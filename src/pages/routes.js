@@ -161,21 +161,28 @@ definePage('routes', {
   min-width: 140px;
 }
 
-/* 自定义模式下目的地改成文本输入 */
-.step-row input.step-dest-input {
-  flex: 1 1 auto;
-  min-width: 140px;
-  height: 34px;
-  padding: 0 10px;
+/* 自定义模式：整个步骤区是一个 textarea */
+.custom-route-text {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 9px;
   background: #fff;
   font-family: inherit;
   font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink);
   outline: none;
+  resize: vertical;
 }
 
-.step-row input.step-dest-input:focus {
+.custom-route-text::placeholder {
+  color: #9aa7bb;
+  white-space: pre-line;
+}
+
+.custom-route-text:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
 }
@@ -610,10 +617,7 @@ definePage('routes', {
     $('stepAddBtn').addEventListener('click', addStepRow);
     $('routeOrigin').addEventListener('change', updateRoutePreview);
     $('routeOriginCustom').addEventListener('input', updateRoutePreview);
-    // 自定义模式下目的地是 input，也要触发预览
-    $('stepsWrap').addEventListener('input', function (e) {
-      if (e.target.matches('[data-role="destinput"]')) updateRoutePreview();
-    });
+    // 自定义模式下 textarea 的 input 事件在 renderStepsEditor 里动态绑定
     // 步骤编辑器事件委托（删除/动作切换）
     $('stepsWrap').addEventListener('click', onStepChange);
     $('stepsWrap').addEventListener('change', onStepChange);
@@ -761,24 +765,31 @@ function fillOriginSelect() {
   if ((db.configs.origins || []).indexOf(current) >= 0) select.value = current;
 }
 
-/** 渲染步骤编辑器；steps 为空时自动加 1 段；根据 state.routeMode 决定目的地是下拉还是输入框 */
+/** 渲染步骤编辑器；steps 为空时自动加 1 段。
+ * 组合模式：进/提 下拉 + 目的地下拉。
+ * 自定义模式：一个 textarea，每行「动作 目的地」，回车换行。 */
 function renderStepsEditor(steps) {
-  var list = steps && steps.length ? steps : [{ action: '进', dest: '' }];
-  var wrap = $('stepsWrap');
   var isCustom = state.routeMode === 'custom';
+  var wrap = $('stepsWrap');
+  if (isCustom) {
+    var text = (steps || []).map(function (s) {
+      return (s.action || '进') + ' ' + (s.dest || '');
+    }).join('\n');
+    wrap.innerHTML =
+      '<textarea class="custom-route-text" data-role="customsteps"' +
+      ' placeholder="每行一段，例如：\n进 洋山\n提 外一\n还 沧海路\n落 堆场A\n或者直接写目的地（默认按 进 处理）：\n洋山\n外一"' +
+      '>' + esc(text) + '</textarea>';
+    wrap.querySelector('[data-role="customsteps"]').addEventListener('input', updateRoutePreview);
+    updateRoutePreview();
+    return;
+  }
+  var list = steps && steps.length ? steps : [{ action: '进', dest: '' }];
   var html = '';
   list.forEach(function (step, idx) {
-    var destHtml;
-    if (isCustom) {
-      destHtml =
-        '<input type="text" class="step-dest-input" data-role="destinput"' +
-        ' placeholder="输入目的地名称" value="' + esc(step.dest || '') + '">';
-    } else {
-      destHtml =
-        '<select class="step-dest" data-role="dest">' +
-          getDestOptionsGroupedHtml(step.action, step.dest) +
-        '</select>';
-    }
+    var destHtml =
+      '<select class="step-dest" data-role="dest">' +
+        getDestOptionsGroupedHtml(step.action, step.dest) +
+      '</select>';
     html +=
       '<div class="step-row" data-step-idx="' + idx + '">' +
       '<span class="step-idx">' + (idx + 1) + '</span>' +
@@ -794,6 +805,27 @@ function renderStepsEditor(steps) {
   });
   wrap.innerHTML = html;
   updateRoutePreview();
+}
+
+/** 解析自定义模式下 textarea 里的路线文本 */
+function parseCustomRouteText(text) {
+  var result = [];
+  (text || '').split(/[\n\r]+/).forEach(function (line) {
+    line = String(line).trim();
+    if (!line) return;
+    // 去掉开头序号或连字符（如 "1. 进 洋山" / "- 提 外一"）
+    line = line.replace(/^\s*\d+[\.、]\s*/, '').replace(/^\s*[-·•]\s*/, '');
+    // 动作关键字：进 / 提 / 还 / 落 / Pick / Leave ...
+    var m = line.match(/^(进|提|还|落)[\s:：\-\.]+(.*)$/);
+    var action = '进';
+    var dest = line;
+    if (m) {
+      action = m[1];
+      dest = m[2].trim();
+    }
+    if (dest) result.push({ action: action, dest: dest });
+  });
+  return result;
 }
 
 function getDestOptionsForAction(action) {
@@ -834,17 +866,19 @@ function getDestOptionsGroupedHtml(action, currentVal) {
   return html;
 }
 
-/** 从 DOM 收集当前 steps 值（组合模式从 select 取、自定义模式从 input 取） */
+/** 从 DOM 收集当前 steps 值（自定义模式从 textarea 解析，组合模式从 select 取） */
 function collectStepsFromDom() {
+  if (state.routeMode === 'custom') {
+    var ta = document.querySelector('#stepsWrap [data-role="customsteps"]');
+    return parseCustomRouteText(ta ? ta.value : '');
+  }
   var rows = document.querySelectorAll('#stepsWrap .step-row');
   var steps = [];
   rows.forEach(function (row) {
     var actionSel = row.querySelector('[data-role="action"]');
     var destSel = row.querySelector('[data-role="dest"]');
-    var destInput = row.querySelector('[data-role="destinput"]');
-    var dest = destSel ? destSel.value.trim() : (destInput ? destInput.value.trim() : '');
-    if (actionSel && dest) {
-      steps.push({ action: actionSel.value, dest: dest });
+    if (actionSel && destSel && destSel.value.trim()) {
+      steps.push({ action: actionSel.value, dest: destSel.value.trim() });
     }
   });
   return steps;
@@ -875,6 +909,7 @@ function applyRouteMode() {
   $('routeOriginCustom').classList.toggle('is-hidden', !isCustom);
   $('routeOrigin').required = !isCustom;
   $('routeOriginCustom').required = isCustom;
+  $('stepAddBtn').classList.toggle('is-hidden', isCustom);
   // 自定义模式下把 select 当前值带给 input，方便用户直接改
   if (isCustom && !$('routeOriginCustom').value) {
     $('routeOriginCustom').value = $('routeOrigin').value;
