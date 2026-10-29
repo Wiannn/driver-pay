@@ -43,6 +43,18 @@
     return (amount < 0 ? '-¥' : '¥') + fmt2(Math.abs(amount));
   }
 
+  /* 整数格式：不带小数（如 120 而非 120.00） */
+  var integerFormat = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
+
+  function fmt0(value) {
+    return integerFormat.format(Number(value) || 0);
+  }
+
+  function yuan0(value) {
+    var amount = Number(value) || 0;
+    return (amount < 0 ? '-¥' : '¥') + fmt0(Math.abs(amount));
+  }
+
   function round2(value) {
     var number = Number(value) || 0;
     return Math.round((number + (number >= 0 ? 1 : -1) * Number.EPSILON) * 100) / 100;

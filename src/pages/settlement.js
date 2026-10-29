@@ -349,11 +349,11 @@ function driverCard(driver) {
     '</div>' +
     '<div class="stat-grid">' +
     stat('上班天数', driver.days + ' 天') +
-    stat('出勤工资', yuan(dayWage)) +
-    stat('总公里数', fmt2(driver.km) + ' km') +
-    stat('提成合计', yuan(driver.commission)) +
+    stat('出勤工资', yuan0(dayWage)) +
+    stat('总公里数', fmt0(driver.km) + ' km') +
+    stat('提成合计', yuan0(driver.commission)) +
     stat('应加油量', fmt2(driver.expected_fuel) + ' L') +
-    stat('实际加油量', fmt2(driver.actual_fuel) + ' L') +
+    stat('实际加油量', fmt0(driver.actual_fuel) + ' L') +
     stat('节油量', fmt2(driver.saved_fuel) + ' L', negative ? 'warn' : '') +
     stat('节油奖励', yuan(driver.saving_amount), negative ? 'warn' : 'good') +
     '</div>' +
