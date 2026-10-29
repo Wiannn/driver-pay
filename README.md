@@ -119,7 +119,8 @@ npm run build
 | `src/js/core.js` | 常量（工资规则、高德 Key）、工具函数、localStorage 存储与迁移、公里/提成计算规则 |
 | `src/js/data.js` | 数据增删改查（addTrip / removeDriver 等） |
 | `src/js/pages.js` | definePage / mountPages 页面挂载框架 |
-| `src/js/init.js` | 初始化、月份切换、页面切换（最后加载） |
+| `src/js/init.js` | 初始化、月份切换、页面切换、Service Worker 注册（最后加载） |
+| `src/public/sw.js` | Service Worker：整页缓存到本地，再次打开秒开、断网可用（构建时原样复制到 `dist/sw.js`） |
 | `src/pages/settlement.js` | 月度结算页（含 Excel 导出、数据备份） |
 | `src/pages/trips.js` | 趟次录入页（分页、双模式搭建、行内编辑） |
 | `src/pages/fuel.js` | 加油录入页 |

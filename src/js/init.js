@@ -46,6 +46,19 @@
     refreshData();
     applyTripMode();
     renderPage();
+    registerServiceWorker();
+  }
+
+  /* ================= 离线缓存 ================= */
+  /** 线上注册 Service Worker：整页缓存到本地，第二次打开秒开、断网可用。
+   *  本地开发（localhost）不注册，避免缓存干扰热更新。 */
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    if (location.protocol !== 'https:' && location.protocol !== 'http:') return;
+    if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    });
   }
 
   function refreshData() {
