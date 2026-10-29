@@ -429,8 +429,10 @@
 
     var first = valid[0];
     var firstGroup = getDestGroupId(first.dest); // zone-ab / zone-cd / zone-ys
-    // 「还」「落」与「提」提成规则完全一致
-    var isPick = function (s) { return s.action === '提' || s.action === '还' || s.action === '落'; };
+    // 「还」与「提」提成规则一致；「落」单独固定 10 元，不按洋山 100 算
+    var isPick = function (s) { return s.action === '提' || s.action === '还'; };
+    var isDrop = function (s) { return s.action === '落'; };
+    var isMove = function (s) { return isPick(s) || isDrop(s); };
     var pickHasYangshan = valid.some(function (s, i) {
       return i > 0 && isPick(s) && getDestGroupId(s.dest) === 'zone-ys';
     });
@@ -445,6 +447,10 @@
       if (firstGroup === 'zone-ys') return 100;   // 提（还）洋山 = 100
       return 10;                                  // 提（还）外系 = 10
     }
+    // 纯落 1段：不论哪个系都是 10
+    if (valid.length === 1 && isDrop(first)) {
+      return 10;
+    }
     // 进 + 提 / 进 + 还（2段）
     if (valid.length === 2 && first.action === '进' && isPick(valid[1])) {
       // 提（还）洋山系 = 100（沧海路同洋山）
@@ -454,8 +460,12 @@
       // 进洋山 + 提外系 → 暂不存在，按 0
       return 0;
     }
+    // 进 + 落（2段）：固定 30（落不按洋山 100）
+    if (valid.length === 2 && first.action === '进' && isDrop(valid[1])) {
+      return 30;
+    }
     // 一进二提 / 一进还提（3段）：进外系 + 两个外系提 = 60
-    if (valid.length === 3 && first.action === '进' && isPick(valid[1]) && isPick(valid[2])) {
+    if (valid.length === 3 && first.action === '进' && isMove(valid[1]) && isMove(valid[2])) {
       if (pickHasYangshan) return 100;          // 含提洋山，按 100
       if (firstGroup !== 'zone-ys') return 60;  // 一进二提（外）= 60
       return 0;
