@@ -433,9 +433,9 @@
     var isPick = function (s) { return s.action === '提' || s.action === '还'; };
     var isDrop = function (s) { return s.action === '落'; };
     var isMove = function (s) { return isPick(s) || isDrop(s); };
-    var pickHasYangshan = valid.some(function (s, i) {
+    var ysPickCount = valid.filter(function (s, i) {
       return i > 0 && isPick(s) && getDestGroupId(s.dest) === 'zone-ys';
-    });
+    }).length;
 
     // 纯进1段
     if (valid.length === 1 && first.action === '进') {
@@ -464,10 +464,11 @@
     if (valid.length === 2 && first.action === '进' && isDrop(valid[1])) {
       return 30;
     }
-    // 一进二提 / 一进还提（3段）：进外系 + 两个外系提 = 60
+    // 一进二提 / 一进还提（3段）
     if (valid.length === 3 && first.action === '进' && isMove(valid[1]) && isMove(valid[2])) {
-      if (pickHasYangshan) return 100;          // 含提洋山，按 100
-      if (firstGroup !== 'zone-ys') return 60;  // 一进二提（外）= 60
+      if (ysPickCount >= 2) return 130;          // 提两个洋山系 = 100 + 30
+      if (ysPickCount === 1) return 100;          // 含一个提洋山 = 100
+      if (firstGroup !== 'zone-ys') return 60;    // 一进二提（外）= 60
       return 0;
     }
     return 0;
