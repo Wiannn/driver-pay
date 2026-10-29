@@ -103,9 +103,6 @@ definePage('trips', {
   min-width: 140px;
   font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
   font-size: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
 }
 
 .data-table .container-no:empty::before {
@@ -118,6 +115,7 @@ definePage('trips', {
 .data-table .container-no .container-chip {
   display: inline-block;
   padding: 1px 6px;
+  margin: 0 3px 3px 0;
   border-radius: 3px;
   background: rgba(37, 99, 235, 0.08);
   color: var(--primary);
@@ -269,6 +267,14 @@ definePage('trips', {
 /* ---------- 趟次表格：竖向框线 + 拖动调整列宽 ---------- */
 .trip-table {
   table-layout: fixed;
+}
+
+/* 固定布局下列宽由 colgroup 决定，清掉单元格自带的最小/最大宽度，避免把列撑歪 */
+.trip-table .route-name,
+.trip-table .container-no,
+.trip-table .trip-note {
+  min-width: 0;
+  max-width: none;
 }
 
 .trip-table th,
