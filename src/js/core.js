@@ -302,13 +302,16 @@
     return group.id === 'zone-ys' || group.label === '洋山系';
   }
 
-  /** 按 id 找分组（进 / 提还两套一起查） */
+  /** 按 id 找分组（进 / 提还两套一起查）；两套同 id 时优先取真正设过公里的那份 */
   function findGroupById(id) {
     var groups = allDestGroups();
+    var found = null;
     for (var i = 0; i < groups.length; i++) {
-      if (groups[i].id === id) return groups[i];
+      if (groups[i].id !== id) continue;
+      if (groups[i].km && Number(groups[i].km['新库']) > 0) return groups[i];
+      if (!found) found = groups[i];
     }
-    return null;
+    return found;
   }
 
   /** 分组设定的公里：新库为基准，东库按 ±10 自动推导（手填过则以手填为准） */
@@ -342,17 +345,19 @@
     return groupAnchorKm(origin, gid);
   }
 
-  /** 自动算总公里：只统计「进」的目的地公里；提/还/落是顺路回库，不加公里。
-   *  同方向（同进分组 zone-ab/cd/ys）的进目的地不叠加；不同方向叠加。 */
+  /** 自动算总公里：有「进」段时只统计进目的地的公里（提/还/落是顺路回库，不加公里）；
+   *  整趟没有「进」段时（如单独一段提 / 还 / 落），各段按分组公里计入。
+   *  同方向（同进分组 zone-ab/cd/ys）的相邻段不叠加；不同方向叠加。 */
   function computeAutoKm(origin, steps) {
     if (!origin || !Array.isArray(steps)) return 0;
     var sum = 0;
     var prevDest = null;
     var unknown = false;
+    var hasIn = steps.some(function (s) { return s && s.dest && s.action === '进'; });
     steps.forEach(function (s) {
       if (!s || !s.dest) return;
-      // 提 / 还 / 落 是顺路动作，不加公里，也不更新 prevDest（免得干扰后续进的方向判断）
-      if (s.action !== '进') return;
+      // 有「进」段时，提 / 还 / 落 只是顺路动作，不加公里（也不更新 prevDest）
+      if (s.action !== '进' && hasIn) return;
       // 跟前一个进同区域 → 同方向顺路，不加
       if (prevDest && sameDestGroup(prevDest, s.dest)) {
         prevDest = s.dest;
