@@ -683,12 +683,11 @@ function importBackup(event) {
     var used = {};
 
     data.drivers.forEach(function (driver) {
-      var sheet = { name: uniqueSheetName(driver.name, used), widths: [18, 38, 14, 14, 14, 16], rows: [] };
+      var sheet = { name: uniqueSheetName(driver.name, used), widths: [14, 30, 18, 12, 14], rows: [] };
       sheet.rows.push([TITLE(monthLabel(month) + ' 司机结算单')]);
       sheet.rows.push([
         B('姓名'), S(driver.name),
         B('车牌'), S(driver.plate),
-        B('手机号'), S(driver.phone),
       ]);
       sheet.rows.push([]);
       sheet.rows.push([B('结算汇总')]);
@@ -715,11 +714,11 @@ function importBackup(event) {
       ]);
       sheet.rows.push([]);
       sheet.rows.push([B('趟次明细')]);
-      sheet.rows.push([H('日期'), H('线路'), H('公里数'), H('提成（元）')]);
+      sheet.rows.push([H('日期'), H('线路'), H('箱号'), H('公里数'), H('提成（元）')]);
       driver.trips.forEach(function (trip) {
-        sheet.rows.push([S(trip.date), S(trip.route_name), N(trip.km), N(trip.commission)]);
+        sheet.rows.push([S(trip.date), S(trip.route_name), S(trip.container_no || ''), N(trip.km), N(trip.commission)]);
       });
-      sheet.rows.push([TL('合计'), TL('共 ' + driver.trips.length + ' 趟'), TN(driver.km), TN(driver.commission)]);
+      sheet.rows.push([TL('合计'), TL('共 ' + driver.trips.length + ' 趟'), TL(''), TN(driver.km), TN(driver.commission)]);
       sheet.rows.push([]);
       sheet.rows.push([B('加油明细')]);
       sheet.rows.push([H('日期'), H('地点'), H('升数（升）')]);
