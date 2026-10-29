@@ -465,16 +465,6 @@ body {
   background: var(--primary-soft);
 }
 
-.role-banner {
-  padding: 8px 14px;
-  margin-bottom: 14px;
-  border: 1px solid #f3d9b5;
-  border-radius: 9px;
-  background: #fff8ed;
-  color: #8a5514;
-  font-size: 12.5px;
-}
-
 /* 身份选择遮罩 */
 .role-gate {
   position: fixed;

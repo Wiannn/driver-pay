@@ -96,7 +96,6 @@
     var chip = $('roleChip');
     chip.textContent = manager ? '主管' : '员工';
     chip.classList.toggle('is-staff', !manager);
-    $('roleBanner').classList.toggle('is-hidden', manager);
     $('roleGate').classList.add('is-hidden');
   }
 
