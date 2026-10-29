@@ -285,6 +285,12 @@ definePage('trips', {
   text-align: left;
 }
 
+/* 操作列（删除）也左对齐，右侧留白不再空一大块 */
+.trip-table th.op,
+.trip-table td.op {
+  text-align: left;
+}
+
 .trip-table th,
 .trip-table td {
   overflow: hidden;
