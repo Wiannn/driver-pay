@@ -296,10 +296,7 @@ definePage('trips', {
   user-select: none;
 }
 
-.trip-table th:last-child,
-.trip-table td:last-child {
-  border-right: 0;
-}
+/* 操作列（删除）右侧也保留框线，整张表四边闭合 */
 
 /* 表头右边缘 7px 是拖拽热区，靠近时显示蓝色提示线 */
 .trip-table th::after {
