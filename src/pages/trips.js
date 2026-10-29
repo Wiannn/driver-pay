@@ -66,7 +66,7 @@ definePage('trips', {
       <div class="table-scroll">
         <table class="data-table trip-table">
           <colgroup>
-            <col><col><col><col><col><col><col><col><col>
+            <col><col><col><col><col><col><col><col><col><col>
           </colgroup>
           <thead>
             <tr>
@@ -77,6 +77,7 @@ definePage('trips', {
               <th class="num">公里数</th>
               <th class="num">提成</th>
               <th>备注</th>
+              <th>更新人</th>
               <th>更新时间</th>
               <th class="op"></th>
             </tr>
@@ -378,7 +379,7 @@ function kmInt(value) {
 }
 
 /* ---------- 列宽：默认值 / 读取 / 应用 / 拖动 / 保存 ---------- */
-var TRIP_COL_DEFAULT = [110, 90, 240, 220, 90, 90, 160, 150, 110];
+var TRIP_COL_DEFAULT = [110, 90, 240, 220, 90, 90, 160, 90, 150, 110];
 var TRIP_COL_MIN = 60;
 
 function tripColEls() {
@@ -693,7 +694,7 @@ function renderTrips() {
       : db.trips.length
         ? '本月还没有趟次记录 · 试试切换月份（共有 ' + db.trips.length + ' 笔历史数据）'
         : '还没有趟次记录';
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-cell">' + hint + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-cell">' + hint + '</td></tr>';
     $('tripSummary').textContent = '共 0 趟';
     updateTripPager(0, 0);
     return;
@@ -725,6 +726,7 @@ function renderTrips() {
           yuanInt(trip.commission) + '</td>' +
         '<td class="trip-note" data-trip="' + trip.id + '" title="双击编辑">' +
           esc(trip.note || '') + '</td>' +
+        '<td class="trip-updater">' + esc(trip.updated_by || '—') + '</td>' +
         '<td class="trip-updated">' + esc(trip.updated_at || '—') + '</td>' +
         '<td class="op"><button type="button" class="link-danger" data-del-trip="' +
         trip.id + '">删除</button></td></tr>'
@@ -784,10 +786,13 @@ function jumpToTripPage() {
 
 /** 当前时间戳，写进趟次的「更新时间」列 */
 function tripStamp() {
-  var d = new Date();
-  function p(n) { return String(n).padStart(2, '0'); }
-  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
-    ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  return nowStamp();
+}
+
+/** 记录本次修改的人和时间 */
+function markTripUpdated(trip) {
+  trip.updated_by = operatorName();
+  trip.updated_at = tripStamp();
 }
 
 /** 双击日期单元格 → 内联改日期（跨月会自动跳月份） */
@@ -814,7 +819,7 @@ function editTripDate(cell) {
     if (!v || !validDate(v)) { renderTrips(); return; }
     if (v === trip.date) { renderTrips(); return; }
     trip.date = v;
-    trip.updated_at = tripStamp();
+    markTripUpdated(trip);
     saveLocal();
     if (String(v).slice(0, 7) !== state.month) ensureMonth(v);
     renderPage();
@@ -853,7 +858,7 @@ function editTripRoute(cell) {
     if (!newName) { renderTrips(); return; }
     if (newName === trip.route_name) { renderTrips(); return; }
     trip.route_name = newName;
-    trip.updated_at = tripStamp();
+    markTripUpdated(trip);
     saveLocal();
     renderPage();
   }
@@ -905,7 +910,7 @@ function editContainerNo(cell) {
     // 清洗：按分隔符拆分 → 去重 → 大写 → 用 ", " 拼回
     var cleaned = splitContainerNos(input.value);
     var v = cleaned.join(', ');
-    if (v !== (trip.container_no || '')) trip.updated_at = tripStamp();
+    if (v !== (trip.container_no || '')) markTripUpdated(trip);
     trip.container_no = v;
     saveLocal();
     renderTrips();
@@ -941,7 +946,7 @@ function editTripNote(cell) {
 
   function finish() {
     var v = input.value.trim();
-    if (v !== (trip.note || '')) trip.updated_at = tripStamp();
+    if (v !== (trip.note || '')) markTripUpdated(trip);
     trip.note = v;
     saveLocal();
     renderTrips();
@@ -986,7 +991,7 @@ function editTripNumber(cell, field) {
     var v = raw === '' ? 0 : Number(raw);
     if (isNaN(v)) v = 0;
     v = round2(v);
-    if (v !== oldValue) trip.updated_at = tripStamp();
+    if (v !== oldValue) markTripUpdated(trip);
     trip[field] = v;
     saveLocal();
     renderPage();

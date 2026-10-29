@@ -49,6 +49,8 @@ definePage('fuel', {
               <th>司机</th>
               <th>地点</th>
               <th class="num">升数（升）</th>
+              <th>更新人</th>
+              <th>更新时间</th>
               <th class="op"></th>
             </tr>
           </thead>
@@ -106,7 +108,7 @@ function renderFuel() {
       : db.fuel.length
         ? '本月还没有加油记录 · 试试切换月份（共有 ' + db.fuel.length + ' 笔历史数据）'
         : '还没有加油记录';
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">' + hint + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">' + hint + '</td></tr>';
     $('fuelSummary').textContent = '共 0 笔';
     return;
   }
@@ -121,6 +123,8 @@ function renderFuel() {
         '<td>' + esc(driver ? driver.name : '—') + '</td>' +
         '<td>' + esc(item.place) + '</td>' +
         '<td class="num">' + fmt2(item.liters) + '</td>' +
+        '<td>' + esc(item.updated_by || '—') + '</td>' +
+        '<td>' + esc(item.updated_at || '—') + '</td>' +
         '<td class="op"><button type="button" class="link-danger" data-del-fuel="' +
         item.id + '">删除</button></td></tr>'
       );

@@ -11,6 +11,7 @@
   }
 
   function addDriver(input) {
+    if (!isManager()) throw new Error('员工模式无法修改司机信息');
     var name = String(input.name || '').trim();
     var plate = String(input.plate || '').trim();
     if (!name) throw new Error('请填写司机姓名');
@@ -23,6 +24,7 @@
   }
 
   function updateDriver(id, input) {
+    if (!isManager()) throw new Error('员工模式无法修改司机信息');
     var driver = db.drivers.find(function (item) { return item.id === id; });
     if (!driver) throw new Error('司机不存在');
     var name = String(input.name || '').trim();
@@ -37,6 +39,7 @@
   }
 
   function removeDriver(id) {
+    if (!isManager()) throw new Error('员工模式无法修改司机信息');
     var used =
       db.trips.some(function (item) { return item.driver_id === id; }) ||
       db.fuel.some(function (item) { return item.driver_id === id; });
@@ -46,6 +49,7 @@
   }
 
   function addRoute(input) {
+    if (!isManager()) throw new Error('员工模式无法修改线路价目');
     var origin = String(input.origin || '').trim();
     if (!origin) throw new Error('请选择始发地');
     var steps = Array.isArray(input.steps) ? input.steps.filter(function (s) {
@@ -73,6 +77,7 @@
   }
 
   function updateRoute(id, input) {
+    if (!isManager()) throw new Error('员工模式无法修改线路价目');
     var route = db.routes.find(function (item) { return item.id === id; });
     if (!route) throw new Error('线路不存在');
     var origin = String(input.origin || '').trim();
@@ -102,6 +107,7 @@
   }
 
   function removeRoute(id) {
+    if (!isManager()) throw new Error('员工模式无法修改线路价目');
     db.routes = db.routes.filter(function (item) { return item.id !== id; });
     saveLocal();
   }
@@ -137,7 +143,7 @@
       id: newId(), date: date, driver_id: driverId,
       route_id: routeId, route_origin: routeOrigin, route_steps: routeSteps,
       route_name: routeName, km: round2(km), commission: round2(commission),
-      updated_at: tripStamp(),
+      updated_by: operatorName(), updated_at: nowStamp(),
     };
     db.trips.push(trip);
     saveLocal();
@@ -161,6 +167,7 @@
     var record = {
       id: newId(), date: date, driver_id: driverId,
       place: place, liters: round2(liters),
+      updated_by: operatorName(), updated_at: nowStamp(),
     };
     db.fuel.push(record);
     saveLocal();

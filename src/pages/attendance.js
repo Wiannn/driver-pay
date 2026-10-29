@@ -109,10 +109,15 @@ function attLockOf(driverId, month) {
   return locks[driverId + '|' + month] || '';
 }
 
-/** 写入确认锁 */
+/** 写入确认锁；员工模式返回 false */
 function setAttLock(driverId, month, stamp) {
+  if (!isManager()) {
+    toast('员工模式无法确认考勤', 'error');
+    return false;
+  }
   if (!db.configs.att_locks) db.configs.att_locks = {};
   db.configs.att_locks[driverId + '|' + month] = stamp;
+  return true;
 }
 
 /** 当月还没有选状态的日子 */
@@ -173,8 +178,9 @@ function confirmAttMonth() {
   if (!confirm('确认后 ' + name + ' ' + month + ' 的考勤将锁定，不能再修改。\n\n确定现在确认吗？')) return;
 
   var now = new Date();
-  setAttLock(driverId, month, now.getFullYear() + '-' +
+  var ok = setAttLock(driverId, month, now.getFullYear() + '-' +
     String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0'));
+  if (!ok) return;
   saveLocal();
   renderAttCalendar();
   toast('已确认，' + month + ' 考勤已锁定');

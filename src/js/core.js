@@ -15,6 +15,55 @@
   var TRIP_PAGE_SIZE = 12;
   var db;
 
+  /* ================= 身份（主管 / 员工） ================= */
+  var ROLE_KEY = 'driver-salary-role';
+  var DEFAULT_MANAGER_PIN = '8888';
+
+  /** 当前身份：manager / staff；空串表示还没选 */
+  function getRole() {
+    try {
+      return sessionStorage.getItem(ROLE_KEY) || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function setRole(role) {
+    try {
+      sessionStorage.setItem(ROLE_KEY, role);
+    } catch (error) {
+      /* 隐私模式下 sessionStorage 不可用，按未选处理 */
+    }
+  }
+
+  function isManager() {
+    return getRole() === 'manager';
+  }
+
+  /** 当前操作人标签，写进「更新人」列 */
+  function operatorName() {
+    return isManager() ? '主管' : '员工';
+  }
+
+  function managerPin() {
+    return (db && db.configs && db.configs.manager_pin) || DEFAULT_MANAGER_PIN;
+  }
+
+  /** 员工模式下拦截写操作：返回 false 并提示 */
+  function requireManager(action) {
+    if (isManager()) return true;
+    toast('员工模式无法' + (action || '修改'), 'error');
+    return false;
+  }
+
+  /** 当前时间戳，如 2026-10-29 14:05 */
+  function nowStamp() {
+    var d = new Date();
+    function p(n) { return String(n).padStart(2, '0'); }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+      ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
   /* ================= 工具 ================= */
   function $(id) {
     return document.getElementById(id);

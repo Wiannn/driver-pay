@@ -473,6 +473,7 @@ definePage('map', {
       if (dot) {
         e.preventDefault();
         e.stopPropagation();
+        if (!requireManager('修改分组颜色')) return;
         openGroupColorPicker(dot.dataset.groupColor, dot);
         return;
       }
@@ -499,11 +500,19 @@ definePage('map', {
       var row = e.target.closest('[data-map-place]');
       if (!row) return;
       e.preventDefault();
+      if (!isManager()) {
+        toast('员工模式无法设置坐标', 'error');
+        return;
+      }
       openMapMenu(row.dataset.mapPlace, e.clientX, e.clientY);
     });
 
-    // 右侧列表拖动：地点换组 / 分组排序
+    // 右侧列表拖动：地点换组 / 分组排序（员工只读）
     $('mapPlaceList').addEventListener('dragstart', function (e) {
+      if (!isManager()) {
+        e.preventDefault();
+        return;
+      }
       var grip = e.target.closest('.map-group-grip');
       if (grip) {
         var card = grip.closest('[data-map-group]');
@@ -1133,6 +1142,10 @@ function renderMapMarkers(fit) {
       });
       marker.on('click', function () { openPlaceInfo(name, group); });
       marker.on('rightclick', function (event) {
+        if (!isManager()) {
+          toast('员工模式无法设置坐标', 'error');
+          return;
+        }
         var oe = event && event.originEvent;
         openMapMenu(name,
           oe && oe.clientX ? oe.clientX : window.innerWidth / 2,

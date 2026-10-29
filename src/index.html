@@ -34,9 +34,40 @@
       <button type="button" class="month-step" id="monthNext" aria-label="下个月">›</button>
     </div>
   </div>
+  <div class="role-box">
+    <button type="button" class="role-chip" id="roleChip" title="切换身份 / 修改 PIN">主管</button>
+    <div class="role-menu is-hidden" id="roleMenu">
+      <button type="button" id="roleChangePin">修改 PIN</button>
+      <button type="button" id="roleExit">切换为员工</button>
+    </div>
+  </div>
 </header>
 
 <main class="wrap">
+
+  <div class="role-banner is-hidden" id="roleBanner">员工模式 · 只读区域已锁定</div>
+
+  <!-- ========== 身份选择 ========== -->
+  <div class="role-gate" id="roleGate">
+    <div class="role-gate-card">
+      <div class="role-gate-logo">薪</div>
+      <h2>司机工资结算</h2>
+      <p class="role-gate-sub">请选择本次使用的身份</p>
+      <div class="role-gate-actions" id="roleGateActions">
+        <button type="button" class="btn btn-primary" id="roleStaffBtn">员工进入</button>
+        <button type="button" class="btn btn-ghost" id="roleManagerBtn">主管进入</button>
+      </div>
+      <div class="role-pin is-hidden" id="rolePinWrap">
+        <label for="rolePinInput">主管 PIN</label>
+        <input type="password" id="rolePinInput" inputmode="numeric" maxlength="4" placeholder="4 位数字" autocomplete="off">
+        <div class="role-pin-actions">
+          <button type="button" class="btn btn-ghost" id="rolePinCancel">返回</button>
+          <button type="button" class="btn btn-primary" id="rolePinOk">进入</button>
+        </div>
+        <p class="role-pin-error is-hidden" id="rolePinError"></p>
+      </div>
+    </div>
+  </div>
 
   <!-- ========== 月度结算 ========== -->
   <section class="page is-active" id="page-settlement"></section>

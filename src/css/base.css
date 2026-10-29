@@ -315,3 +315,208 @@ body {
   border-radius: 50%;
   background: #c3cee0;
 }
+
+/* ---------- 身份（主管 / 员工） ---------- */
+.role-box {
+  position: relative;
+  margin-left: 14px;
+}
+
+.role-chip {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.role-chip:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.role-chip.is-staff {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.role-menu {
+  position: absolute;
+  right: 0;
+  top: 38px;
+  min-width: 132px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.16);
+  z-index: 60;
+}
+
+.role-menu button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.role-menu button:hover {
+  background: var(--primary-soft);
+}
+
+.role-banner {
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  border: 1px solid #f3d9b5;
+  border-radius: 9px;
+  background: #fff8ed;
+  color: #8a5514;
+  font-size: 12.5px;
+}
+
+/* 身份选择遮罩 */
+.role-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(12, 22, 38, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.role-gate.is-hidden {
+  display: none;
+}
+
+.role-gate-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 26px 24px 22px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(10, 20, 40, 0.25);
+  text-align: center;
+}
+
+.role-gate-logo {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2a5be0, #1f49c2);
+  color: #fff;
+  font-size: 22px;
+  line-height: 46px;
+  font-weight: 600;
+}
+
+.role-gate-card h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.role-gate-sub {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.role-gate-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.role-gate-actions .btn {
+  flex: 1;
+}
+
+.role-pin {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.role-pin.is-hidden {
+  display: none;
+}
+
+.role-pin label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.role-pin input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 15px;
+  letter-spacing: 6px;
+}
+
+.role-pin input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.role-pin-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.role-pin-actions .btn {
+  flex: 1;
+}
+
+.role-pin-error {
+  margin: 10px 0 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.role-pin-error.is-hidden {
+  display: none;
+}
+
+/* 员工模式：隐藏所有需要主管权限的入口 */
+body.is-staff #backupBtn,
+body.is-staff #restoreBtn,
+body.is-staff #exportBtn,
+body.is-staff #cfgOriginsBtn,
+body.is-staff #cfgDestInBtn,
+body.is-staff #cfgDestPickBtn,
+body.is-staff #routeForm,
+body.is-staff #driverForm,
+body.is-staff #attConfirmBtn,
+body.is-staff #attLockNote,
+body.is-staff [data-edit-route],
+body.is-staff [data-del-route],
+body.is-staff [data-edit-driver],
+body.is-staff [data-del-driver] {
+  display: none !important;
+}
+
+body.is-staff .map-color-dot {
+  pointer-events: none;
+  cursor: default;
+}
+
+body.is-staff .map-group-grip {
+  display: none !important;
+}
