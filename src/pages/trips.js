@@ -64,7 +64,10 @@ definePage('trips', {
         <span class="table-sum" id="tripSummary"></span>
       </div>
       <div class="table-scroll">
-        <table class="data-table">
+        <table class="data-table trip-table">
+          <colgroup>
+            <col><col><col><col><col><col><col><col><col>
+          </colgroup>
           <thead>
             <tr>
               <th>日期</th>
@@ -262,6 +265,44 @@ definePage('trips', {
   outline: none;
   border-color: var(--primary);
 }
+
+/* ---------- 趟次表格：竖向框线 + 拖动调整列宽 ---------- */
+.trip-table {
+  table-layout: fixed;
+}
+
+.trip-table th,
+.trip-table td {
+  overflow: hidden;
+  border-right: 1px solid #e8edf5;
+}
+
+.trip-table th {
+  position: relative;
+  border-right-color: #dde5f1;
+  user-select: none;
+}
+
+.trip-table th:last-child,
+.trip-table td:last-child {
+  border-right: 0;
+}
+
+/* 表头右边缘 7px 是拖拽热区，靠近时显示蓝色提示线 */
+.trip-table th::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+  width: 7px;
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.trip-table th:hover::after {
+  background: rgba(42, 91, 224, 0.28);
+}
   `,
 
   init: function () {
@@ -303,10 +344,103 @@ definePage('trips', {
       var commissionCell = e.target.closest('.trip-commission[data-trip]');
       if (commissionCell) { e.preventDefault(); editTripNumber(commissionCell, 'commission'); }
     });
+
+    // 表格列宽：竖线、拖动调整、宽度记忆
+    bindTripColResize();
+    ensureTripColLayout();
   },
 });
 
 /* ================= 趟次 ================= */
+
+/* ---------- 列宽：默认值 / 读取 / 应用 / 拖动 / 保存 ---------- */
+var TRIP_COL_DEFAULT = [110, 90, 240, 220, 90, 90, 160, 150, 110];
+var TRIP_COL_MIN = 60;
+
+function tripColEls() {
+  var table = document.querySelector('.trip-table');
+  return table ? table.querySelectorAll('colgroup col') : [];
+}
+
+/** 把宽度写进 colgroup，表格总宽 = 各列之和 */
+function applyTripColWidths(widths) {
+  var cols = tripColEls();
+  var sum = 0;
+  widths.forEach(function (w, i) {
+    if (!cols[i]) return;
+    cols[i].style.width = w + 'px';
+    sum += w;
+  });
+  var table = document.querySelector('.trip-table');
+  if (table) table.style.width = sum + 'px';
+}
+
+/** 读取列宽：存过就用存的；没存过按容器宽度等比铺满默认值（页面隐藏时先跳过） */
+function getTripColWidths() {
+  // mountPages 早于 loadDb，初始化阶段 db 还没赋值
+  if (!db || !db.configs) return null;
+  var cols = tripColEls();
+  var count = cols.length || TRIP_COL_DEFAULT.length;
+  var saved = db.configs.trip_col_widths;
+  if (Array.isArray(saved) && saved.length === count) {
+    var ok = saved.every(function (w) {
+      return isFinite(Number(w)) && Number(w) >= TRIP_COL_MIN;
+    });
+    if (ok) return saved.map(Number);
+  }
+  var table = document.querySelector('.trip-table');
+  var box = table && table.parentNode ? table.parentNode.clientWidth : 0;
+  if (!box) return null; // 页面还隐藏着，等可见了再算
+  var total = TRIP_COL_DEFAULT.reduce(function (s, w) { return s + w; }, 0);
+  var widths = TRIP_COL_DEFAULT.map(function (w) { return Math.round(w * box / total); });
+  db.configs.trip_col_widths = widths;
+  saveLocal();
+  return widths;
+}
+
+/** 页面可见后应用一次列宽；容器宽度为 0 时什么都不做 */
+function ensureTripColLayout() {
+  var widths = getTripColWidths();
+  if (!widths) return;
+  applyTripColWidths(widths);
+}
+
+/** 表头右边缘拖动调列宽（只绑一次） */
+function bindTripColResize() {
+  var table = document.querySelector('.trip-table');
+  if (!table || table.dataset.colResize === '1') return;
+  table.dataset.colResize = '1';
+
+  var drag = null;
+  table.querySelector('thead').addEventListener('mousedown', function (e) {
+    var th = e.target.closest('th');
+    if (!th) return;
+    var rect = th.getBoundingClientRect();
+    // 只有指针在右边缘 7px 内才进入拖动，避免干扰正常点击 / 双击
+    if (e.clientX < rect.right - 7) return;
+    e.preventDefault();
+    var index = Array.prototype.indexOf.call(th.parentNode.children, th);
+    var widths = getTripColWidths();
+    if (!widths) return;
+    drag = { index: index, startX: e.clientX, startW: widths[index], widths: widths };
+    document.body.style.cursor = 'col-resize';
+  });
+
+  window.addEventListener('mousemove', function (e) {
+    if (!drag) return;
+    drag.widths[drag.index] = Math.max(TRIP_COL_MIN, Math.round(drag.startW + e.clientX - drag.startX));
+    applyTripColWidths(drag.widths);
+  });
+
+  window.addEventListener('mouseup', function () {
+    if (!drag) return;
+    document.body.style.cursor = '';
+    db.configs.trip_col_widths = drag.widths.map(function (w) { return Math.round(w); });
+    saveLocal();
+    drag = null;
+  });
+}
+
 function fillDriverSelect(id) {
   var select = $(id);
   var current = select.value;
@@ -524,6 +658,7 @@ function filteredTrips() {
 }
 
 function renderTrips() {
+  ensureTripColLayout();
   var driverId = $('tripDriver').value;
   var rows = filteredTrips();
 
