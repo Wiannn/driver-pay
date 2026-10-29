@@ -14,7 +14,7 @@ var AUTH_HTML = `
       </div>
       <div class="auth-pin is-hidden" id="rolePinWrap">
         <label for="rolePinInput">主管 PIN</label>
-        <input type="password" id="rolePinInput" inputmode="numeric" maxlength="4" placeholder="4 位数字" autocomplete="off">
+        <input type="password" id="rolePinInput" inputmode="numeric" maxlength="4" autocomplete="off">
         <p class="auth-error is-hidden" id="rolePinError"></p>
         <div class="auth-pin-actions">
           <button type="button" class="btn btn-ghost" id="rolePinCancel">返回</button>
