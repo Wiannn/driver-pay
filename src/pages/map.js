@@ -7,7 +7,7 @@ definePage('map', {
     <div class="page-head">
       <div>
         <h2>目的地地图</h2>
-        <p class="sub">按区域查看所有始发地与目的地。点地点可定位放大；右键地点（或地图上的圆点）可在地图上点选坐标、用弹窗精确设置或清除坐标。</p>
+        <p class="sub">按区域查看所有始发地与目的地。点地点可定位放大；右键地点（或地图上的圆点）可用弹窗精确设置或清除坐标。</p>
       </div>
       <div class="page-actions">
         <button type="button" class="btn btn-ghost" id="mapFitBtn">全览</button>
@@ -23,7 +23,6 @@ definePage('map', {
         </div>
         <div class="map-filters" id="mapFilters"></div>
         <div class="map-canvas" id="mapCanvas"></div>
-        <div class="map-pick-tip is-hidden" id="mapPickTip"></div>
       </div>
       <aside class="map-side">
         <div class="map-side-head">
@@ -197,19 +196,6 @@ definePage('map', {
   line-height: 2;
 }
 
-.map-pick-tip {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  background: rgba(16, 24, 40, 0.88);
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  z-index: 5;
-}
-
 .map-side {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -348,10 +334,6 @@ definePage('map', {
 
 .map-place:hover {
   background: #f5f7fb;
-}
-
-.map-place.is-picking {
-  background: #eef3ff;
 }
 
 .map-place.is-highlight {
@@ -506,7 +488,7 @@ definePage('map', {
       var name = row.dataset.mapPlace;
       var coord = placeCoord(name);
       if (!coord) {
-        toast('「' + name + '」还没有坐标，右键选「在地图上点选」或「用弹窗精确设置」');
+        toast('「' + name + '」还没有坐标，右键选「用弹窗精确设置」');
         return;
       }
       if (mapState.map) mapState.map.setZoomAndCenter(15, [coord.lng, coord.lat]);
@@ -768,7 +750,6 @@ var mapState = {
   filter: {},
   collapsed: {},
   highlight: '',
-  pickName: '',
   coordMap: null,
   coordMarker: null,
   coordTarget: '',
@@ -995,7 +976,6 @@ function renderMapPlaceList() {
       var has = !!placeCoord(name);
       if (has) ok++; else missing++;
       rows += '<div class="map-place' +
-        (mapState.pickName === name ? ' is-picking' : '') +
         (mapState.highlight === name ? ' is-highlight' : '') +
         '" data-map-place="' + esc(name) + '"' +
         (isOrigin ? '' : ' draggable="true"') + '>' +
@@ -1122,7 +1102,6 @@ function initMainMap() {
       return;
     }
     setShanghaiLimit(mapState.map);
-    mapState.map.on('click', onMainMapClick);
   } else {
     mapState.map.resize();
   }
@@ -1182,34 +1161,6 @@ function openPlaceInfo(name, group) {
     isCustom: false,
   });
   mapState.info.open(mapState.map, [coord.lng, coord.lat]);
-}
-
-function onMainMapClick(event) {
-  if (!mapState.pickName) return;
-  var name = mapState.pickName;
-  db.configs.coords = db.configs.coords || {};
-  db.configs.coords[name] = {
-    lat: round6(event.lnglat.getLat()),
-    lng: round6(event.lnglat.getLng()),
-  };
-  saveLocal();
-  mapState.pickName = '';
-  $('mapPickTip').classList.add('is-hidden');
-  renderMapPlaceList();
-  if (cfgModalKey) renderCfgTags();
-  renderMapMarkers(false);
-  toast('已设置「' + name + '」坐标');
-}
-
-function startMapPick(name) {
-  if (!amapConfigured()) {
-    toast('未配置高德 Key，无法在地图上取点', 'error');
-    return;
-  }
-  mapState.pickName = name;
-  $('mapPickTip').textContent = '点击地图，为「' + name + '」设定坐标';
-  $('mapPickTip').classList.remove('is-hidden');
-  focusPlaceInList(name);
 }
 
 /** 展开所在分组、高亮并滚动到该地点 */
@@ -1327,14 +1278,15 @@ function runMapSearch() {
   });
 }
 
-/** 选中「我的地点」：有坐标就定位，没有就进入选点 */
+/** 选中「我的地点」：有坐标就定位，没有则提示用右键弹窗设置 */
 function applyLocalSearch(idx) {
   var listEl = $('mapSearchList');
   var item = (listEl._local || [])[idx];
   if (!item) return;
   listEl.classList.add('is-hidden');
   if (!item.coord) {
-    startMapPick(item.name);
+    toast('「' + item.name + '」还没有坐标，右键选「用弹窗精确设置」');
+    focusPlaceInList(item.name);
     return;
   }
   if (mapState.map) mapState.map.setZoomAndCenter(15, [item.coord.lng, item.coord.lat]);
@@ -1348,20 +1300,6 @@ function applySearchOnMain(idx) {
   if (!poi) return;
   listEl.classList.add('is-hidden');
   if (mapState.map) mapState.map.setZoomAndCenter(15, [poi.lng, poi.lat]);
-  if (!mapState.pickName) {
-    toast('已定位到「' + poi.name + '」。要存为地点坐标：右键地点选「在地图上点选」后再搜这个位置。');
-    return;
-  }
-  var name = mapState.pickName;
-  db.configs.coords = db.configs.coords || {};
-  db.configs.coords[name] = { lat: round6(poi.lat), lng: round6(poi.lng) };
-  saveLocal();
-  mapState.pickName = '';
-  $('mapPickTip').classList.add('is-hidden');
-  renderMapPlaceList();
-  renderMapMarkers(false);
-  if (cfgModalKey) renderCfgTags();
-  toast('已用「' + poi.name + '」定位「' + name + '」');
 }
 
 /** 坐标弹窗里的搜索 */
@@ -1386,9 +1324,7 @@ function applySearchInCoord(idx) {
 function openMapMenu(name, x, y) {
   mapState.menuName = name;
   var menu = $('mapMenu');
-  var pickBtn = menu.querySelector('[data-map-menu="pick"]');
   var clearBtn = menu.querySelector('[data-map-menu="clear"]');
-  pickBtn.classList.toggle('is-hidden', state.page !== 'map');
   clearBtn.classList.toggle('is-hidden', !placeCoord(name));
   menu.classList.remove('is-hidden');
   var left = Math.max(8, Math.min(x, window.innerWidth - menu.offsetWidth - 8));
@@ -1413,11 +1349,6 @@ function handleMapMenu(action) {
     renderMapMarkers(false);
     if (cfgModalKey) renderCfgTags();
     toast('已清除「' + name + '」坐标');
-    return;
-  }
-  if (action === 'pick') {
-    if (!mapState.map) { toast('地图还没加载好，请稍后再试', 'error'); return; }
-    startMapPick(name);
     return;
   }
   if (action === 'modal') openCoordModal(name);
