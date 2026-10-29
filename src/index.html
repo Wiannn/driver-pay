@@ -29,14 +29,6 @@
 <div class="layout">
 
   <aside class="sidebar">
-    <div class="month-box" id="monthBox">
-      <label for="monthSelect">结算月份</label>
-      <div class="month-control">
-        <button type="button" class="month-step" id="monthPrev" aria-label="上个月">‹</button>
-        <select id="monthSelect" aria-label="结算月份"></select>
-        <button type="button" class="month-step" id="monthNext" aria-label="下个月">›</button>
-      </div>
-    </div>
     <nav class="nav" id="nav">
       <button type="button" class="nav-btn is-active" data-page="settlement">月度结算</button>
       <button type="button" class="nav-btn" data-page="trips">趟次录入</button>
@@ -51,6 +43,16 @@
 <main class="wrap">
 
   <div class="role-banner is-hidden" id="roleBanner">员工模式 · 只读区域已锁定</div>
+
+  <!-- 月份控件：跟随页面自动挂到标题行右侧（见 init.js placeMonthBox） -->
+  <div class="month-box is-hidden" id="monthBox">
+    <label for="monthSelect" id="monthLabel">结算月份</label>
+    <div class="month-control">
+      <button type="button" class="month-step" id="monthPrev" aria-label="上个月">‹</button>
+      <select id="monthSelect" aria-label="结算月份"></select>
+      <button type="button" class="month-step" id="monthNext" aria-label="下个月">›</button>
+    </div>
+  </div>
 
   <!-- ========== 身份选择 ========== -->
   <div class="role-gate" id="roleGate">

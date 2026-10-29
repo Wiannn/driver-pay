@@ -139,6 +139,7 @@
     document.addEventListener('click', handleRowAction);
 
     applyRole();
+    placeMonthBox(state.page);
     refreshData();
     applyTripMode();
     renderPage();
@@ -228,8 +229,32 @@
     document.querySelectorAll('.page').forEach(function (section) {
       section.classList.toggle('is-active', section.id === 'page-' + page);
     });
-    $('monthBox').classList.toggle('is-hidden', page === 'drivers' || page === 'routes' || page === 'attendance' || page === 'map');
+    placeMonthBox(page);
     renderPage();
+  }
+
+  /** 需要月份控件的页面，以及各自的小标签文案 */
+  var MONTH_PAGES = { settlement: '结算月份', trips: '统计月份', fuel: '统计月份' };
+
+  /** 月份控件跟随页面：挂到当前页标题行右侧，不依赖月份的页面就隐藏 */
+  function placeMonthBox(page) {
+    var box = $('monthBox');
+    var label = MONTH_PAGES[page];
+    if (!label) {
+      box.classList.add('is-hidden');
+      return;
+    }
+    box.classList.remove('is-hidden');
+    $('monthLabel').textContent = label;
+    var head = document.querySelector('#page-' + page + ' .page-head');
+    if (!head) return;
+    var actions = head.querySelector('.page-actions');
+    if (!actions) {
+      actions = document.createElement('div');
+      actions.className = 'page-actions';
+      head.appendChild(actions);
+    }
+    actions.insertBefore(box, actions.firstChild);
   }
 
   function renderPage() {
