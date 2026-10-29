@@ -314,6 +314,81 @@ definePage('trips', {
 .trip-table th:hover::after {
   background: rgba(42, 91, 224, 0.28);
 }
+
+/* ---------- 直接搭建：目的地可搜索下拉 ---------- */
+.dest-picker {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 160px;
+}
+
+.dest-picker .dest-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.dest-picker .dest-input::placeholder {
+  color: #9aa7bb;
+}
+
+.dest-picker .dest-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
+}
+
+.dest-list {
+  position: absolute;
+  z-index: 40;
+  top: 38px;
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.16);
+}
+
+.dest-list .dest-group {
+  padding: 6px 8px 3px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.dest-list .dest-item {
+  display: block;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dest-list .dest-item:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.dest-list .dest-empty {
+  padding: 10px 9px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
   `,
 
   init: function () {
@@ -339,6 +414,23 @@ definePage('trips', {
     $('tripBuildOrigin').addEventListener('change', updateAutoTripKm);
     $('tripBuildSteps').addEventListener('click', onTripBuildStepChange);
     $('tripBuildSteps').addEventListener('change', onTripBuildStepChange);
+    // 目的地搜索：聚焦展开全部，输入即时过滤，点选写入，失焦还原
+    $('tripBuildSteps').addEventListener('focusin', onTripDestFocus);
+    $('tripBuildSteps').addEventListener('input', onTripDestInput);
+    $('tripBuildSteps').addEventListener('keydown', onTripDestKeydown);
+    $('tripBuildSteps').addEventListener('mousedown', function (e) {
+      var item = e.target.closest('.dest-item');
+      if (!item) return;
+      // 抢在失焦之前完成点选，避免列表先关闭
+      e.preventDefault();
+      selectTripDest(item);
+    });
+    $('tripBuildSteps').addEventListener('focusout', onTripDestBlur);
+    // 点页面其它地方：收起候选列表，并把没选定的输入文字还原
+    document.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('#tripBuildSteps .dest-picker')) return;
+      resetTripDestInputs();
+    });
 
     // 双击单元格 → 行内编辑
     document.addEventListener('dblclick', function (e) {
@@ -573,7 +665,6 @@ function renderTripBuildSteps(steps) {
   var wrap = $('tripBuildSteps');
   var html = '';
   list.forEach(function (step, idx) {
-    var destHtml = getDestOptionsGroupedHtml(step.action, step.dest);
     html +=
       '<div class="step-row" data-step-idx="' + idx + '">' +
       '<span class="step-idx">' + (idx + 1) + '</span>' +
@@ -583,11 +674,140 @@ function renderTripBuildSteps(steps) {
         '<option value="还"' + (step.action === '还' ? ' selected' : '') + '>还</option>' +
         '<option value="落"' + (step.action === '落' ? ' selected' : '') + '>落</option>' +
       '</select>' +
-      '<select class="step-dest" data-role="dest">' + destHtml + '</select>' +
+      '<div class="dest-picker">' +
+        '<input type="text" class="dest-input" data-role="destinput" autocomplete="off"' +
+          ' placeholder="输入关键词搜索目的地"' +
+          ' value="' + esc(step.dest || '') + '">' +
+        '<input type="hidden" data-role="dest" value="' + esc(step.dest || '') + '">' +
+        '<div class="dest-list is-hidden" data-role="destlist"></div>' +
+      '</div>' +
       '<button type="button" class="step-del" data-role="del" title="删除">×</button>' +
       '</div>';
   });
   wrap.innerHTML = html;
+  // 每行先铺好完整候选列表，输入时再按关键词过滤
+  wrap.querySelectorAll('.dest-picker').forEach(function (picker) {
+    var action = picker.closest('.step-row').querySelector('[data-role="action"]').value;
+    fillDestList(picker, action, '');
+  });
+}
+
+/** 提 / 还 / 落 用提还分组，「进」用进港分组 */
+function destGroupList(action) {
+  return (action === '提' || action === '还' || action === '落')
+    ? (db.configs.dest_pick_groups || [])
+    : (db.configs.dest_groups || []);
+}
+
+function destItemHtml(name) {
+  return '<button type="button" class="dest-item" data-dest="' + esc(name) + '">' +
+    esc(name) + '</button>';
+}
+
+/** 按关键词重绘某行的目的地候选列表（同时命中分组名则整组显示） */
+function fillDestList(picker, action, keyword) {
+  var flat = getDestOptionsForAction(action);
+  var groups = destGroupList(action);
+  var kw = String(keyword || '').trim().toLowerCase();
+  var shown = {};
+  var html = '';
+
+  groups.forEach(function (group) {
+    var members = (group.members || []).filter(function (name) {
+      return flat.indexOf(name) >= 0;
+    });
+    var groupHit = kw && String(group.label || '').toLowerCase().indexOf(kw) >= 0;
+    var visible = members.filter(function (name) {
+      return !kw || groupHit || String(name).toLowerCase().indexOf(kw) >= 0;
+    });
+    if (!visible.length) return;
+    html += '<div class="dest-group">' + esc(group.label) + '</div>';
+    visible.forEach(function (name) {
+      html += destItemHtml(name);
+      shown[name] = true;
+    });
+  });
+
+  var rest = flat.filter(function (name) {
+    return !shown[name] && (!kw || String(name).toLowerCase().indexOf(kw) >= 0);
+  });
+  if (rest.length) {
+    if (html) html += '<div class="dest-group">其他</div>';
+    rest.forEach(function (name) {
+      html += destItemHtml(name);
+    });
+  }
+
+  picker.querySelector('[data-role="destlist"]').innerHTML =
+    html || '<div class="dest-empty">没有匹配的目的地</div>';
+}
+
+/** 点选候选项：写回隐藏字段与输入框 */
+function selectTripDest(item) {
+  var picker = item.closest('.dest-picker');
+  var row = picker.closest('.step-row');
+  var name = item.dataset.dest;
+  row.querySelector('[data-role="dest"]').value = name;
+  row.querySelector('[data-role="destinput"]').value = name;
+  picker.querySelector('[data-role="destlist"]').classList.add('is-hidden');
+  updateAutoTripKm();
+}
+
+function closeDestLists() {
+  document.querySelectorAll('#tripBuildSteps [data-role="destlist"]').forEach(function (list) {
+    list.classList.add('is-hidden');
+  });
+}
+
+/** 聚焦输入框：展开候选；已选过目的地就先展示全部再筛 */
+function onTripDestFocus(event) {
+  var input = event.target.closest('[data-role="destinput"]');
+  if (!input) return;
+  var row = input.closest('.step-row');
+  var confirmed = row.querySelector('[data-role="dest"]').value;
+  var picker = row.querySelector('.dest-picker');
+  var keyword = input.value === confirmed ? '' : input.value;
+  fillDestList(picker, row.querySelector('[data-role="action"]').value, keyword);
+  picker.querySelector('[data-role="destlist"]').classList.remove('is-hidden');
+}
+
+function onTripDestInput(event) {
+  var input = event.target.closest('[data-role="destinput"]');
+  if (!input) return;
+  var row = input.closest('.step-row');
+  fillDestList(row.querySelector('.dest-picker'), row.querySelector('[data-role="action"]').value, input.value);
+  row.querySelector('[data-role="destlist"]').classList.remove('is-hidden');
+}
+
+function onTripDestKeydown(event) {
+  var input = event.target.closest('[data-role="destinput"]');
+  if (!input) return;
+  if (event.key === 'Escape') {
+    input.blur();
+    return;
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    var first = input.closest('.dest-picker').querySelector('.dest-item');
+    if (first) selectTripDest(first);
+  }
+}
+
+/** 失焦：没点选就把输入框还原成已确认的目的地 */
+function onTripDestBlur(event) {
+  var input = event.target.closest ? event.target.closest('[data-role="destinput"]') : null;
+  if (!input) return;
+  var row = input.closest('.step-row');
+  input.value = row.querySelector('[data-role="dest"]').value;
+  closeDestLists();
+}
+
+/** 离开目的地选择区：输入框还原成已确认值，候选列表收起 */
+function resetTripDestInputs() {
+  document.querySelectorAll('#tripBuildSteps .step-row').forEach(function (row) {
+    row.querySelector('[data-role="destinput"]').value = row.querySelector('[data-role="dest"]').value;
+  });
+  closeDestLists();
 }
 
 function collectTripBuildSteps() {
@@ -607,8 +827,10 @@ function onTripBuildStepChange(event) {
   var target = event.target;
   if (target.matches('[data-role="action"]')) {
     var row = target.closest('.step-row');
-    var destSel = row.querySelector('[data-role="dest"]');
-    destSel.innerHTML = getDestOptionsGroupedHtml(target.value, '');
+    // 动作换了，原目的地不再适用，清空重选
+    row.querySelector('[data-role="dest"]').value = '';
+    row.querySelector('[data-role="destinput"]').value = '';
+    fillDestList(row.querySelector('.dest-picker'), target.value, '');
   } else if (target.matches('[data-role="del"]')) {
     var idx = Number(target.closest('.step-row').dataset.stepIdx);
     var steps = collectTripBuildSteps();
