@@ -1400,11 +1400,8 @@ function renderCfgTags() {
 }
 
 function renderCfgTag(name, idx) {
-  var hasCoord = !!placeCoord(name);
-  // 只有「始发地」保留地图定位按钮；进港区 / 提还堆场在管理弹窗里不设置坐标
-  var coordBtn = cfgModalKey === 'origins' ?
-    '<button type="button" data-cfg-coord="' + idx + '" class="' + (hasCoord ? 'has-coord' : '') +
-    '" aria-label="设置坐标" title="' + (hasCoord ? '已设置坐标，点击修改' : '设置地图坐标') + '">📍</button>' : '';
+  // 管理弹窗里不再提供"设置坐标"入口——坐标在地图页单独设置
+  var coordBtn = '';
   return '<span class="cfg-tag" draggable="true" data-cfg-name="' + esc(name) + '" data-cfg-idx="' + idx + '">' +
     esc(name) +
     coordBtn +
