@@ -363,11 +363,24 @@
     return group.id === 'zone-ys' || group.label === '洋山系';
   }
 
-  /** 按 id 找分组（进 / 提还两套一起查）；两套同 id 时优先取真正设过公里的那份 */
-  function findGroupById(id) {
+  /** 按侧取分组列表：'in' = 进港区，'pick' = 提还堆场；不传 = 两套一起 */
+  function groupsOfSide(side) {
+    var cfg = db.configs || {};
+    if (side === 'pick') return cfg.dest_pick_groups || [];
+    if (side === 'in') return cfg.dest_groups || [];
+    return allDestGroups();
+  }
+
+  /** 按 id 找分组；side 限定优先在进 / 提还那一套里找（同名地点两套各有一套分组） */
+  function findGroupById(id, side) {
+    var prefer = side ? groupsOfSide(side) : [];
+    var i;
+    for (i = 0; i < prefer.length; i++) {
+      if (prefer[i].id === id) return prefer[i];
+    }
     var groups = allDestGroups();
     var found = null;
-    for (var i = 0; i < groups.length; i++) {
+    for (i = 0; i < groups.length; i++) {
       if (groups[i].id !== id) continue;
       if (groups[i].km && Number(groups[i].km['新库']) > 0) return groups[i];
       if (!found) found = groups[i];
@@ -391,10 +404,11 @@
   }
 
   /** 某段的实际公里：分组设了公里就统一跟随（新成员自动继承）；
-   *  分组没设时才回退到目的地自己的 base_km，再没则用内置组的基准地点，否则留空手填 */
-  function resolveDestKm(origin, dest) {
-    var gid = getDestGroupId(dest);
-    var group = gid ? findGroupById(gid) : null;
+   *  分组没设时才回退到目的地自己的 base_km，再没则用内置组的基准地点，否则留空手填
+   *  side 传 'in' / 'pick'：先进本侧分组里找，找不到再退回两套一起找 */
+  function resolveDestKm(origin, dest, side) {
+    var gid = getDestGroupId(dest, side);
+    var group = gid ? findGroupById(gid, side) : null;
     // 分组自己设了公里（如「新库130」组：新库 130 / 东库自动 120）——组内所有成员统一跟随
     var groupKm = groupKmValue(origin, group);
     if (groupKm !== null) return groupKm;
@@ -427,7 +441,7 @@
           prevDest = s.dest;
           return;
         }
-        var km = resolveDestKm(origin, s.dest);
+        var km = resolveDestKm(origin, s.dest, 'in');
         if (km === null) unknown = true;
         else inSum += km;
         prevDest = s.dest;
@@ -438,7 +452,7 @@
         // 有「进」段：提 / 还 / 落 默认顺路不加公里；
         // 但「提」的分组公里比「进」大时，用提的公里覆盖整趟公里
         if (s.action === '提') {
-          var pickKm = resolveDestKm(origin, s.dest);
+          var pickKm = resolveDestKm(origin, s.dest, 'pick');
           if (pickKm !== null && pickKm > pickMax) pickMax = pickKm;
         }
         return;
@@ -449,7 +463,7 @@
         prevDest = s.dest;
         return;
       }
-      var soloKm = resolveDestKm(origin, s.dest);
+      var soloKm = resolveDestKm(origin, s.dest, 'pick');
       if (soloKm === null) unknown = true;
       else inSum += soloKm;
       prevDest = s.dest;
@@ -459,10 +473,13 @@
     return Math.max(inSum, pickMax);
   }
 
-  /** 判断目的地属于哪个区域 id */
-  function getDestGroupId(dest) {
-    var groups = allDestGroups();
+  /** 判断目的地属于哪个区域 id；side 优先看进 / 提还那一套分组，避免同名地点互相串公里 */
+  function getDestGroupId(dest, side) {
+    var groups = side ? groupsOfSide(side).concat(allDestGroups()) : allDestGroups();
+    var seen = {};
     for (var i = 0; i < groups.length; i++) {
+      if (seen[groups[i].id]) continue;
+      seen[groups[i].id] = true;
       if ((groups[i].members || []).indexOf(dest) >= 0) return groups[i].id;
     }
     return null;

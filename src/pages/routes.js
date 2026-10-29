@@ -1018,6 +1018,19 @@ function moveDestToGroup(destName, targetGroupId) {
   groups.forEach(function (g) {
     g.members = (g.members || []).filter(function (m) { return m !== destName; });
   });
+  // 另一个弹窗那套分组里的同名残留也清掉（只清「不属于那一侧」的，避免影响真正两处都有的地点）
+  var isInDest = (db.configs.dest_in || []).indexOf(destName) >= 0;
+  var isPickDest = (db.configs.dest_pick || []).indexOf(destName) >= 0;
+  if (cfgGroupKey() === 'dest_pick_groups' && !isInDest) {
+    (db.configs.dest_groups || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) { return m !== destName; });
+    });
+  }
+  if (cfgGroupKey() === 'dest_groups' && !isPickDest) {
+    (db.configs.dest_pick_groups || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) { return m !== destName; });
+    });
+  }
   // 加到目标组（__none__ 表示未分组，不加任何组）
   if (targetGroupId !== '__none__') {
     var target = groups.find(function (g) { return g.id === targetGroupId; });
