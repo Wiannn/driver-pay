@@ -5,76 +5,29 @@
   /* ================= 初始化 ================= */
   document.addEventListener('DOMContentLoaded', init);
 
+  /** 主界面是否已初始化（退出后重新选身份时不再重复挂载） */
+  var appStarted = false;
+
   function init() {
-    bindRoleControls();
+    bindRoleChip();
     if (!getRole()) {
-      $('roleGate').classList.remove('is-hidden');
+      showAuth();
       return;
     }
     startApp();
   }
 
-  /* ================= 身份选择 / 切换 ================= */
-  function bindRoleControls() {
-    $('roleStaffBtn').addEventListener('click', function () {
-      setRole('staff');
-      startApp();
-    });
-    $('roleManagerBtn').addEventListener('click', function () {
-      $('roleGateActions').classList.add('is-hidden');
-      $('rolePinWrap').classList.remove('is-hidden');
-      $('rolePinError').classList.add('is-hidden');
-      $('rolePinInput').value = '';
-      $('rolePinInput').focus();
-    });
-    $('rolePinCancel').addEventListener('click', function () {
-      $('rolePinWrap').classList.add('is-hidden');
-      $('roleGateActions').classList.remove('is-hidden');
-      $('rolePinError').classList.add('is-hidden');
-    });
-    $('rolePinOk').addEventListener('click', tryManagerLogin);
-    $('rolePinInput').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); tryManagerLogin(); }
-    });
-
+  /* ================= 顶栏身份菜单 ================= */
+  function bindRoleChip() {
     $('roleChip').addEventListener('click', function (e) {
       e.stopPropagation();
-      // 员工没有修改 PIN 的入口，点击不弹菜单
-      if (!isManager()) return;
       $('roleMenu').classList.toggle('is-hidden');
     });
     document.addEventListener('click', function (e) {
       if (!e.target.closest('.role-box')) $('roleMenu').classList.add('is-hidden');
     });
     $('roleChangePin').addEventListener('click', changeManagerPin);
-    $('roleExit').addEventListener('click', function () {
-      if (!confirm('切换为员工模式？')) return;
-      setRole('staff');
-      location.reload();
-    });
-  }
-
-  function tryManagerLogin() {
-    // db 未加载时先读一次，才能校验改过的 PIN
-    if (!db) loadDb();
-    var pin = String($('rolePinInput').value || '').trim();
-    if (!/^\d{4}$/.test(pin)) {
-      showPinError('请输入 4 位数字');
-      return;
-    }
-    if (pin !== managerPin()) {
-      showPinError('PIN 不正确');
-      return;
-    }
-    setRole('manager');
-    startApp();
-  }
-
-  function showPinError(text) {
-    var el = $('rolePinError');
-    el.textContent = text;
-    el.classList.remove('is-hidden');
-    $('rolePinInput').focus();
+    $('roleExit').addEventListener('click', exitToAuth);
   }
 
   /** 修改主管 PIN：必须先输对当前 PIN，再设置新的 */
@@ -109,10 +62,11 @@
     var chip = $('roleChip');
     chip.textContent = manager ? '主管' : '员工';
     chip.classList.toggle('is-staff', !manager);
-    $('roleGate').classList.add('is-hidden');
+    $('roleChangePin').classList.toggle('is-hidden', !manager);
   }
 
   function startApp() {
+    appStarted = true;
     mountPages();
     loadDb();
 

@@ -429,7 +429,6 @@ body {
   border-color: #e0e6f0;
   background: #f4f6fa;
   color: var(--muted);
-  cursor: default;
 }
 
 .role-chip.is-staff::before {
@@ -466,114 +465,122 @@ body {
   background: var(--primary-soft);
 }
 
-/* 身份选择遮罩 */
-.role-gate {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(12, 22, 38, 0.55);
-  backdrop-filter: blur(3px);
-}
-
-.role-gate.is-hidden {
+/* ---------- 身份选择页（登录） ---------- */
+/* 选身份之前主界面完全不显示，不是半透明遮罩 */
+body.is-auth .topbar,
+body.is-auth .layout {
   display: none;
 }
 
-.role-gate-card {
+.auth-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: linear-gradient(160deg, #f4f7fd 0%, #edf2ff 55%, #f7f9fc 100%);
+}
+
+.auth-view.is-hidden {
+  display: none;
+}
+
+.auth-card {
   width: 100%;
-  max-width: 340px;
-  padding: 26px 24px 22px;
-  border-radius: 16px;
+  max-width: 360px;
+  padding: 30px 26px 26px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
   background: #fff;
-  box-shadow: 0 24px 60px rgba(10, 20, 40, 0.25);
+  box-shadow: 0 24px 60px rgba(16, 30, 56, 0.12);
   text-align: center;
 }
 
-.role-gate-logo {
-  width: 46px;
-  height: 46px;
-  margin: 0 auto 12px;
-  border-radius: 12px;
+.auth-logo {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 14px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #2a5be0, #1f49c2);
   color: #fff;
-  font-size: 22px;
-  line-height: 46px;
+  font-size: 24px;
   font-weight: 600;
+  line-height: 50px;
+  box-shadow: 0 10px 22px -10px rgba(42, 91, 224, 0.9);
 }
 
-.role-gate-card h2 {
+.auth-title {
   margin: 0 0 6px;
-  font-size: 17px;
-  color: var(--ink);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
-.role-gate-sub {
-  margin: 0 0 18px;
+.auth-sub {
+  margin: 0 0 22px;
   color: var(--muted);
   font-size: 12.5px;
 }
 
-.role-gate-actions {
+.auth-actions {
   display: flex;
   gap: 10px;
 }
 
-.role-gate-actions .btn {
+.auth-actions .btn {
   flex: 1;
+  height: 42px;
 }
 
-.role-pin {
-  margin-top: 16px;
+.auth-pin {
   text-align: left;
 }
 
-.role-pin.is-hidden {
+.auth-pin.is-hidden {
   display: none;
 }
 
-.role-pin label {
+.auth-pin label {
   display: block;
   margin-bottom: 6px;
   color: var(--muted);
   font-size: 12px;
 }
 
-.role-pin input {
+.auth-pin input {
   width: 100%;
-  height: 38px;
+  height: 42px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  font-size: 15px;
-  letter-spacing: 6px;
+  font-family: inherit;
+  font-size: 16px;
+  letter-spacing: 8px;
 }
 
-.role-pin input:focus {
+.auth-pin input:focus {
   border-color: var(--primary);
   outline: none;
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.12);
 }
 
-.role-pin-actions {
+.auth-pin-actions {
   display: flex;
   gap: 10px;
   margin-top: 12px;
 }
 
-.role-pin-actions .btn {
+.auth-pin-actions .btn {
   flex: 1;
 }
 
-.role-pin-error {
-  margin: 10px 0 0;
+.auth-error {
+  margin: 8px 0 0;
   color: var(--danger);
   font-size: 12px;
 }
 
-.role-pin-error.is-hidden {
+.auth-error.is-hidden {
   display: none;
 }
 

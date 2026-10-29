@@ -18,10 +18,10 @@
     </div>
   </div>
   <div class="role-box">
-    <button type="button" class="role-chip" id="roleChip" title="切换身份 / 修改 PIN">主管</button>
+    <button type="button" class="role-chip" id="roleChip" title="退出登录 / 修改 PIN">主管</button>
     <div class="role-menu is-hidden" id="roleMenu">
       <button type="button" id="roleChangePin">修改 PIN</button>
-      <button type="button" id="roleExit">切换为员工</button>
+      <button type="button" id="roleExit">退出</button>
     </div>
   </div>
 </header>
@@ -49,28 +49,6 @@
       <button type="button" class="month-step" id="monthPrev" aria-label="上个月">‹</button>
       <select id="monthSelect" aria-label="结算月份"></select>
       <button type="button" class="month-step" id="monthNext" aria-label="下个月">›</button>
-    </div>
-  </div>
-
-  <!-- ========== 身份选择 ========== -->
-  <div class="role-gate" id="roleGate">
-    <div class="role-gate-card">
-      <div class="role-gate-logo">薪</div>
-      <h2>司机工资结算</h2>
-      <p class="role-gate-sub">请选择本次使用的身份</p>
-      <div class="role-gate-actions" id="roleGateActions">
-        <button type="button" class="btn btn-primary" id="roleStaffBtn">员工进入</button>
-        <button type="button" class="btn btn-ghost" id="roleManagerBtn">主管进入</button>
-      </div>
-      <div class="role-pin is-hidden" id="rolePinWrap">
-        <label for="rolePinInput">主管 PIN</label>
-        <input type="password" id="rolePinInput" inputmode="numeric" maxlength="4" placeholder="4 位数字" autocomplete="off">
-        <div class="role-pin-actions">
-          <button type="button" class="btn btn-ghost" id="rolePinCancel">返回</button>
-          <button type="button" class="btn btn-primary" id="rolePinOk">进入</button>
-        </div>
-        <p class="role-pin-error is-hidden" id="rolePinError"></p>
-      </div>
     </div>
   </div>
 
@@ -131,7 +109,7 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- 顺序不能变：core → data → pages(框架) → 各页面 definePage → init(启动) -->
+<!-- 顺序不能变：core → data → pages(框架) → 各页面 definePage → auth(身份页) → init(启动) -->
 <!-- 普通 script 保持全局作用域；build 后 inline.js 会把它们合并内联 -->
 <script src="./js/core.js"></script>
 <script src="./js/data.js"></script>
@@ -143,6 +121,7 @@
 <script src="./pages/routes.js"></script>
 <script src="./pages/attendance.js"></script>
 <script src="./pages/map.js"></script>
+<script src="./js/auth.js"></script>
 <script src="./js/init.js"></script>
 </body>
 </html>
