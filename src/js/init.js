@@ -104,6 +104,8 @@
 
     document.addEventListener('click', handleRowAction);
 
+    bindDriverSync();
+
     applyRole();
     placeMonthBox(state.page);
     refreshData();
@@ -128,12 +130,52 @@
     fillDriverSelect('tripDriver');
     fillDriverSelect('fuelDriver');
     fillAttDriverSelect();
+    syncDriverSelects();
     fillRouteSelect();
     fillOriginSelect();
     fillTripBuildOrigin();
     renderStepsEditor([]);
     renderDriverTable();
     renderRouteTable();
+  }
+
+  /* ================= 司机联动 ================= */
+  /** 三个页面用到司机的下拉；任选一个，其它页面跟着选中，省得每页重选 */
+  var DRIVER_SELECTS = ['tripDriver', 'fuelDriver', 'attDriver'];
+
+  function bindDriverSync() {
+    DRIVER_SELECTS.forEach(function (id) {
+      $(id).addEventListener('change', function () {
+        var driverId = this.value;
+        // 选「请选择 / 全部」只影响当前页，不改动其他页
+        if (!driverId) return;
+        DRIVER_SELECTS.forEach(function (otherId) {
+          if (otherId === id) return;
+          var select = $(otherId);
+          var found = Array.prototype.some.call(select.options, function (option) {
+            return option.value === driverId;
+          });
+          if (found) select.value = driverId;
+        });
+      });
+    });
+  }
+
+  /** 某页下拉被重填（司机增删）后，尽量维持全站同一个司机 */
+  function syncDriverSelects() {
+    var driverId = '';
+    DRIVER_SELECTS.some(function (id) {
+      driverId = $(id).value;
+      return !!driverId;
+    });
+    if (!driverId) return;
+    DRIVER_SELECTS.forEach(function (id) {
+      var select = $(id);
+      var found = Array.prototype.some.call(select.options, function (option) {
+        return option.value === driverId;
+      });
+      if (found) select.value = driverId;
+    });
   }
 
   /* ================= 月份 ================= */
