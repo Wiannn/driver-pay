@@ -619,7 +619,6 @@ definePage('routes', {
     $('stepsWrap').addEventListener('change', onStepChange);
 
     applyRouteMode();
-    refreshData();
 
     // 配置弹窗
     $('cfgOriginsBtn').addEventListener('click', function () { openCfgModal('origins'); });
