@@ -672,7 +672,6 @@ definePage('routes', {
       e.preventDefault();
       createDestGroup(groupInput.value);
     });
-    $('cfgSaveBtn').addEventListener('click', saveCfgModal);
 
     // 目的地 / 始发地标签右键：坐标菜单（提/还目的地不需要定位）
     $('cfgTags').addEventListener('contextmenu', function (e) {
@@ -1566,11 +1565,6 @@ function removeCfgItem(idx) {
   refreshCfgDependentUI();
 }
 
-function saveCfgModal() {
-  if (!requireManager('保存地点管理')) return;
-  refreshCfgDependentUI();
-  closeCfgModal();
-  renderRouteTable();
-  toast(cfgModalLabel + '已保存');
-}
+function saveCfgModal() {}
+
 
