@@ -9,6 +9,7 @@ definePage('fuel', {
         <h2>加油录入</h2>
         <p class="sub">加油站和仓库的油都计入实际加油量，一起参与节油计算。</p>
       </div>
+      <div class="page-tools"></div>
     </div>
 
     <form class="entry-card" id="fuelForm">

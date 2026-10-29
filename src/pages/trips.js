@@ -9,6 +9,7 @@ definePage('trips', {
         <h2>趟次录入</h2>
         <p class="sub">选一个常用路线模板（自动带公里提成），或现场临时搭建（不污染路线库）。</p>
       </div>
+      <div class="page-tools"></div>
     </div>
 
     <form class="entry-card" id="tripForm">

@@ -9,12 +9,13 @@ definePage('settlement', {
         <h2>月度结算</h2>
         <p class="sub" id="settleHint">按月自动汇总每位司机的工资</p>
       </div>
-      <div class="page-actions">
-        <button type="button" class="btn btn-ghost" id="backupBtn" title="数据只保存在这台电脑的浏览器里，换电脑前请先导出备份">导出备份</button>
-        <button type="button" class="btn btn-ghost" id="restoreBtn" title="恢复备份会覆盖当前全部数据">恢复备份</button>
-        <input type="file" id="restoreFile" accept=".json,application/json" hidden>
-        <button type="button" class="btn btn-ghost" id="settleRefresh">刷新</button>
-        <button type="button" class="btn btn-primary" id="exportBtn">导出 Excel</button>
+      <div class="page-tools">
+        <div class="page-actions">
+          <button type="button" class="btn btn-ghost" id="backupBtn" title="数据只保存在这台电脑的浏览器里，换电脑前请先导出备份">导出备份</button>
+          <button type="button" class="btn btn-ghost" id="restoreBtn" title="恢复备份会覆盖当前全部数据">恢复备份</button>
+          <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+          <button type="button" class="btn btn-primary" id="exportBtn">导出 Excel</button>
+        </div>
       </div>
     </div>
     <div class="rule-bar" id="ruleBar"></div>
@@ -159,12 +160,6 @@ definePage('settlement', {
   `,
 
   init: function () {
-    $('settleRefresh').addEventListener('click', function () {
-      loadDb();
-      refreshData();
-      renderPage();
-      toast('数据已刷新');
-    });
     $('exportBtn').addEventListener('click', exportExcel);
 
     $('backupBtn').addEventListener('click', exportBackup);

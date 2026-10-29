@@ -248,13 +248,13 @@
     $('monthLabel').textContent = label;
     var head = document.querySelector('#page-' + page + ' .page-head');
     if (!head) return;
-    var actions = head.querySelector('.page-actions');
-    if (!actions) {
-      actions = document.createElement('div');
-      actions.className = 'page-actions';
-      head.appendChild(actions);
+    var tools = head.querySelector('.page-tools');
+    if (!tools) {
+      tools = document.createElement('div');
+      tools.className = 'page-tools';
+      head.appendChild(tools);
     }
-    actions.insertBefore(box, actions.firstChild);
+    tools.insertBefore(box, tools.firstChild);
   }
 
   function renderPage() {

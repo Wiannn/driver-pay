@@ -296,6 +296,19 @@ body {
   gap: 10px;
 }
 
+/* 标题行右侧纵向容器：月份控件在上，按钮行在下（三页位置一致） */
+.page-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-start;
+  gap: 10px;
+}
+
+.page-tools .month-box {
+  min-height: 36px;
+}
+
 .btn {
   appearance: none;
   height: 38px;
