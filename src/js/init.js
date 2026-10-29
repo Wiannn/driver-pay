@@ -219,8 +219,15 @@
     toast('已切换到 ' + monthLabel(month));
   }
 
+  /** 员工不开放的页面（菜单入口也隐藏） */
+  var STAFF_HIDDEN_PAGES = { routes: true, drivers: true };
+
   /* ================= 页面 ================= */
   function switchPage(page) {
+    if (!isManager() && STAFF_HIDDEN_PAGES[page]) {
+      toast('员工模式无法查看该页面', 'error');
+      return;
+    }
     state.page = page;
     document.querySelectorAll('.nav-btn').forEach(function (button) {
       button.classList.toggle('is-active', button.dataset.page === page);
