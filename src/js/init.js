@@ -109,7 +109,6 @@
     applyRole();
     placeMonthBox(state.page);
     refreshData();
-    applyTripMode();
     renderPage();
     registerServiceWorker();
   }
@@ -133,6 +132,7 @@
     syncDriverSelects();
     fillOriginSelect();
     fillTripBuildOrigin();
+    renderTripBuildSteps([{ action: '进', dest: '' }]);
     renderStepsEditor([]);
     renderDriverTable();
     renderRouteTable();
