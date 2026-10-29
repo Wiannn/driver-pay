@@ -357,33 +357,57 @@
     return groupAnchorKm(origin, gid);
   }
 
-  /** 自动算总公里：有「进」段时只统计进目的地的公里（提/还/落是顺路回库，不加公里）；
-   *  整趟没有「进」段时（如单独一段提 / 还 / 落），各段按分组公里计入。
-   *  同方向（同进分组 zone-ab/cd/ys）的相邻段不叠加；不同方向叠加。 */
+  /** 自动算总公里：
+   *  - 有「进」段时，提 / 还 / 落按顺路不加公里；但「提」的分组公里比进大时，用提的公里覆盖整趟。
+   *  - 整趟没有「进」段时（如单独一段提 / 还 / 落），各段按分组公里计入。
+   *  同方向（同进分组 zone-ab/cd/ys）的相邻段不叠加。 */
   function computeAutoKm(origin, steps) {
     if (!origin || !Array.isArray(steps)) return 0;
-    var sum = 0;
+    var inSum = 0;        // 「进」段累计公里
+    var pickMax = 0;      // 「提」段里最大的公里（用于覆盖）
     var prevDest = null;
     var unknown = false;
     var hasIn = steps.some(function (s) { return s && s.dest && s.action === '进'; });
+
     steps.forEach(function (s) {
       if (!s || !s.dest) return;
-      // 有「进」段时，提 / 还 / 落 只是顺路动作，不加公里（也不更新 prevDest）
-      if (s.action !== '进' && hasIn) return;
-      // 跟前一个进同区域 → 同方向顺路，不加
+
+      if (s.action === '进') {
+        // 跟前一个进同区域 → 同方向顺路，不叠加
+        if (prevDest && sameDestGroup(prevDest, s.dest)) {
+          prevDest = s.dest;
+          return;
+        }
+        var km = resolveDestKm(origin, s.dest);
+        if (km === null) unknown = true;
+        else inSum += km;
+        prevDest = s.dest;
+        return;
+      }
+
+      if (hasIn) {
+        // 有「进」段：提 / 还 / 落 默认顺路不加公里；
+        // 但「提」的分组公里比「进」大时，用提的公里覆盖整趟公里
+        if (s.action === '提') {
+          var pickKm = resolveDestKm(origin, s.dest);
+          if (pickKm !== null && pickKm > pickMax) pickMax = pickKm;
+        }
+        return;
+      }
+
+      // 整趟没有「进」段：提 / 还 / 落 各自按分组公里计入
       if (prevDest && sameDestGroup(prevDest, s.dest)) {
         prevDest = s.dest;
         return;
       }
-      var km = resolveDestKm(origin, s.dest);
-      if (km === null) {
-        unknown = true;
-      } else {
-        sum += km;
-      }
+      var soloKm = resolveDestKm(origin, s.dest);
+      if (soloKm === null) unknown = true;
+      else inSum += soloKm;
       prevDest = s.dest;
     });
-    return unknown ? null : sum;
+
+    if (unknown) return null;
+    return Math.max(inSum, pickMax);
   }
 
   /** 判断目的地属于哪个区域 id */
