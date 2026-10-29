@@ -310,17 +310,7 @@
 /* ---------- 窄屏 ---------- */
 @media (max-width: 1180px) {
   .topbar {
-    height: auto;
-    flex-wrap: wrap;
-    padding: 12px 18px;
-    gap: 10px 18px;
-  }
-
-  .nav {
-    order: 3;
-    flex: 1 1 100%;
-    width: 100%;
-    overflow-x: auto;
+    padding: 0 18px;
   }
 
   .wrap {

@@ -17,23 +17,6 @@
       <p>趟次 · 加油 · 月度工资</p>
     </div>
   </div>
-  <nav class="nav" id="nav">
-    <button type="button" class="nav-btn is-active" data-page="settlement">月度结算</button>
-    <button type="button" class="nav-btn" data-page="trips">趟次录入</button>
-    <button type="button" class="nav-btn" data-page="fuel">加油录入</button>
-    <button type="button" class="nav-btn" data-page="attendance">出勤登记</button>
-    <button type="button" class="nav-btn" data-page="map">地图</button>
-    <button type="button" class="nav-btn" data-page="drivers">司机信息</button>
-    <button type="button" class="nav-btn" data-page="routes">线路价目</button>
-  </nav>
-  <div class="month-box" id="monthBox">
-    <label for="monthSelect">结算月份</label>
-    <div class="month-control">
-      <button type="button" class="month-step" id="monthPrev" aria-label="上个月">‹</button>
-      <select id="monthSelect" aria-label="结算月份"></select>
-      <button type="button" class="month-step" id="monthNext" aria-label="下个月">›</button>
-    </div>
-  </div>
   <div class="role-box">
     <button type="button" class="role-chip" id="roleChip" title="切换身份 / 修改 PIN">主管</button>
     <div class="role-menu is-hidden" id="roleMenu">
@@ -42,6 +25,28 @@
     </div>
   </div>
 </header>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="month-box" id="monthBox">
+      <label for="monthSelect">结算月份</label>
+      <div class="month-control">
+        <button type="button" class="month-step" id="monthPrev" aria-label="上个月">‹</button>
+        <select id="monthSelect" aria-label="结算月份"></select>
+        <button type="button" class="month-step" id="monthNext" aria-label="下个月">›</button>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <button type="button" class="nav-btn is-active" data-page="settlement">月度结算</button>
+      <button type="button" class="nav-btn" data-page="trips">趟次录入</button>
+      <button type="button" class="nav-btn" data-page="fuel">加油录入</button>
+      <button type="button" class="nav-btn" data-page="attendance">出勤登记</button>
+      <button type="button" class="nav-btn" data-page="map">地图</button>
+      <button type="button" class="nav-btn" data-page="drivers">司机信息</button>
+      <button type="button" class="nav-btn" data-page="routes">线路价目</button>
+    </nav>
+  </aside>
 
 <main class="wrap">
 
@@ -121,6 +126,8 @@
   </div>
 
 </main>
+
+</div>
 
 <div class="toast" id="toast"></div>
 
