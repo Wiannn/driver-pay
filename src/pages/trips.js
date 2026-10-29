@@ -353,12 +353,16 @@ definePage('trips', {
 
 /* ================= 趟次 ================= */
 
-/* 提成展示为整数，不显示小数（如 ¥120 而非 ¥120.00） */
-var commissionFormat = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
+/* 提成、公里展示为整数，不显示小数（如 ¥120 而非 ¥120.00） */
+var intFormat = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
 
 function yuanInt(value) {
   var amount = Number(value) || 0;
-  return (amount < 0 ? '-¥' : '¥') + commissionFormat.format(Math.abs(amount));
+  return (amount < 0 ? '-¥' : '¥') + intFormat.format(Math.abs(amount));
+}
+
+function kmInt(value) {
+  return intFormat.format(Number(value) || 0);
 }
 
 /* ---------- 列宽：默认值 / 读取 / 应用 / 拖动 / 保存 ---------- */
@@ -481,7 +485,7 @@ function fillRouteSelect() {
   routes.forEach(function (route) {
     html +=
       '<option value="' + route.id + '">' + esc(buildRouteName(route)) + ' · ' +
-      fmt2(route.total_km) + ' km · ' + yuanInt(route.total_commission) + '</option>';
+      kmInt(route.total_km) + ' km · ' + yuanInt(route.total_commission) + '</option>';
   });
   select.innerHTML = html;
 
@@ -704,7 +708,7 @@ function renderTrips() {
         '<td class="container-no" data-trip="' + trip.id + '" title="双击编辑 · 箱号或提单号多个用逗号/空格隔开">' +
           renderContainerChips(trip.container_no) + '</td>' +
         '<td class="num trip-km" data-trip="' + trip.id + '" title="双击编辑公里数">' +
-          fmt2(trip.km) + '</td>' +
+          kmInt(trip.km) + '</td>' +
         '<td class="num trip-commission" data-trip="' + trip.id + '" title="双击编辑提成">' +
           yuanInt(trip.commission) + '</td>' +
         '<td class="trip-note" data-trip="' + trip.id + '" title="双击编辑">' +
@@ -723,7 +727,7 @@ function renderTrips() {
     return sum + Number(item.commission);
   }, 0);
   $('tripSummary').innerHTML =
-    '共 <b>' + rows.length + '</b> 趟 · ' + fmt2(km) + ' km · ' + yuanInt(commission);
+    '共 <b>' + rows.length + '</b> 趟 · ' + kmInt(km) + ' km · ' + yuanInt(commission);
 
   updateTripPager(rows.length, totalPages);
 }
