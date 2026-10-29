@@ -441,6 +441,9 @@ definePage('trips', {
     // 表格列宽：竖线、拖动调整、宽度记忆
     bindTripColResize();
     ensureTripColLayout();
+
+    // 表单默认就有一个空步骤
+    renderTripBuildSteps([{ action: '进', dest: '' }]);
   },
 });
 
@@ -801,7 +804,7 @@ function saveTrip(event) {
     // reset
     fillTripBuildOrigin();
     $('tripBuildOrigin').value = '';
-    renderTripBuildSteps([]);
+    renderTripBuildSteps([{ action: '进', dest: '' }]);
     $('tripKm').value = '';
     $('tripCommission').value = '';
     renderPage();
