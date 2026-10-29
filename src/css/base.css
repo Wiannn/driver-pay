@@ -429,6 +429,7 @@ body {
   border-color: #e0e6f0;
   background: #f4f6fa;
   color: var(--muted);
+  cursor: default;
 }
 
 .role-chip.is-staff::before {

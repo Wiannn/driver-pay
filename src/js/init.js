@@ -39,6 +39,8 @@
 
     $('roleChip').addEventListener('click', function (e) {
       e.stopPropagation();
+      // 员工没有修改 PIN 的入口，点击不弹菜单
+      if (!isManager()) return;
       $('roleMenu').classList.toggle('is-hidden');
     });
     document.addEventListener('click', function (e) {
@@ -75,8 +77,19 @@
     $('rolePinInput').focus();
   }
 
+  /** 修改主管 PIN：必须先输对当前 PIN，再设置新的 */
   function changeManagerPin() {
     $('roleMenu').classList.add('is-hidden');
+    if (!isManager()) {
+      toast('只有主管可以修改 PIN', 'error');
+      return;
+    }
+    var oldPin = window.prompt('请先输入当前主管 PIN', '');
+    if (oldPin === null) return;
+    if (String(oldPin).trim() !== managerPin()) {
+      toast('当前 PIN 不正确', 'error');
+      return;
+    }
     var next = window.prompt('输入新的 4 位主管 PIN', '');
     if (next === null) return;
     next = String(next).trim();
@@ -89,7 +102,7 @@
     toast('主管 PIN 已修改', 'success');
   }
 
-  /** 按身份刷新界面：员工隐藏只读入口并显示提示条 */
+  /** 按身份刷新界面：员工隐藏只读入口 */
   function applyRole() {
     var manager = isManager();
     document.body.classList.toggle('is-staff', !manager);
