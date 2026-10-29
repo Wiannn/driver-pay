@@ -969,6 +969,7 @@ var cfgModalKey = null; // 当前编辑的 config key：origins / dest_in / dest
 var cfgModalLabel = '';
 
 function openCfgModal(key) {
+  if (!requireManager('管理地点')) return;
   cfgModalKey = key;
   cfgGroupAdding = false;
   if (key === 'origins') { cfgModalLabel = '始发地列表'; $('cfgHint').textContent = '行驶的起点，例如：新库、东库'; }
@@ -1010,6 +1011,7 @@ function cfgGroupsLocked() {
 
 /** 把一个目的地移到指定分组 */
 function moveDestToGroup(destName, targetGroupId) {
+  if (!requireManager('调整分组')) return;
   if (!destName) return;
   var groups = db.configs[cfgGroupKey()] || [];
   // 从所有组里移除
@@ -1078,6 +1080,7 @@ function renderGroupKmEditor(group) {
 
 /** 保存分组公里：东库留空表示按 ±10 自动推导 */
 function saveGroupKm(groupId) {
+  if (!requireManager('修改分组公里')) return;
   var groups = db.configs[cfgGroupKey()] || [];
   var group = groups.filter(function (g) { return g.id === groupId; })[0];
   if (!group) return;
@@ -1103,6 +1106,7 @@ function saveGroupKm(groupId) {
 }
 
 function createDestGroup(label) {
+  if (!requireManager('新增分组')) return;
   if (cfgGroupsLocked()) return;
   label = String(label || '').trim();
   if (!label) { toast('请输入分组名称', 'error'); return; }
@@ -1127,6 +1131,7 @@ function createDestGroup(label) {
 }
 
 function commitGroupRename(groupId, label) {
+  if (!requireManager('修改分组名称')) return;
   var groups = db.configs[cfgGroupKey()] || [];
   var group = groups.filter(function (g) { return g.id === groupId; })[0];
   if (!group) return;
@@ -1178,6 +1183,7 @@ function startGroupRename(groupId) {
 
 /** 删除分组（组内地点移到未分组） */
 function removeDestGroup(groupId) {
+  if (!requireManager('删除分组')) return;
   if (cfgGroupsLocked()) return;
   var key = cfgGroupKey();
   var groups = db.configs[key] || [];
@@ -1279,6 +1285,7 @@ function renderCfgTag(name, idx) {
 
 /** 编辑改名 → 同步 routes 和 trips */
 function editCfgItem(idx) {
+  if (!requireManager('修改地点名称')) return;
   if (!cfgModalKey) return;
   var list = db.configs[cfgModalKey] || [];
   var oldVal = list[idx];
@@ -1373,6 +1380,7 @@ function refreshCfgDependentUI() {
 }
 
 function addCfgItem() {
+  if (!requireManager('新增地点')) return;
   if (!cfgModalKey) return;
   var input = $('cfgNewInput');
   var value = String(input.value || '').trim();
@@ -1407,6 +1415,7 @@ function countRoutesUsingCfg(key, value) {
 }
 
 function removeCfgItem(idx) {
+  if (!requireManager('删除地点')) return;
   if (!cfgModalKey) return;
   var list = db.configs[cfgModalKey] || [];
   var value = list[idx];
@@ -1432,6 +1441,7 @@ function removeCfgItem(idx) {
 }
 
 function saveCfgModal() {
+  if (!requireManager('保存地点管理')) return;
   refreshCfgDependentUI();
   closeCfgModal();
   renderRouteTable();

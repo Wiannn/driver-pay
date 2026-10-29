@@ -57,12 +57,23 @@ distHtml = distHtml.replace(
 // ===== 6. 写回单文件 =====
 fs.writeFileSync(path.join(distDir, 'index.html'), distHtml, 'utf8');
 
-// ===== 7. 清理 assets/ =====
+// ===== 7. 给 Service Worker 注入本次构建版本（每次发版换缓存名，旧缓存自动清掉） =====
+const swPath = path.join(distDir, 'sw.js');
+if (fs.existsSync(swPath)) {
+  const version = Date.now().toString(36);
+  const swCode = fs
+    .readFileSync(swPath, 'utf8')
+    .replace(/var CACHE_NAME = '[^']*';/, `var CACHE_NAME = 'driver-pay-${version}';`);
+  fs.writeFileSync(swPath, swCode, 'utf8');
+  console.log(`[inline] SW 缓存版本: driver-pay-${version}`);
+}
+
+// ===== 8. 清理 assets/ =====
 const assetsDir = path.join(distDir, 'assets');
 if (fs.existsSync(assetsDir)) {
   fs.rmSync(assetsDir, { recursive: true });
 }
 
-// ===== 8. 报告 =====
+// ===== 9. 报告 =====
 const size = fs.statSync(path.join(distDir, 'index.html')).size;
 console.log(`[inline] ✓ 单文件就绪: dist/index.html  ${(size / 1024).toFixed(1)} KB  (CSS+${scriptSrcs.length}个JS 全部内联)`);

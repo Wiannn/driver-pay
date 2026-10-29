@@ -916,6 +916,7 @@ function renderMapFilters() {
 
 /** 点击分组圆点 → 打开系统取色盘，选完立即写库并刷新列表、筛选条、地图圆点 */
 function openGroupColorPicker(groupId, anchor) {
+  if (!requireManager('修改分组颜色')) return;
   var group = getPlaceGroups().filter(function (g) { return String(g.id) === String(groupId); })[0];
   var current = group ? String(group.color || '') : '';
   var input = document.createElement('input');
@@ -1043,6 +1044,7 @@ function afterMapGroupChange(targetGroupId) {
 
 /** 把地点拖到提还分组；targetGroupId 为 '__none__' 表示移到未分组 */
 function mapMovePlaceToGroup(name, targetGroupId) {
+  if (!requireManager('调整分组')) return;
   if (!name) return;
   if ((db.configs.dest_pick || []).indexOf(name) < 0) {
     toast('「' + name + '」只在进目的地里，不能拖到提还分组', 'error');
@@ -1073,6 +1075,7 @@ function mapMovePlaceToGroup(name, targetGroupId) {
 
 /** 拖动分组调整顺序：把 dragId 插到 targetId 前面（before=true）或后面 */
 function mapReorderGroups(dragId, targetId, before) {
+  if (!requireManager('调整分组顺序')) return;
   if (!dragId || !targetId || dragId === targetId) return;
   var groups = db.configs.dest_pick_groups || [];
   var from = -1;
@@ -1355,6 +1358,7 @@ function handleMapMenu(action) {
   var name = mapState.menuName;
   hideMapMenu();
   if (!name) return;
+  if (!requireManager('修改坐标')) return;
   if (action === 'clear') {
     if (db.configs.coords) delete db.configs.coords[name];
     saveLocal();
@@ -1368,6 +1372,7 @@ function handleMapMenu(action) {
 }
 
 function openCoordModal(name) {
+  if (!requireManager('修改坐标')) return;
   mapState.coordTarget = name;
   mapState.coordLatLng = placeCoord(name);
   $('coordModalTitle').textContent = '设置坐标 · ' + name;
@@ -1442,6 +1447,7 @@ function closeCoordModal() {
 }
 
 function saveCoordModal() {
+  if (!requireManager('修改坐标')) return;
   if (!mapState.coordTarget) return;
   var name = mapState.coordTarget;
   db.configs.coords = db.configs.coords || {};
