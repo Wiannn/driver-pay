@@ -19,8 +19,14 @@ definePage('routes', {
     <form class="entry-card route-form" id="routeForm">
       <input type="hidden" id="routeId">
       <div class="field">
-        <label for="routeOrigin">始发地</label>
+        <label>
+          始发地
+          <button type="button" class="btn btn-ghost mode-switch-btn" id="routeModeSwitch">切换为自定义</button>
+        </label>
+        <!-- 组合模式：从始发地库选 -->
         <select id="routeOrigin" required></select>
+        <!-- 自定义模式：自由输入 -->
+        <input type="text" id="routeOriginCustom" class="is-hidden" placeholder="自由输入始发地名称">
       </div>
 
       <div class="field field-wide">
@@ -153,6 +159,25 @@ definePage('routes', {
 .step-row select.step-dest {
   flex: 1 1 auto;
   min-width: 140px;
+}
+
+/* 自定义模式下目的地改成文本输入 */
+.step-row input.step-dest-input {
+  flex: 1 1 auto;
+  min-width: 140px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.step-row input.step-dest-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
 }
 
 .step-row button.step-del {
@@ -573,8 +598,10 @@ definePage('routes', {
   `,
 
   init: function () {
+    state.routeMode = state.routeMode || 'combo';
     $('routeForm').addEventListener('submit', saveRoute);
     $('routeCancel').addEventListener('click', resetRouteForm);
+    $('routeModeSwitch').addEventListener('click', toggleRouteMode);
     $('routeSearch').addEventListener('input', renderRouteTable);
     $('routeSortBtn').addEventListener('click', function () {
       state.routeSort = state.routeSort === 'name' ? 'add' : 'name';
@@ -582,9 +609,17 @@ definePage('routes', {
     });
     $('stepAddBtn').addEventListener('click', addStepRow);
     $('routeOrigin').addEventListener('change', updateRoutePreview);
+    $('routeOriginCustom').addEventListener('input', updateRoutePreview);
+    // 自定义模式下目的地是 input，也要触发预览
+    $('stepsWrap').addEventListener('input', function (e) {
+      if (e.target.matches('[data-role="destinput"]')) updateRoutePreview();
+    });
     // 步骤编辑器事件委托（删除/动作切换）
     $('stepsWrap').addEventListener('click', onStepChange);
     $('stepsWrap').addEventListener('change', onStepChange);
+
+    applyRouteMode();
+    refreshData();
 
     // 配置弹窗
     $('cfgOriginsBtn').addEventListener('click', function () { openCfgModal('origins'); });
@@ -727,13 +762,24 @@ function fillOriginSelect() {
   if ((db.configs.origins || []).indexOf(current) >= 0) select.value = current;
 }
 
-/** 渲染步骤编辑器；steps 为空时自动加 1 段 */
+/** 渲染步骤编辑器；steps 为空时自动加 1 段；根据 state.routeMode 决定目的地是下拉还是输入框 */
 function renderStepsEditor(steps) {
   var list = steps && steps.length ? steps : [{ action: '进', dest: '' }];
   var wrap = $('stepsWrap');
+  var isCustom = state.routeMode === 'custom';
   var html = '';
   list.forEach(function (step, idx) {
-    var destHtml = getDestOptionsGroupedHtml(step.action, step.dest);
+    var destHtml;
+    if (isCustom) {
+      destHtml =
+        '<input type="text" class="step-dest-input" data-role="destinput"' +
+        ' placeholder="输入目的地名称" value="' + esc(step.dest || '') + '">';
+    } else {
+      destHtml =
+        '<select class="step-dest" data-role="dest">' +
+          getDestOptionsGroupedHtml(step.action, step.dest) +
+        '</select>';
+    }
     html +=
       '<div class="step-row" data-step-idx="' + idx + '">' +
       '<span class="step-idx">' + (idx + 1) + '</span>' +
@@ -743,7 +789,7 @@ function renderStepsEditor(steps) {
         '<option value="还"' + (step.action === '还' ? ' selected' : '') + '>还</option>' +
         '<option value="落"' + (step.action === '落' ? ' selected' : '') + '>落</option>' +
       '</select>' +
-      '<select class="step-dest" data-role="dest">' + destHtml + '</select>' +
+      destHtml +
       '<button type="button" class="step-del" data-role="del" title="删除此段">×</button>' +
       '</div>';
   });
@@ -789,24 +835,62 @@ function getDestOptionsGroupedHtml(action, currentVal) {
   return html;
 }
 
-/** 从 DOM 收集当前 steps 值 */
+/** 从 DOM 收集当前 steps 值（组合模式从 select 取、自定义模式从 input 取） */
 function collectStepsFromDom() {
   var rows = document.querySelectorAll('#stepsWrap .step-row');
   var steps = [];
   rows.forEach(function (row) {
     var actionSel = row.querySelector('[data-role="action"]');
     var destSel = row.querySelector('[data-role="dest"]');
-    if (actionSel && destSel && destSel.value) {
-      steps.push({ action: actionSel.value, dest: destSel.value });
+    var destInput = row.querySelector('[data-role="destinput"]');
+    var dest = destSel ? destSel.value.trim() : (destInput ? destInput.value.trim() : '');
+    if (actionSel && dest) {
+      steps.push({ action: actionSel.value, dest: dest });
     }
   });
   return steps;
 }
 
-/** 路线库：始发地/步骤变化时自动填总公里 */
-function updateAutoRouteKm() {
-  var origin = $('routeOrigin').value;
+/** 取始发地（组合模式从 select 取，自定义模式从 input 取） */
+function getCurrentOrigin() {
+  if (state.routeMode === 'custom') {
+    return $('routeOriginCustom').value.trim();
+  }
+  return $('routeOrigin').value;
+}
+
+/** 切换组合式 / 自定义 */
+function toggleRouteMode() {
+  state.routeMode = state.routeMode === 'custom' ? 'combo' : 'custom';
+  applyRouteMode();
+  // 收集当前步骤再重渲染，保留已有内容
   var steps = collectStepsFromDom();
+  renderStepsEditor(steps);
+  toast(state.routeMode === 'custom' ? '已切换为自定义模板，自动计算公里/提成将停用' : '已切换为组合式');
+}
+
+function applyRouteMode() {
+  var isCustom = state.routeMode === 'custom';
+  $('routeModeSwitch').textContent = isCustom ? '切换为组合式' : '切换为自定义';
+  $('routeOrigin').classList.toggle('is-hidden', isCustom);
+  $('routeOriginCustom').classList.toggle('is-hidden', !isCustom);
+  $('routeOrigin').required = !isCustom;
+  $('routeOriginCustom').required = isCustom;
+  // 自定义模式下把 select 当前值带给 input，方便用户直接改
+  if (isCustom && !$('routeOriginCustom').value) {
+    $('routeOriginCustom').value = $('routeOrigin').value;
+  }
+}
+
+/** 路线库：始发地/步骤变化时自动填总公里（自定义模式跳过自动计算，全程手填） */
+function updateAutoRouteKm() {
+  var origin = getCurrentOrigin();
+  var steps = collectStepsFromDom();
+  if (state.routeMode === 'custom') {
+    // 自定义模式停用自动计算，只更新预览
+    updateRoutePreviewOnly(origin, steps);
+    return;
+  }
   if (origin && steps.length) {
     var autoKm = computeAutoKm(origin, steps);
     // 自定义分组没有公里规则 → 留空，手填
@@ -821,8 +905,17 @@ function updateAutoRouteKm() {
   state._lastRouteAutoCommission = autoComm;
 }
 
+/** 只更新预览，不触发公里/提成重算（自定义模式用） */
+function updateRoutePreviewOnly(origin, steps) {
+  var parts = [];
+  if (origin) parts.push(origin);
+  steps.forEach(function (s) { parts.push(s.action + s.dest); });
+  var preview = parts.length ? parts.join(' → ') : '预览：始发地 + 步骤后自动拼接';
+  $('routePreview').textContent = preview;
+}
+
 function updateRoutePreview() {
-  var origin = $('routeOrigin').value;
+  var origin = getCurrentOrigin();
   var steps = collectStepsFromDom();
   var parts = [];
   if (origin) parts.push(origin);
@@ -846,9 +939,12 @@ function addStepRow() {
 function onStepChange(event) {
   var target = event.target;
   if (target.matches('[data-role="action"]')) {
-    var row = target.closest('.step-row');
-    var destSel = row.querySelector('[data-role="dest"]');
-    destSel.innerHTML = getDestOptionsGroupedHtml(target.value, '');
+    // 自定义模式切动作不重置目的地（用户自己填的），也不重算公里
+    if (state.routeMode !== 'custom') {
+      var row = target.closest('.step-row');
+      var destSel = row.querySelector('[data-role="dest"]');
+      if (destSel) destSel.innerHTML = getDestOptionsGroupedHtml(target.value, destSel.value || '');
+    }
   } else if (target.matches('[data-role="del"]')) {
     var idx = Number(target.closest('.step-row').dataset.stepIdx);
     var steps = collectStepsFromDom();
@@ -911,8 +1007,11 @@ function saveRoute(event) {
   try {
     var id = Number($('routeId').value);
     var steps = collectStepsFromDom();
+    var origin = getCurrentOrigin();
+    if (!origin) throw new Error('请填写始发地');
+    if (!steps.length) throw new Error('请至少添加一段行驶步骤');
     var payload = {
-      origin: $('routeOrigin').value,
+      origin: origin,
       steps: steps,
       total_km: $('routeKm').value,
       total_commission: $('routeCommission').value,
@@ -944,13 +1043,24 @@ function editRoute(id) {
   }
   $('routeId').value = route.id;
   fillOriginSelect();
-  $('routeOrigin').value = route.origin;
+  // origin 是否在始发地库里 → 决定默认用哪种模式打开
+  var origins = db.configs.origins || [];
+  var inLibrary = origins.indexOf(route.origin) >= 0;
+  state.routeMode = inLibrary ? 'combo' : 'custom';
+  applyRouteMode();
+  if (state.routeMode === 'custom') {
+    $('routeOriginCustom').value = route.origin;
+    $('routeOrigin').value = '';
+  } else {
+    $('routeOrigin').value = route.origin;
+    $('routeOriginCustom').value = '';
+  }
   $('routeKm').value = route.total_km;
   $('routeCommission').value = route.total_commission;
   renderStepsEditor(route.steps);
   $('routeSubmit').textContent = '保存修改';
   $('routeCancel').classList.remove('is-hidden');
-  $('routeOrigin').focus();
+  (state.routeMode === 'custom' ? $('routeOriginCustom') : $('routeOrigin')).focus();
 }
 
 function resetRouteForm() {
@@ -958,10 +1068,12 @@ function resetRouteForm() {
   $('routeForm').reset();
   $('routeKm').value = '';
   $('routeCommission').value = '';
+  $('routeOriginCustom').value = '';
   fillOriginSelect();
   renderStepsEditor([]);
   $('routeSubmit').textContent = '添加线路';
   $('routeCancel').classList.add('is-hidden');
+  applyRouteMode();
 }
 
 /* ================= 管理始发地 / 进港区 / 提还堆场（配置弹窗） ================= */
