@@ -277,6 +277,12 @@ definePage('trips', {
   max-width: none;
 }
 
+/* 公里 / 提成 与其他列统一左对齐（表头和数据一起） */
+.trip-table th.num,
+.trip-table td.num {
+  text-align: left;
+}
+
 .trip-table th,
 .trip-table td {
   overflow: hidden;
