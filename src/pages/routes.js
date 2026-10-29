@@ -70,27 +70,6 @@ definePage('routes', {
       </div>
     </div>
 
-    <!-- ========== 配置管理弹窗 ========== -->
-    <div class="modal-mask is-hidden" id="cfgModal">
-      <div class="modal">
-        <div class="modal-head">
-          <h3 id="cfgModalTitle">管理列表</h3>
-          <button type="button" class="modal-close" id="cfgModalClose">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="cfg-hint" id="cfgHint">回车添加，点 × 删除</div>
-          <div class="cfg-tags" id="cfgTags"></div>
-          <div class="cfg-input-row">
-            <input type="text" id="cfgNewInput" list="cfgSuggestList" placeholder="输入新名称后回车（已有地点会提示）">
-            <datalist id="cfgSuggestList"></datalist>
-            <button type="button" class="btn btn-primary" id="cfgAddBtn">添加</button>
-          </div>
-        </div>
-        <div class="modal-foot">
-          <button type="button" class="btn btn-ghost" id="cfgSaveBtn">保存</button>
-        </div>
-      </div>
-    </div>
   `,
 
   css: `
