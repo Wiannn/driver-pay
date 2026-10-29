@@ -1496,7 +1496,6 @@ function refreshCfgDependentUI() {
 
   fillTripBuildOrigin();
   fillOriginSelect();
-  fillRouteSelect();
 
   // 分组调整后地图同步（筛选条、右侧列表、标记颜色）
   if (typeof mapState !== 'undefined' && mapState && mapState.map) {
