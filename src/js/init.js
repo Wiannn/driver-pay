@@ -131,7 +131,6 @@
     fillDriverSelect('fuelDriver');
     fillAttDriverSelect();
     syncDriverSelects();
-    fillRouteSelect();
     fillOriginSelect();
     fillTripBuildOrigin();
     renderStepsEditor([]);

@@ -11,6 +11,9 @@ definePage('map', {
       </div>
       <div class="page-actions">
         <button type="button" class="btn btn-ghost" id="mapFitBtn">全览</button>
+        <button type="button" class="btn btn-ghost" id="cfgOriginsBtn">管理始发地</button>
+        <button type="button" class="btn btn-ghost" id="cfgDestInBtn">管理进港区</button>
+        <button type="button" class="btn btn-ghost" id="cfgDestPickBtn">管理提还堆场</button>
       </div>
     </div>
 
@@ -610,6 +613,10 @@ definePage('map', {
     $('mapFitBtn').addEventListener('click', function () {
       if (mapState.map) renderMapMarkers(true);
     });
+    // 地点管理弹窗（复用线路价目页那套 openCfgModal）
+    $('cfgOriginsBtn').addEventListener('click', function () { openCfgModal('origins'); });
+    $('cfgDestInBtn').addEventListener('click', function () { openCfgModal('dest_in'); });
+    $('cfgDestPickBtn').addEventListener('click', function () { openCfgModal('dest_pick'); });
     $('coordModalClose').addEventListener('click', closeCoordModal);
     $('coordSaveBtn').addEventListener('click', saveCoordModal);
     $('coordClearBtn').addEventListener('click', function () {

@@ -7,12 +7,7 @@ definePage('routes', {
     <div class="page-head">
       <div>
         <h2>线路价目</h2>
-        <p class="sub">始发地 + 多段步骤（进/提），最多可 4 段。</p>
-      </div>
-      <div class="page-actions">
-        <button type="button" class="btn btn-ghost" id="cfgOriginsBtn">管理始发地</button>
-        <button type="button" class="btn btn-ghost" id="cfgDestInBtn">管理进港区</button>
-        <button type="button" class="btn btn-ghost" id="cfgDestPickBtn">管理提还堆场</button>
+        <p class="sub">始发地 + 多段步骤（进/提），最多可 4 段。管理地点请到「目的地地图」页。</p>
       </div>
     </div>
 
@@ -625,9 +620,6 @@ definePage('routes', {
     applyRouteMode();
 
     // 配置弹窗
-    $('cfgOriginsBtn').addEventListener('click', function () { openCfgModal('origins'); });
-    $('cfgDestInBtn').addEventListener('click', function () { openCfgModal('dest_in'); });
-    $('cfgDestPickBtn').addEventListener('click', function () { openCfgModal('dest_pick'); });
     $('cfgModalClose').addEventListener('click', closeCfgModal);
     $('cfgModal').addEventListener('click', function (e) {
       if (e.target.id === 'cfgModal') closeCfgModal();

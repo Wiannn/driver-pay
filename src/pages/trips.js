@@ -22,28 +22,14 @@ definePage('trips', {
         <select id="tripDriver" required></select>
       </div>
 
-      <!-- 路线：模板 / 直接搭建 双模式 -->
+      <!-- 路线：直接搭建（从始发地 + 多段步骤） -->
       <div class="field field-wide">
-        <label>
-          路线
-          <button type="button" class="btn btn-ghost mode-switch-btn" id="tripModeSwitch">切换为模板</button>
-        </label>
-
-        <!-- 模式A：模板 -->
-        <div id="tripModeTemplate" class="is-hidden">
-          <div class="field-inline">
-            <select id="tripRoute"></select>
-          </div>
+        <label>路线</label>
+        <div class="field-inline" style="margin-bottom:8px">
+          <select id="tripBuildOrigin"></select>
+          <button type="button" class="btn btn-ghost" id="tripBuildAddStep">+ 添加步骤</button>
         </div>
-
-        <!-- 模式B：直接搭建 -->
-        <div id="tripModeBuild">
-          <div class="field-inline" style="margin-bottom:8px">
-            <select id="tripBuildOrigin"></select>
-            <button type="button" class="btn btn-ghost" id="tripBuildAddStep">+ 添加步骤</button>
-          </div>
-          <div id="tripBuildSteps"></div>
-        </div>
+        <div id="tripBuildSteps"></div>
       </div>
 
       <div class="field">
@@ -414,8 +400,6 @@ definePage('trips', {
     $('tripPagerJump').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); jumpToTripPage(); }
     });
-    $('tripRoute').addEventListener('change', syncRouteFields);
-    $('tripModeSwitch').addEventListener('click', switchTripMode);
     $('tripBuildAddStep').addEventListener('click', addTripBuildStep);
     $('tripBuildOrigin').addEventListener('change', updateAutoTripKm);
     $('tripBuildSteps').addEventListener('click', onTripBuildStepChange);
@@ -578,46 +562,9 @@ function fillDriverSelect(id) {
   if (exists) select.value = current;
 }
 
-function fillRouteSelect() {
-  var select = $('tripRoute');
-  var current = select.value;
-
-  if (!db.routes.length) {
-    select.innerHTML = '<option value="">请先到「线路价目」添加线路</option>';
-    return;
-  }
-
-  var routes = db.routes.slice().sort(function (a, b) {
-    return buildRouteName(a).localeCompare(buildRouteName(b), 'zh-CN');
-  });
-  var html = '<option value="">请选择线路</option>';
-  routes.forEach(function (route) {
-    html +=
-      '<option value="' + route.id + '">' + esc(buildRouteName(route)) + ' · ' +
-      kmInt(route.total_km) + ' km · ' + yuanInt(route.total_commission) + '</option>';
-  });
-  select.innerHTML = html;
-
-  var exists = routes.some(function (route) {
-    return String(route.id) === current;
-  });
-  if (exists) select.value = current;
-}
-
-function syncRouteFields() {
-  var routeId = Number($('tripRoute').value);
-  var route = db.routes.find(function (item) {
-    return item.id === routeId;
-  });
-  if (!route) return;
-  $('tripKm').value = route.total_km;
-  $('tripCommission').value = route.total_commission;
-}
-
-/* ------- 趟次：直接搭建模式 ------- */
+/* ------- 趟次：直接搭建 ------- */
 /** 趟次直接搭建：始发地/步骤变化时自动填公里 */
 function updateAutoTripKm() {
-  if (state.tripMode !== 'build') return;
   var origin = $('tripBuildOrigin').value;
   var steps = collectTripBuildSteps();
   if (origin && steps.length) {
@@ -633,26 +580,6 @@ function updateAutoTripKm() {
     $('tripCommission').value = autoComm;
   }
   state._lastAutoCommission = autoComm;
-}
-
-function switchTripMode() {
-  state.tripMode = state.tripMode === 'template' ? 'build' : 'template';
-  applyTripMode();
-}
-
-/** 按当前的 state.tripMode 把两种模式切换到界面上 */
-function applyTripMode() {
-  var build = state.tripMode === 'build';
-  $('tripModeTemplate').classList.toggle('is-hidden', build);
-  $('tripModeBuild').classList.toggle('is-hidden', !build);
-  $('tripModeSwitch').textContent = build ? '切换为模板' : '切换为直接搭建';
-  if (build) {
-    fillTripBuildOrigin();
-    renderTripBuildSteps([{ action: '进', dest: '' }]);
-    updateAutoTripKm();
-  } else {
-    $('tripBuildSteps').innerHTML = '';
-  }
 }
 
 function fillTripBuildOrigin() {
@@ -862,31 +789,23 @@ function saveTrip(event) {
     var payload = {
       date: $('tripDate').value,
       driver_id: $('tripDriver').value,
+      route_origin: $('tripBuildOrigin').value,
+      route_steps: collectTripBuildSteps(),
       km: $('tripKm').value,
       commission: $('tripCommission').value,
     };
-
-    if (state.tripMode === 'template') {
-      payload.route_id = $('tripRoute').value;
-    } else {
-      payload.route_id = '';
-      payload.route_origin = $('tripBuildOrigin').value;
-      payload.route_steps = collectTripBuildSteps();
-    }
 
     var trip = addTrip(payload);
     ensureMonth(trip.date);
     toast('趟次已保存');
     // reset
-    fillRouteSelect();
-    $('tripRoute').value = '';
+    fillTripBuildOrigin();
     $('tripBuildOrigin').value = '';
     renderTripBuildSteps([]);
     $('tripKm').value = '';
     $('tripCommission').value = '';
     renderPage();
-    if (state.tripMode === 'template') $('tripRoute').focus();
-    else $('tripBuildOrigin').focus();
+    $('tripBuildOrigin').focus();
   } catch (error) {
     toast(error.message, 'error');
   }
