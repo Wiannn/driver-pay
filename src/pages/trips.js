@@ -459,7 +459,7 @@ function kmInt(value) {
 }
 
 /* ---------- 列宽：默认值 / 读取 / 应用 / 拖动 / 保存 ---------- */
-var TRIP_COL_DEFAULT = [110, 90, 240, 220, 90, 90, 160, 90, 150, 110];
+var TRIP_COL_DEFAULT = [110, 90, 240, 220, 90, 90, 160, 90, 150, 60];
 var TRIP_COL_MIN = 60;
 
 function tripColEls() {
@@ -491,7 +491,16 @@ function getTripColWidths() {
     var ok = saved.every(function (w) {
       return isFinite(Number(w)) && Number(w) >= TRIP_COL_MIN;
     });
-    if (ok) return saved.map(Number);
+    if (ok) {
+      var widths = saved.map(Number);
+      // 迁移：删除列（最后一列）强制不超过 60，旧默认是 110 太宽
+      if (widths.length > 0 && widths[widths.length - 1] > 60) {
+        widths[widths.length - 1] = 60;
+        db.configs.trip_col_widths = widths;
+        saveLocal();
+      }
+      return widths;
+    }
   }
   var table = document.querySelector('.trip-table');
   var box = table && table.parentNode ? table.parentNode.clientWidth : 0;
