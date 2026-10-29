@@ -26,6 +26,10 @@ definePage('attendance', {
         <span class="legend-item"><i class="dot dot-weather"></i>台风</span>
         <span class="legend-item"><i class="dot dot-empty"></i>未登记</span>
       </div>
+      <div class="attendance-control att-lock-ctrl">
+        <button type="button" class="btn btn-primary" id="attConfirmBtn">确认本月考勤</button>
+        <span class="att-lock-note" id="attLockNote"></span>
+      </div>
     </div>
 
     <div class="attendance-stats" id="attStats"></div>
@@ -39,6 +43,13 @@ definePage('attendance', {
 .attendance-control input, .attendance-control select { height: 32px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-family: inherit; font-size: 13px; outline: none; min-width: 140px; }
 .attendance-control input:focus, .attendance-control select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1); }
 .attendance-legend { display: flex; gap: 14px; margin-left: auto; align-items: center; }
+.att-lock-ctrl { display: flex; align-items: center; gap: 10px; }
+.att-lock-ctrl .btn { height: 32px; padding: 0 14px; font-size: 13px; }
+.att-lock-ctrl .btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+.att-lock-note { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.att-lock-note.is-locked { color: #0a8f5c; font-weight: 600; }
+.calendar-wrap.is-locked .cal-cell { cursor: default; }
+.calendar-wrap.is-locked .cal-cell:hover { transform: none; box-shadow: none; }
 .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .dot-work { background: #0a8f5c; }
@@ -77,6 +88,7 @@ definePage('attendance', {
   init: function () {
     $('attMonth').addEventListener('change', renderAttCalendar);
     $('attDriver').addEventListener('change', renderAttCalendar);
+    $('attConfirmBtn').addEventListener('click', confirmAttMonth);
 
     // 月历格子点击委托
     $('calendarWrap').addEventListener('click', function (e) {
@@ -90,6 +102,83 @@ definePage('attendance', {
 
 var ATT_STATUS = { work: '正常', rest: '休息', weather: '台风' };
 var ATT_STATUS_CYCLE = ['work', 'rest', 'weather']; // 点击循环顺序
+
+/** 某司机某月的确认锁：返回确认日期字符串，未确认返回 '' */
+function attLockOf(driverId, month) {
+  var locks = (db.configs && db.configs.att_locks) || {};
+  return locks[driverId + '|' + month] || '';
+}
+
+/** 写入确认锁 */
+function setAttLock(driverId, month, stamp) {
+  if (!db.configs.att_locks) db.configs.att_locks = {};
+  db.configs.att_locks[driverId + '|' + month] = stamp;
+}
+
+/** 当月还没有选状态的日子 */
+function attMissingDays(driverId, month) {
+  var totalDays = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+  var filled = {};
+  db.attendance.forEach(function (a) {
+    if (a.driver_id === driverId && String(a.date).slice(0, 7) === month) filled[String(a.date)] = true;
+  });
+  var missing = [];
+  for (var d = 1; d <= totalDays; d++) {
+    var ds = month + '-' + String(d).padStart(2, '0');
+    if (!filled[ds]) missing.push(d);
+  }
+  return missing;
+}
+
+/** 同步「确认本月考勤」按钮与提示文字 */
+function syncAttLockUi(driverId, month) {
+  var btn = $('attConfirmBtn');
+  var note = $('attLockNote');
+  if (!driverId || !month) {
+    btn.disabled = true;
+    btn.textContent = '确认本月考勤';
+    note.textContent = '';
+    note.classList.remove('is-locked');
+    return;
+  }
+  var lock = attLockOf(driverId, month);
+  btn.disabled = !!lock;
+  btn.textContent = lock ? '本月已确认' : '确认本月考勤';
+  if (lock) {
+    note.textContent = '已于 ' + lock + ' 锁定，不可修改';
+    note.classList.add('is-locked');
+  } else {
+    var missing = attMissingDays(driverId, month).length;
+    note.textContent = missing ? '还有 ' + missing + ' 天未选状态' : '全部已选，可确认';
+    note.classList.remove('is-locked');
+  }
+}
+
+/** 确认本月考勤：每天都有状态才允许，确认后该司机该月锁定 */
+function confirmAttMonth() {
+  var month = $('attMonth').value;
+  var driverId = Number($('attDriver').value);
+  if (!month || !driverId) { toast('请先选择月份和司机', 'error'); return; }
+  if (attLockOf(driverId, month)) return;
+
+  var missing = attMissingDays(driverId, month);
+  if (missing.length) {
+    toast('还有 ' + missing.length + ' 天未选状态（' + missing.slice(0, 6).join('、') +
+      (missing.length > 6 ? ' 等' : '') + '），补齐后才能确认', 'error');
+    return;
+  }
+
+  var driver = db.drivers.filter(function (d) { return d.id === driverId; })[0];
+  var name = driver ? driver.name : '该司机';
+  if (!confirm('确认后 ' + name + ' ' + month + ' 的考勤将锁定，不能再修改。\n\n确定现在确认吗？')) return;
+
+  var now = new Date();
+  setAttLock(driverId, month, now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0'));
+  saveLocal();
+  renderAttCalendar();
+  toast('已确认，' + month + ' 考勤已锁定');
+}
 
 function fillAttDriverSelect() {
   var select = $('attDriver');
@@ -110,7 +199,9 @@ function renderAttCalendar() {
   var driverId = Number($('attDriver').value);
   if (!month || !driverId) {
     $('calendarWrap').innerHTML = '<div class="empty-cell" style="padding:24px">请先选择月份和司机</div>';
+    $('calendarWrap').classList.remove('is-locked');
     $('attStats').innerHTML = '';
+    syncAttLockUi('', '');
     return;
   }
 
@@ -179,6 +270,8 @@ function renderAttCalendar() {
   });
   body += '</div>';
   $('calendarWrap').innerHTML = head + body;
+  $('calendarWrap').classList.toggle('is-locked', !!attLockOf(driverId, month));
+  syncAttLockUi(driverId, month);
 
   // 统计
   var statWork = 0, statRest = 0, statWeather = 0, statTripsDays = Object.keys(tripsMap).length;
@@ -198,6 +291,10 @@ function renderAttCalendar() {
 function toggleAttendance(dateStr) {
   var driverId = Number($('attDriver').value);
   if (!dateStr || !driverId) return;
+  if (attLockOf(driverId, String(dateStr).slice(0, 7))) {
+    toast('本月考勤已确认，不能再修改', 'error');
+    return;
+  }
   var existing = db.attendance.find(function (a) {
     return a.driver_id === driverId && String(a.date) === dateStr;
   });
