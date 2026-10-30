@@ -273,6 +273,28 @@ definePage('routes', {
   border-radius: 9px;
 }
 
+/* ---------- 地点管理弹窗：加宽，分组左右两列（窄屏自动退回单列） ---------- */
+#cfgModal .modal {
+  width: 760px;
+  max-height: 88vh;
+}
+
+#cfgModal .cfg-tags.is-grouped {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+#cfgModal .cfg-tags.is-grouped .cfg-group,
+#cfgModal .cfg-tags.is-grouped .cfg-group-add {
+  margin-bottom: 0;
+}
+
+#cfgModal .cfg-tags.is-grouped .cfg-group-add {
+  grid-column: 1 / -1;
+}
+
 .cfg-input-row {
   display: flex;
   gap: 8px;
@@ -1391,6 +1413,8 @@ function renderCfgTags() {
     }
   }
   $('cfgTags').innerHTML = html;
+  // 目的地分组用双列网格；始发地平铺标签保持 flex
+  $('cfgTags').classList.toggle('is-grouped', cfgModalKey !== 'origins');
   // 打开新增分组表单时自动聚焦
   if (cfgModalKey !== 'origins' && cfgGroupAdding) {
     var addInput = document.getElementById('cfgGroupNewInput');
