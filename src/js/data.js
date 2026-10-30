@@ -106,12 +106,6 @@
     return route;
   }
 
-  function removeRoute(id) {
-    if (!isManager()) throw new Error('员工模式无法修改线路价目');
-    db.routes = db.routes.filter(function (item) { return item.id !== id; });
-    saveLocal();
-  }
-
   function addTrip(input) {
     var date = String(input.date || '').trim();
     if (!validDate(date)) throw new Error('请选择正确的日期');

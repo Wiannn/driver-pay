@@ -11,7 +11,7 @@
   var AMAP_KEY = '35ff17adac7d27b664587854d5538448';                 // 高德 JS API Key
   var AMAP_SECURITY_CODE = '1ce351cd7b768471d33f0b94c8e6b407';  // 高德安全密钥（2022 年后新 Key 必须填）
 
-  var state = { month: '', page: 'settlement', routeSort: 'name', tripMode: 'build', tripPage: 1 };
+  var state = { month: '', page: 'settlement', tripMode: 'build', tripPage: 1 };
   var TRIP_PAGE_SIZE = 12;
   var db;
 
@@ -421,22 +421,22 @@
   }
 
   /** 自动算总公里：
-   *  - 有「进」段时，提 / 还 / 落按顺路不加公里；但「提」的分组公里比进大时，用提的公里覆盖整趟。
-   *  - 整趟没有「进」段时（如单独一段提 / 还 / 落），各段按分组公里计入。
+   *  - 有「重进」段时，提 / 还 / 落按顺路不加公里；但「提」的分组公里比重进大时，用提的公里覆盖整趟。
+   *  - 整趟没有「重进」段时（如单独一段提 / 还 / 落），各段按分组公里计入。
    *  同方向（同进分组 zone-ab/cd/ys）的相邻段不叠加。 */
   function computeAutoKm(origin, steps) {
     if (!origin || !Array.isArray(steps)) return 0;
-    var inSum = 0;        // 「进」段累计公里
+    var inSum = 0;        // 「重进」段累计公里
     var pickMax = 0;      // 「提」段里最大的公里（用于覆盖）
     var prevDest = null;
     var unknown = false;
-    var hasIn = steps.some(function (s) { return s && s.dest && s.action === '进'; });
+    var hasIn = steps.some(function (s) { return s && s.dest && s.action === '重进'; });
 
     steps.forEach(function (s) {
       if (!s || !s.dest) return;
 
-      if (s.action === '进') {
-        // 跟前一个进同区域 → 同方向顺路，不叠加
+      if (s.action === '重进') {
+        // 跟前一个重进同区域 → 同方向顺路，不叠加
         if (prevDest && sameDestGroup(prevDest, s.dest)) {
           prevDest = s.dest;
           return;
@@ -449,8 +449,8 @@
       }
 
       if (hasIn) {
-        // 有「进」段：提 / 还 / 落 默认顺路不加公里；
-        // 但「提」的分组公里比「进」大时，用提的公里覆盖整趟公里
+        // 有「重进」段：提 / 还 / 落 默认顺路不加公里；
+        // 但「提」的分组公里比重进大时，用提的公里覆盖整趟公里
         if (s.action === '提') {
           var pickKm = resolveDestKm(origin, s.dest, 'pick');
           if (pickKm !== null && pickKm > pickMax) pickMax = pickKm;
@@ -458,7 +458,7 @@
         return;
       }
 
-      // 整趟没有「进」段：提 / 还 / 落 各自按分组公里计入
+      // 整趟没有「重进」段：提 / 还 / 落 各自按分组公里计入
       if (prevDest && sameDestGroup(prevDest, s.dest)) {
         prevDest = s.dest;
         return;
@@ -503,10 +503,10 @@
       return i > 0 && isPick(s) && getDestGroupId(s.dest) === 'zone-ys';
     }).length;
 
-    // 纯进1段
-    if (valid.length === 1 && first.action === '进') {
-      if (firstGroup === 'zone-ys') return 0;   // 进洋山 = 0
-      return 10;                                  // 进外系 = 10
+    // 纯重进1段
+    if (valid.length === 1 && first.action === '重进') {
+      if (firstGroup === 'zone-ys') return 0;   // 重进洋山 = 0
+      return 10;                                  // 重进外系 = 10
     }
     // 纯提 / 纯还 1段
     if (valid.length === 1 && isPick(first)) {
@@ -517,24 +517,24 @@
     if (valid.length === 1 && isDrop(first)) {
       return 10;
     }
-    // 进 + 提 / 进 + 还（2段）
-    if (valid.length === 2 && first.action === '进' && isPick(valid[1])) {
+    // 重进 + 提 / 重进 + 还（2段）
+    if (valid.length === 2 && first.action === '重进' && isPick(valid[1])) {
       // 提（还）洋山系 = 100（沧海路同洋山）
       if (getDestGroupId(valid[1].dest) === 'zone-ys') return 100;
-      // 进外系 + 提（还）外系 = 30
+      // 重进外系 + 提（还）外系 = 30
       if (firstGroup !== 'zone-ys') return 30;
-      // 进洋山 + 提外系 → 暂不存在，按 0
+      // 重进洋山 + 提外系 → 暂不存在，按 0
       return 0;
     }
-    // 进 + 落（2段）：固定 30（落不按洋山 100）
-    if (valid.length === 2 && first.action === '进' && isDrop(valid[1])) {
+    // 重进 + 落（2段）：固定 30（落不按洋山 100）
+    if (valid.length === 2 && first.action === '重进' && isDrop(valid[1])) {
       return 30;
     }
-    // 一进二提 / 一进还提（3段）
-    if (valid.length === 3 && first.action === '进' && isMove(valid[1]) && isMove(valid[2])) {
+    // 一重进二提 / 一重进还提（3段）
+    if (valid.length === 3 && first.action === '重进' && isMove(valid[1]) && isMove(valid[2])) {
       if (ysPickCount >= 2) return 130;          // 提两个洋山系 = 100 + 30
       if (ysPickCount === 1) return 100;          // 含一个提洋山 = 100
-      if (firstGroup !== 'zone-ys') return 60;    // 一进二提（外）= 60
+      if (firstGroup !== 'zone-ys') return 60;    // 一重进二提（外）= 60
       return 0;
     }
     return 0;
@@ -547,7 +547,7 @@
     route.steps.forEach(function (s) {
       if (!s) return;
       var label = s.action === '提' ? '提'
-        : (s.action === '还' ? '还' : (s.action === '落' ? '落' : '进'));
+        : (s.action === '还' ? '还' : (s.action === '落' ? '落' : '重进'));
       parts.push(label + (s.dest || ''));
     });
     return parts.join(' → ');
@@ -642,6 +642,16 @@
           if (cfg.base_km[origin][d] === undefined) cfg.base_km[origin][d] = 0;
         });
       });
+      // 动作「进」已更名为「重进」：把历史趟次 / 线路模板里的旧值一次性迁移
+      var migrateLegacyAction = function (steps) {
+        if (!Array.isArray(steps)) return steps;
+        steps.forEach(function (step) {
+          if (step && step.action === '进') step.action = '重进';
+        });
+        return steps;
+      };
+      parsed.trips.forEach(function (trip) { migrateLegacyAction(trip.route_steps); });
+      parsed.routes.forEach(function (route) { migrateLegacyAction(route.steps); });
       return {
         configs: cfg,
         drivers: parsed.drivers,

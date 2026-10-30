@@ -98,9 +98,7 @@
     // 月度结算页（含数据备份）的事件绑定在 pages/settlement.js 里
 
     // 趟次录入页的事件绑定在 pages/trips.js 里
-    // 出勤登记、地图等页面的事件绑定分别在 pages/attendance.js、pages/map.js 里
-
-    // 线路价目页（含始发地 / 进港区 / 提还堆场管理弹窗）的事件绑定在 pages/routes.js 里
+    // 出勤登记、地图（含始发地 / 进港区 / 提还堆场管理弹窗）等页面的事件绑定分别在 pages/attendance.js、pages/map.js 里
 
     document.addEventListener('click', handleRowAction);
 
@@ -130,12 +128,9 @@
     fillDriverSelect('fuelDriver');
     fillAttDriverSelect();
     syncDriverSelects();
-    fillOriginSelect();
     fillTripBuildOrigin();
-    renderTripBuildSteps([{ action: '进', dest: '' }]);
-    renderStepsEditor([]);
+    renderTripBuildSteps([{ action: '重进', dest: '' }]);
     renderDriverTable();
-    renderRouteTable();
   }
 
   /* ================= 司机联动 ================= */
@@ -228,7 +223,7 @@
   }
 
   /** 员工不开放的页面（菜单入口也隐藏） */
-  var STAFF_HIDDEN_PAGES = { routes: true, drivers: true };
+  var STAFF_HIDDEN_PAGES = { drivers: true };
 
   /* ================= 页面 ================= */
   function switchPage(page) {
@@ -279,7 +274,6 @@
       if (state.page === 'attendance') return renderAttCalendar();
       if (state.page === 'map') return renderMapPage();
       if (state.page === 'drivers') return renderDriverTable();
-      if (state.page === 'routes') return renderRouteTable();
     } catch (error) {
       toast(error.message, 'error');
     }

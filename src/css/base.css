@@ -607,13 +607,11 @@ body.is-staff .map-color-dot {
   cursor: default;
 }
 
-/* 员工看不到线路价目 / 司机信息：菜单入口与页面都隐藏 */
-body.is-staff .nav-btn[data-page="routes"],
+/* 员工看不到司机信息：菜单入口与页面都隐藏 */
 body.is-staff .nav-btn[data-page="drivers"] {
   display: none !important;
 }
 
-body.is-staff #page-routes,
 body.is-staff #page-drivers {
   display: none !important;
 }

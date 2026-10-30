@@ -48,7 +48,11 @@ definePage('trips', {
     <div class="table-card">
       <div class="table-head">
         <h3>本月趟次记录</h3>
-        <span class="table-sum" id="tripSummary"></span>
+        <div class="table-tools">
+          <input type="search" id="tripSearch" autocomplete="off"
+            placeholder="搜索线路 / 箱号" title="按空格分隔多个关键词">
+          <span class="table-sum" id="tripSummary"></span>
+        </div>
       </div>
       <div class="table-scroll">
         <table class="data-table trip-table">
@@ -277,6 +281,17 @@ definePage('trips', {
   text-align: left;
 }
 
+/* 删除按钮去掉自带的 8px 左偏移和左内边距，
+   「删除」两个字才能和上方各列一样，从单元格 20px 内边距处起排 */
+.trip-table td.op {
+  padding-right: 0;
+}
+
+.trip-table td.op .link-danger {
+  margin-left: 0;
+  padding: 3px 4px 3px 0;
+}
+
 .trip-table th,
 .trip-table td {
   overflow: hidden;
@@ -381,6 +396,76 @@ definePage('trips', {
   color: var(--muted);
   font-size: 12.5px;
 }
+
+/* ---------- 直接搭建：步骤行样式 ---------- */
+.step-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafd;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  margin-bottom: 8px;
+}
+
+.step-row .step-idx {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.step-row select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+  cursor: pointer;
+}
+
+.step-row select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
+}
+
+.step-row select.step-action {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.step-row select.step-dest {
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+
+.step-row button.step-del {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--danger);
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.step-row button.step-del:hover {
+  background: #fdeceb;
+}
   `,
 
   init: function () {
@@ -399,6 +484,19 @@ definePage('trips', {
     $('tripPagerJumpBtn').addEventListener('click', jumpToTripPage);
     $('tripPagerJump').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); jumpToTripPage(); }
+    });
+    // 关键词搜索：输入即时过滤（线路 + 箱号），回到第一页
+    $('tripSearch').addEventListener('input', function () {
+      state.tripPage = 1;
+      renderTrips();
+    });
+    $('tripSearch').addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        this.value = '';
+        state.tripPage = 1;
+        renderTrips();
+      }
     });
     $('tripBuildAddStep').addEventListener('click', addTripBuildStep);
     $('tripBuildOrigin').addEventListener('change', updateAutoTripKm);
@@ -602,8 +700,45 @@ function fillTripBuildOrigin() {
   if ((db.configs.origins || []).indexOf(current) >= 0) select.value = current;
 }
 
+/** 根据动作返回对应的目的地下拉列表 */
+function getDestOptionsForAction(action) {
+  if (action === '提' || action === '还' || action === '落') return db.configs.dest_pick || [];
+  return db.configs.dest_in || [];
+}
+
+/** 生成带 <optgroup> 的目的地下拉 HTML，按区域分组 */
+function getDestOptionsGroupedHtml(action, currentVal) {
+  var flat = getDestOptionsForAction(action);
+  var groups = (action === '提' || action === '还' || action === '落')
+    ? (db.configs.dest_pick_groups || [])
+    : (db.configs.dest_groups || []);
+  var shown = {};
+  var html = '<option value="">请选目的地</option>';
+  groups.forEach(function (g) {
+    var members = (g.members || []).filter(function (m) { return flat.indexOf(m) >= 0; });
+    if (!members.length) return;
+    html += '<optgroup label="' + esc(g.label) + '">';
+    members.forEach(function (name) {
+      var sel = name === currentVal ? ' selected' : '';
+      html += '<option value="' + esc(name) + '"' + sel + '>' + esc(name) + '</option>';
+      shown[name] = true;
+    });
+    html += '</optgroup>';
+  });
+  var ungrouped = flat.filter(function (name) { return !shown[name]; });
+  if (ungrouped.length) {
+    html += '<optgroup label="其他">';
+    ungrouped.forEach(function (name) {
+      var sel = name === currentVal ? ' selected' : '';
+      html += '<option value="' + esc(name) + '"' + sel + '>' + esc(name) + '</option>';
+    });
+    html += '</optgroup>';
+  }
+  return html;
+}
+
 function renderTripBuildSteps(steps) {
-  var list = steps && steps.length ? steps : [{ action: '进', dest: '' }];
+  var list = steps && steps.length ? steps : [{ action: '重进', dest: '' }];
   var wrap = $('tripBuildSteps');
   var html = '';
   list.forEach(function (step, idx) {
@@ -611,7 +746,7 @@ function renderTripBuildSteps(steps) {
       '<div class="step-row" data-step-idx="' + idx + '">' +
       '<span class="step-idx">' + (idx + 1) + '</span>' +
       '<select class="step-action" data-role="action">' +
-        '<option value="进"' + (step.action === '进' ? ' selected' : '') + '>进</option>' +
+        '<option value="重进"' + (step.action === '重进' ? ' selected' : '') + '>重进</option>' +
         '<option value="提"' + (step.action === '提' ? ' selected' : '') + '>提</option>' +
         '<option value="还"' + (step.action === '还' ? ' selected' : '') + '>还</option>' +
         '<option value="落"' + (step.action === '落' ? ' selected' : '') + '>落</option>' +
@@ -634,7 +769,7 @@ function renderTripBuildSteps(steps) {
   });
 }
 
-/** 提 / 还 / 落 用提还分组，「进」用进港分组 */
+/** 提 / 还 / 落 用提还分组，「重进」用进港分组 */
 function destGroupList(action) {
   return (action === '提' || action === '还' || action === '落')
     ? (db.configs.dest_pick_groups || [])
@@ -777,7 +912,7 @@ function onTripBuildStepChange(event) {
     var idx = Number(target.closest('.step-row').dataset.stepIdx);
     var steps = collectTripBuildSteps();
     steps.splice(idx, 1);
-    if (!steps.length) steps.push({ action: '进', dest: '' });
+    if (!steps.length) steps.push({ action: '重进', dest: '' });
     renderTripBuildSteps(steps);
   }
   // 任何步骤变化 → 重算公里
@@ -810,7 +945,7 @@ function saveTrip(event) {
     // reset
     fillTripBuildOrigin();
     $('tripBuildOrigin').value = '';
-    renderTripBuildSteps([{ action: '进', dest: '' }]);
+    renderTripBuildSteps([{ action: '重进', dest: '' }]);
     $('tripKm').value = '';
     $('tripCommission').value = '';
     renderPage();
@@ -820,12 +955,33 @@ function saveTrip(event) {
   }
 }
 
+/** 读取搜索框关键词：按空格拆成多个词，统一小写 */
+function tripSearchTerms() {
+  var input = $('tripSearch');
+  if (!input) return [];
+  return String(input.value || '')
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(function (term) { return term.length > 0; });
+}
+
 function filteredTrips() {
   var month = state.month;
   var driverId = $('tripDriver').value;
+  var terms = tripSearchTerms();
   var monthRows = db.trips.filter(function (item) {
     return String(item.date).slice(0, 7) === month;
   });
+  // 关键词：每个词都要命中「线路名 + 箱号」拼接后的文本
+  if (terms.length) {
+    monthRows = monthRows.filter(function (item) {
+      var haystack = ((item.route_name || '') + ' ' + (item.container_no || '')).toLowerCase();
+      return terms.every(function (term) {
+        return haystack.indexOf(term) >= 0;
+      });
+    });
+  }
   return (driverId
     ? monthRows.filter(function (item) {
         return String(item.driver_id) === String(driverId);
@@ -839,15 +995,21 @@ function filteredTrips() {
 function renderTrips() {
   ensureTripColLayout();
   var driverId = $('tripDriver').value;
+  var terms = tripSearchTerms();
   var rows = filteredTrips();
 
   var tbody = $('tripRows');
   if (!rows.length) {
-    var hint = driverId
-      ? '本月这个司机还没有趟次记录'
-      : db.trips.length
+    var hint;
+    if (terms.length) {
+      hint = '没有匹配「' + esc(terms.join(' ')) + '」的趟次';
+    } else if (driverId) {
+      hint = '本月这个司机还没有趟次记录';
+    } else {
+      hint = db.trips.length
         ? '本月还没有趟次记录 · 试试切换月份（共有 ' + db.trips.length + ' 笔历史数据）'
         : '还没有趟次记录';
+    }
     tbody.innerHTML = '<tr><td colspan="10" class="empty-cell">' + hint + '</td></tr>';
     $('tripSummary').textContent = '共 0 趟';
     updateTripPager(0, 0);
@@ -1190,22 +1352,6 @@ function handleRowAction(event) {
     removeDriverAsync(driver.id);
     return;
   }
-
-  var routeEdit = target.closest('[data-edit-route]');
-  if (routeEdit) {
-    editRoute(Number(routeEdit.dataset.editRoute));
-    return;
-  }
-
-  var routeDelete = target.closest('[data-del-route]');
-  if (routeDelete) {
-    var route = db.routes.find(function (item) {
-      return item.id === Number(routeDelete.dataset.delRoute);
-    });
-    if (!route) return;
-    if (!confirm('确定删除线路「' + buildRouteName(route) + '」吗？已录入的历史趟次不受影响。')) return;
-    removeRouteAsync(route.id);
-  }
 }
 
 function removeTripAsync(id) {
@@ -1233,14 +1379,3 @@ function removeDriverAsync(id) {
     renderPage();
   } catch (error) { toast(error.message, 'error'); }
 }
-
-function removeRouteAsync(id) {
-  try {
-    removeRoute(id);
-    toast('线路已删除');
-    resetRouteForm();
-    refreshData();
-    renderPage();
-  } catch (error) { toast(error.message, 'error'); }
-}
-

@@ -460,6 +460,405 @@ definePage('map', {
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- 配置弹窗（始发地 / 进港区 / 提还堆场） ---------- */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+}
+
+.modal {
+  width: 480px;
+  max-width: 92vw;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 50px -18px rgba(16, 24, 40, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.modal-close:hover {
+  background: #f3f6fb;
+  color: var(--ink);
+}
+
+.modal-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.modal-foot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  text-align: right;
+}
+
+.cfg-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.cfg-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  min-height: 36px;
+  padding: 10px;
+  background: #f8fafd;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.cfg-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.cfg-input-row input {
+  flex: 1 1 auto;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.cfg-input-row input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
+}
+
+/* 地点管理弹窗：加宽，分组多栏布局（窄屏自动退回单列） */
+#cfgModal .modal {
+  width: 760px;
+  max-height: 88vh;
+}
+
+#cfgModal .cfg-tags.is-grouped {
+  display: block;
+  column-width: 320px;
+  column-gap: 12px;
+}
+
+#cfgModal .cfg-tags.is-grouped .cfg-group,
+#cfgModal .cfg-tags.is-grouped .cfg-group-add {
+  break-inside: avoid;
+}
+
+#cfgModal .cfg-tags.is-grouped .cfg-group-add {
+  column-span: all;
+}
+
+.cfg-group {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #f7f8fa;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.cfg-group-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cfg-group-desc {
+  font-weight: 400;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.cfg-group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex: 0 0 auto;
+}
+
+.cfg-group-ops {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.cfg-group-ops button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #b3bcc9;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cfg-group-ops button:hover {
+  color: var(--primary);
+  background: #fff;
+}
+
+.cfg-group-ops button[data-group-del]:hover {
+  color: var(--danger);
+}
+
+.cfg-group-ops button.cfg-group-km-btn {
+  width: auto;
+  padding: 0 7px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cfg-group-ops button.cfg-group-km-btn.has-km {
+  color: var(--primary);
+  border-color: #b9cbff;
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+
+.cfg-km-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 0 0 8px;
+  background: #f8fafd;
+  border: 1px solid #dbe4f2;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cfg-km-editor label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cfg-km-editor .cfg-km-input {
+  width: 78px;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: none;
+}
+
+.cfg-km-editor .cfg-km-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(42, 91, 224, 0.12);
+}
+
+.cfg-km-editor button {
+  appearance: none;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cfg-km-editor button[data-km-save] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.cfg-group-add {
+  margin-bottom: 12px;
+}
+
+.cfg-group-add button {
+  appearance: none;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px dashed #c8d2e2;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.cfg-group-add button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.cfg-group-add.is-open {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cfg-group-add.is-open input {
+  flex: 1;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.12);
+}
+
+.cfg-group-add.is-open button {
+  width: auto;
+  padding: 0 14px;
+  border-style: solid;
+  border-color: var(--primary);
+}
+
+.cfg-group-add.is-open button[data-group-cancel] {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.cfg-group-add.is-open button[data-group-cancel]:hover {
+  background: #f5f7fa;
+  color: var(--ink-soft);
+}
+
+.cfg-group-name-input {
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--primary);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  outline: none;
+  max-width: 150px;
+}
+
+.cfg-group.drag-over {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 100, 235, 0.15);
+}
+
+.cfg-group-hint {
+  font-size: 11px;
+  color: #bbb;
+  padding: 4px 0;
+  font-style: italic;
+}
+
+.cfg-tag[draggable="true"] {
+  cursor: grab;
+}
+
+.cfg-tag[draggable="true"].dragging {
+  opacity: 0.4;
+}
+
+.cfg-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: 16px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.cfg-tag button {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 2px;
+}
+
+.cfg-tag button[data-cfg-edit] {
+  color: var(--muted);
+  font-size: 11px;
+  margin-right: 2px;
+}
+
+.cfg-tag button[data-cfg-edit]:hover {
+  color: var(--primary);
+}
+
+.cfg-tag button[data-cfg-del]:hover {
+  color: var(--danger);
+}
+
+.cfg-tag button[data-cfg-coord] {
+  color: #98a2b3;
+  font-size: 11px;
+  margin-right: 2px;
+}
+
+.cfg-tag button[data-cfg-coord]:hover {
+  color: var(--primary);
+}
+
+.cfg-tag button[data-cfg-coord].has-coord {
+  color: #17a673;
+}
   `,
 
   init: function () {
@@ -613,10 +1012,120 @@ definePage('map', {
     $('mapFitBtn').addEventListener('click', function () {
       if (mapState.map) renderMapMarkers(true);
     });
-    // 地点管理弹窗（复用线路价目页那套 openCfgModal）
+    // 地点管理弹窗
     $('cfgOriginsBtn').addEventListener('click', function () { openCfgModal('origins'); });
     $('cfgDestInBtn').addEventListener('click', function () { openCfgModal('dest_in'); });
     $('cfgDestPickBtn').addEventListener('click', function () { openCfgModal('dest_pick'); });
+
+    // ===== 配置弹窗（始发地 / 进港区 / 提还堆场）事件绑定 =====
+    $('cfgModalClose').addEventListener('click', closeCfgModal);
+    $('cfgModal').addEventListener('click', function (e) {
+      if (e.target.id === 'cfgModal') closeCfgModal();
+      if (e.target.closest('[data-group-add]')) {
+        e.stopPropagation();
+        cfgGroupAdding = true;
+        renderCfgTags();
+        return;
+      }
+      if (e.target.closest('[data-group-create]')) {
+        e.stopPropagation();
+        var newGroupInput = document.getElementById('cfgGroupNewInput');
+        createDestGroup(newGroupInput ? newGroupInput.value : '');
+        return;
+      }
+      if (e.target.closest('[data-group-cancel]')) {
+        e.stopPropagation();
+        cfgGroupAdding = false;
+        renderCfgTags();
+        return;
+      }
+      var groupKm = e.target.closest('[data-group-km]');
+      if (groupKm) {
+        e.stopPropagation();
+        var kmGroupId = groupKm.getAttribute('data-group-km');
+        cfgKmEditingId = cfgKmEditingId === kmGroupId ? null : kmGroupId;
+        renderCfgTags();
+        return;
+      }
+      var kmSave = e.target.closest('[data-km-save]');
+      if (kmSave) { e.stopPropagation(); saveGroupKm(kmSave.getAttribute('data-km-save')); return; }
+      if (e.target.closest('[data-km-cancel]')) {
+        e.stopPropagation();
+        cfgKmEditingId = null;
+        renderCfgTags();
+        return;
+      }
+      var groupEdit = e.target.closest('[data-group-edit]');
+      if (groupEdit) {
+        e.stopPropagation();
+        startGroupRename(groupEdit.getAttribute('data-group-edit'));
+        return;
+      }
+      var groupDel = e.target.closest('[data-group-del]');
+      if (groupDel) { e.stopPropagation(); removeDestGroup(groupDel.getAttribute('data-group-del')); return; }
+      var editBtn = e.target.closest('[data-cfg-edit]');
+      if (editBtn) { e.stopPropagation(); editCfgItem(Number(editBtn.dataset.cfgEdit)); return; }
+      var delBtn = e.target.closest('[data-cfg-del]');
+      if (delBtn) { e.stopPropagation(); removeCfgItem(Number(delBtn.dataset.cfgDel)); return; }
+    });
+    $('cfgAddBtn').addEventListener('click', addCfgItem);
+    $('cfgNewInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); addCfgItem(); }
+    });
+    $('cfgModal').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var groupInput = e.target.closest('#cfgGroupNewInput');
+      if (!groupInput) return;
+      e.preventDefault();
+      createDestGroup(groupInput.value);
+    });
+    // 目的地 / 始发地标签右键：坐标菜单
+    $('cfgTags').addEventListener('contextmenu', function (e) {
+      if (cfgModalKey === 'dest_pick') return;
+      var tag = e.target.closest('.cfg-tag');
+      if (!tag) return;
+      e.preventDefault();
+      openMapMenu(tag.dataset.cfgName, e.clientX, e.clientY);
+    });
+    // 目的地标签跨区域拖拽
+    $('cfgTags').addEventListener('dragstart', function (e) {
+      var tag = e.target.closest('.cfg-tag[draggable="true"]');
+      if (!tag) { e.preventDefault(); return; }
+      e.dataTransfer.setData('text/plain', tag.dataset.cfgName);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function () { tag.classList.add('dragging'); }, 0);
+    });
+    $('cfgTags').addEventListener('dragend', function (e) {
+      var tag = e.target.closest('.cfg-tag');
+      if (tag) tag.classList.remove('dragging');
+      document.querySelectorAll('.cfg-group.drag-over').forEach(function (el) {
+        el.classList.remove('drag-over');
+      });
+    });
+    $('cfgTags').addEventListener('dragover', function (e) {
+      var group = e.target.closest('.cfg-group');
+      if (!group) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.cfg-group.drag-over').forEach(function (el) {
+        if (el !== group) el.classList.remove('drag-over');
+      });
+      group.classList.add('drag-over');
+    });
+    $('cfgTags').addEventListener('dragleave', function (e) {
+      var group = e.target.closest('.cfg-group');
+      if (group) group.classList.remove('drag-over');
+    });
+    $('cfgTags').addEventListener('drop', function (e) {
+      var group = e.target.closest('.cfg-group');
+      if (!group) return;
+      e.preventDefault();
+      group.classList.remove('drag-over');
+      var destName = e.dataTransfer.getData('text/plain');
+      var targetGroupId = group.dataset.groupId;
+      if (targetGroupId) moveDestToGroup(destName, targetGroupId);
+    });
+
     $('coordModalClose').addEventListener('click', closeCoordModal);
     $('coordSaveBtn').addEventListener('click', saveCoordModal);
     $('coordClearBtn').addEventListener('click', function () {
@@ -629,6 +1138,438 @@ definePage('map', {
     });
   },
 });
+
+/* ================= 地点管理弹窗（始发地 / 进港区 / 提还堆场） ================= */
+var cfgModalKey = null;
+var cfgModalLabel = '';
+var cfgGroupAdding = false;
+var cfgKmEditingId = null;
+
+function openCfgModal(key) {
+  if (!requireManager('管理地点')) return;
+  cfgModalKey = key;
+  cfgGroupAdding = false;
+  if (key === 'origins') { cfgModalLabel = '始发地列表'; $('cfgHint').textContent = '行驶的起点，例如：新库、东库'; }
+  else if (key === 'dest_in') { cfgModalLabel = '「进」的目的地'; $('cfgHint').textContent = '纯进或进段的目的地，例如：外五、洋山'; }
+  else { cfgModalLabel = '「提 / 还 / 落」的目的地'; $('cfgHint').textContent = '「提」「还」「落」共用的空箱目的地，例如：洋山、沧海路'; }
+
+  $('cfgModalTitle').textContent = cfgModalLabel;
+  $('cfgNewInput').value = '';
+  refreshCfgSuggestList();
+  renderCfgTags();
+  $('cfgModal').classList.remove('is-hidden');
+  setTimeout(function () { $('cfgNewInput').focus(); }, 50);
+}
+
+function refreshCfgSuggestList() {
+  var list = db.configs[cfgModalKey] || [];
+  var datalist = $('cfgSuggestList');
+  if (!datalist) return;
+  datalist.innerHTML = list.map(function (item) {
+    return '<option value="' + esc(item) + '">';
+  }).join('');
+}
+
+function closeCfgModal() {
+  $('cfgModal').classList.add('is-hidden');
+  cfgModalKey = null;
+}
+
+function cfgGroupKey() {
+  return cfgModalKey === 'dest_in' ? 'dest_groups' : 'dest_pick_groups';
+}
+
+function cfgGroupsLocked() {
+  return cfgModalKey === 'dest_in' || cfgModalKey === 'origins';
+}
+
+function moveDestToGroup(destName, targetGroupId) {
+  if (!requireManager('调整分组')) return;
+  if (!destName) return;
+  var groups = db.configs[cfgGroupKey()] || [];
+  groups.forEach(function (g) {
+    g.members = (g.members || []).filter(function (m) { return m !== destName; });
+  });
+  var isInDest = (db.configs.dest_in || []).indexOf(destName) >= 0;
+  var isPickDest = (db.configs.dest_pick || []).indexOf(destName) >= 0;
+  if (cfgGroupKey() === 'dest_pick_groups' && !isInDest) {
+    (db.configs.dest_groups || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) { return m !== destName; });
+    });
+  }
+  if (cfgGroupKey() === 'dest_groups' && !isPickDest) {
+    (db.configs.dest_pick_groups || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) { return m !== destName; });
+    });
+  }
+  if (targetGroupId !== '__none__') {
+    var target = groups.find(function (g) { return g.id === targetGroupId; });
+    if (target) target.members.push(destName);
+  }
+  saveLocal();
+  renderCfgTags();
+  refreshCfgDependentUI();
+}
+
+function findDestGroup(dest) {
+  var groups = db.configs[cfgGroupKey()] || [];
+  for (var i = 0; i < groups.length; i++) {
+    if ((groups[i].members || []).indexOf(dest) >= 0) return groups[i];
+  }
+  return null;
+}
+
+function cnSortKey(name) {
+  var digits = { '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9' };
+  return String(name == null ? '' : name).replace(/[一二三四五六七八九]/g, function (ch) { return digits[ch]; });
+}
+
+function sortNamesByName(names) {
+  return names.slice().sort(function (a, b) {
+    return cnSortKey(a).localeCompare(cnSortKey(b), 'zh-CN');
+  });
+}
+
+function groupKmLabel(group) {
+  var base = group && group.km ? Number(group.km['新库']) : 0;
+  return base > 0 ? ('新库 ' + base) : '公里';
+}
+
+function renderGroupKmEditor(group) {
+  var km = group.km || {};
+  var base = Number(km['新库']);
+  var autoDong = '';
+  if (isFinite(base) && base > 0) {
+    autoDong = String(base + (isFarGroup(group) ? 10 : -10));
+  }
+  return '<div class="cfg-km-editor" data-km-group="' + esc(group.id) + '">' +
+    '<label>新库 <input type="number" class="cfg-km-input" data-km-origin="新库" min="0" step="1" value="' +
+      (isFinite(base) && base > 0 ? base : '') + '" placeholder="如 130"></label>' +
+    '<label>东库 <input type="number" class="cfg-km-input" data-km-origin="东库" min="0" step="1" value="' +
+      (Number(km['东库']) > 0 ? Number(km['东库']) : '') + '" placeholder="' +
+      (autoDong ? '自动 ' + autoDong : '自动 ±10') + '"></label>' +
+    '<button type="button" data-km-save="' + esc(group.id) + '">保存</button>' +
+    '<button type="button" data-km-cancel="1">取消</button>' +
+    '</div>';
+}
+
+function saveGroupKm(groupId) {
+  if (!requireManager('修改分组公里')) return;
+  var groups = db.configs[cfgGroupKey()] || [];
+  var group = groups.filter(function (g) { return g.id === groupId; })[0];
+  if (!group) return;
+  var editor = document.querySelector('.cfg-km-editor[data-km-group="' + groupId + '"]');
+  if (!editor) return;
+  var baseInput = editor.querySelector('[data-km-origin="新库"]');
+  var dongInput = editor.querySelector('[data-km-origin="东库"]');
+  var base = parseFloat(baseInput && baseInput.value);
+  var dong = parseFloat(dongInput && dongInput.value);
+
+  if (!isFinite(base) || base <= 0) {
+    delete group.km;
+  } else {
+    group.km = { '新库': round2(base) };
+    if (isFinite(dong) && dong > 0) group.km['东库'] = round2(dong);
+  }
+  cfgKmEditingId = null;
+  saveLocal();
+  renderCfgTags();
+  refreshCfgDependentUI();
+  toast(group.km ? ('「' + group.label + '」公里已设为 ' + group.km['新库']) : ('「' + group.label + '」公里已清空'));
+}
+
+function createDestGroup(label) {
+  if (!requireManager('新增分组')) return;
+  if (cfgGroupsLocked()) return;
+  label = String(label || '').trim();
+  if (!label) { toast('请输入分组名称', 'error'); return; }
+  var key = cfgGroupKey();
+  var groups = db.configs[key] || (db.configs[key] = []);
+  if (groups.some(function (g) { return g.label === label; })) {
+    toast('分组名称已存在', 'error');
+    return;
+  }
+  groups.push({
+    id: 'zone-' + Date.now().toString(36) + Math.floor(Math.random() * 100).toString(36),
+    label: label,
+    desc: '',
+    members: [],
+    color: pickGroupColor(),
+  });
+  cfgGroupAdding = false;
+  saveLocal();
+  renderCfgTags();
+  refreshCfgDependentUI();
+  toast('已新增分组「' + label + '」');
+}
+
+function commitGroupRename(groupId, label) {
+  if (!requireManager('修改分组名称')) return;
+  var groups = db.configs[cfgGroupKey()] || [];
+  var group = groups.filter(function (g) { return g.id === groupId; })[0];
+  if (!group) return;
+  label = String(label || '').trim();
+  if (!label || label === group.label) { renderCfgTags(); return; }
+  if (groups.some(function (g) { return g.id !== groupId && g.label === label; })) {
+    toast('分组名称已存在', 'error');
+    renderCfgTags();
+    return;
+  }
+  group.label = label;
+  saveLocal();
+  renderCfgTags();
+  refreshCfgDependentUI();
+  toast('分组已改名为「' + label + '」');
+}
+
+function startGroupRename(groupId) {
+  var head = document.querySelector('.cfg-group[data-group-id="' + groupId + '"] .cfg-group-head');
+  if (!head) return;
+  var labelEl = head.querySelector('.cfg-group-label');
+  if (!labelEl) return;
+  var groups = db.configs[cfgGroupKey()] || [];
+  var group = groups.filter(function (g) { return g.id === groupId; })[0];
+  if (!group) return;
+
+  var input = document.createElement('input');
+  input.className = 'cfg-group-name-input';
+  input.value = group.label;
+  input.setAttribute('data-group-rename', groupId);
+  head.replaceChild(input, labelEl);
+  input.focus();
+  input.select();
+
+  var settled = false;
+  var finish = function (save) {
+    if (settled) return;
+    settled = true;
+    if (save) commitGroupRename(groupId, input.value);
+    else renderCfgTags();
+  };
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  input.addEventListener('blur', function () { finish(true); });
+}
+
+function removeDestGroup(groupId) {
+  if (!requireManager('删除分组')) return;
+  if (cfgGroupsLocked()) return;
+  var key = cfgGroupKey();
+  var groups = db.configs[key] || [];
+  var group = groups.filter(function (g) { return g.id === groupId; })[0];
+  if (!group) return;
+  var count = (group.members || []).length;
+  if (!confirm('删除分组「' + group.label + '」？' +
+    (count ? '组内 ' + count + ' 个地点会变为「未分组」，地点本身不会删除。' : '该分组为空。'))) return;
+  db.configs[key] = groups.filter(function (g) { return g.id !== groupId; });
+  saveLocal();
+  renderCfgTags();
+  refreshCfgDependentUI();
+  toast('分组「' + group.label + '」已删除');
+}
+
+function renderCfgTags() {
+  if (!cfgModalKey) return;
+  var list = db.configs[cfgModalKey] || [];
+  var html = '';
+
+  if (cfgModalKey === 'origins') {
+    list.forEach(function (name, idx) {
+      html += renderCfgTag(name, idx);
+    });
+  } else {
+    var groups = db.configs[cfgGroupKey()] || [];
+    var locked = cfgGroupsLocked();
+    var shown = {};
+    groups.forEach(function (g, gi) {
+      var members = (g.members || []).filter(function (m) { return list.indexOf(m) >= 0; });
+      members = sortNamesByName(members);
+      html += '<div class="cfg-group" data-group-id="' + g.id + '">' +
+        '<div class="cfg-group-head">' +
+        '<i class="cfg-group-dot" style="background:' + groupColor(g, gi) + '"></i>' +
+        '<span class="cfg-group-label">' + esc(g.label) + '</span>' +
+        '<span class="cfg-group-desc">' + esc(g.desc || '') + '</span>' +
+        '<span class="cfg-group-ops">' +
+        '<button type="button" data-group-km="' + esc(g.id) + '" title="设置本组公里数" class="cfg-group-km-btn' +
+          (g.km && Number(g.km['新库']) > 0 ? ' has-km' : '') + '">' + esc(groupKmLabel(g)) + '</button>' +
+        '<button type="button" data-group-edit="' + esc(g.id) + '" title="修改分组名称">✎</button>' +
+        (locked ? '' : '<button type="button" data-group-del="' + esc(g.id) + '" title="删除分组">×</button>') +
+        '</span></div>' +
+        (cfgKmEditingId === g.id ? renderGroupKmEditor(g) : '');
+      members.forEach(function (name) {
+        var idx = list.indexOf(name);
+        if (idx >= 0) { html += renderCfgTag(name, idx); shown[name] = true; }
+      });
+      if (!members.length) html += '<div class="cfg-group-hint">拖目的地到这里归入此组</div>';
+      html += '</div>';
+    });
+    if (!locked) {
+      if (cfgGroupAdding) {
+        html += '<div class="cfg-group-add is-open">' +
+          '<input type="text" id="cfgGroupNewInput" maxlength="16" placeholder="新分组名称，例如 临港系">' +
+          '<button type="button" data-group-create="1">确定</button>' +
+          '<button type="button" data-group-cancel="1">取消</button>' +
+          '</div>';
+      } else {
+        html += '<div class="cfg-group-add"><button type="button" data-group-add="1">＋ 新增分组</button></div>';
+      }
+    }
+    var ungrouped = list.filter(function (name) { return !shown[name]; });
+    if (ungrouped.length || groups.length) {
+      html += '<div class="cfg-group cfg-group-ungrouped" data-group-id="__none__">' +
+        '<div class="cfg-group-head">未分组<span class="cfg-group-desc">拖到上方区域即归入</span></div>';
+      ungrouped.forEach(function (name) {
+        var idx = list.indexOf(name);
+        if (idx >= 0) html += renderCfgTag(name, idx);
+      });
+      html += '</div>';
+    }
+  }
+  $('cfgTags').innerHTML = html;
+  $('cfgTags').classList.toggle('is-grouped', cfgModalKey !== 'origins');
+  if (cfgModalKey !== 'origins' && cfgGroupAdding) {
+    var addInput = document.getElementById('cfgGroupNewInput');
+    if (addInput) addInput.focus();
+  }
+}
+
+function renderCfgTag(name, idx) {
+  var coordBtn = '';
+  return '<span class="cfg-tag" draggable="true" data-cfg-name="' + esc(name) + '" data-cfg-idx="' + idx + '">' +
+    esc(name) +
+    coordBtn +
+    '<button type="button" data-cfg-edit="' + idx + '" aria-label="编辑" title="改名">✎</button>' +
+    '<button type="button" data-cfg-del="' + idx + '" aria-label="删除">×</button>' +
+    '</span>';
+}
+
+function editCfgItem(idx) {
+  if (!requireManager('修改地点名称')) return;
+  if (!cfgModalKey) return;
+  var list = db.configs[cfgModalKey] || [];
+  var oldVal = list[idx];
+  var newVal = prompt('修改名称：', oldVal);
+  if (newVal === null) return;
+  newVal = String(newVal).trim();
+  if (!newVal || newVal === oldVal) return;
+  if (list.indexOf(newVal) >= 0) {
+    toast('该名称已存在', 'error');
+    return;
+  }
+  list[idx] = newVal;
+
+  // 同步坐标
+  db.configs.coords = db.configs.coords || {};
+  if (db.configs.coords[oldVal]) {
+    db.configs.coords[newVal] = db.configs.coords[oldVal];
+    delete db.configs.coords[oldVal];
+  }
+
+  // 同步两套分组里的成员名
+  [db.configs.dest_groups, db.configs.dest_pick_groups].forEach(function (groupList) {
+    (groupList || []).forEach(function (g) {
+      g.members = (g.members || []).map(function (m) { return m === oldVal ? newVal : m; });
+    });
+  });
+
+  // 同步 base_km 里的列名
+  Object.keys(db.configs.base_km || {}).forEach(function (origin) {
+    var row = db.configs.base_km[origin];
+    if (row && row[oldVal] !== undefined) {
+      row[newVal] = row[oldVal];
+      delete row[oldVal];
+    }
+  });
+
+  renderCfgTags();
+  refreshCfgDependentUI();
+  toast('已改名：' + oldVal + ' → ' + newVal);
+}
+
+/** 配置变更后刷新趟次下拉和地图标记 */
+function refreshCfgDependentUI() {
+  saveLocal();
+
+  // 保留趟次「直接搭建」里当前已选的动作/目的地
+  var tripSteps = [];
+  document.querySelectorAll('#tripBuildSteps .step-row').forEach(function (row) {
+    var a = row.querySelector('[data-role="action"]');
+    var d = row.querySelector('[data-role="dest"]');
+    if (a && d) tripSteps.push({ action: a.value, dest: d.value });
+  });
+  renderTripBuildSteps(tripSteps);
+  fillTripBuildOrigin();
+
+  // 分组调整后地图同步
+  if (mapState && mapState.map) {
+    renderMapFilters();
+    renderMapPlaceList();
+    renderMapMarkers(false);
+  }
+}
+
+function addCfgItem() {
+  if (!requireManager('新增地点')) return;
+  if (!cfgModalKey) return;
+  var input = $('cfgNewInput');
+  var value = String(input.value || '').trim();
+  if (!value) return;
+  var list = db.configs[cfgModalKey] || [];
+  if (list.indexOf(value) >= 0) {
+    toast('「' + value + '」已存在，不能重复添加', 'error');
+    input.select();
+    return;
+  }
+  list.push(value);
+  db.configs[cfgModalKey] = list;
+  input.value = '';
+  renderCfgTags();
+  refreshCfgSuggestList();
+  refreshCfgDependentUI();
+  input.focus();
+}
+
+function countRoutesUsingCfg(key, value) {
+  var count = 0;
+  db.routes.forEach(function (route) {
+    if (!route.steps) return;
+    if (key === 'origins') {
+      if (route.origin === value) count++;
+    } else {
+      route.steps.forEach(function (s) { if (s.dest === value) count++; });
+    }
+  });
+  return count;
+}
+
+function removeCfgItem(idx) {
+  if (!requireManager('删除地点')) return;
+  if (!cfgModalKey) return;
+  var list = db.configs[cfgModalKey] || [];
+  var value = list[idx];
+  var usage = countRoutesUsingCfg(cfgModalKey, value);
+  if (usage > 0) {
+    var label = cfgModalKey === 'origins' ? '始发地' : '目的地';
+    var msg =
+      '有 ' + usage + ' 条路线还在使用这个' + label + '，\n' +
+      '删除后这些路线的数据不会丢失，但编辑时选不到该' + label + '。\n\n' +
+      '确定要删除吗？';
+    if (!confirm(msg)) return;
+  }
+  list.splice(idx, 1);
+  db.configs[cfgModalKey] = list;
+  [db.configs.dest_groups, db.configs.dest_pick_groups].forEach(function (groupList) {
+    (groupList || []).forEach(function (g) {
+      g.members = (g.members || []).filter(function (m) { return m !== value; });
+    });
+  });
+  renderCfgTags();
+  refreshCfgDependentUI();
+}
+
+function saveCfgModal() {}
 
 /* ================= 地图 ================= */
 var MAP_COLORS = {
