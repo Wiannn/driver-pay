@@ -279,20 +279,20 @@ definePage('routes', {
   max-height: 88vh;
 }
 
+/* 用多栏布局而不是 grid：各分组在各自列里自然堆叠，两列之间不强行对齐 */
 #cfgModal .cfg-tags.is-grouped {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 12px;
-  align-items: start;
+  display: block;
+  column-width: 320px;
+  column-gap: 12px;
 }
 
 #cfgModal .cfg-tags.is-grouped .cfg-group,
 #cfgModal .cfg-tags.is-grouped .cfg-group-add {
-  margin-bottom: 0;
+  break-inside: avoid;
 }
 
 #cfgModal .cfg-tags.is-grouped .cfg-group-add {
-  grid-column: 1 / -1;
+  column-span: all;
 }
 
 .cfg-input-row {
