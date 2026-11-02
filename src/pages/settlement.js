@@ -221,7 +221,7 @@ function computeSettlement(month) {
         return sum + Number(item.commission);
       }, 0)
     );
-    var actualFuel = round2(
+    var actualFuel = trunc2(
       fuelRows.reduce(function (sum, item) {
         return sum + Number(item.liters);
       }, 0)
@@ -348,7 +348,7 @@ function driverCard(driver) {
     stat('总公里数', fmt0(driver.km) + ' km') +
     stat('提成合计', yuan0(driver.commission)) +
     stat('应加油量', fmt2(driver.expected_fuel) + ' L') +
-    stat('实际加油量', fmt0(driver.actual_fuel) + ' L') +
+    stat('实际加油量', fmt2(driver.actual_fuel) + ' L') +
     stat('节油量', fmt2(driver.saved_fuel) + ' L', negative ? 'warn' : '') +
     stat('节油奖励', yuan(driver.saving_amount), negative ? 'warn' : 'good') +
     '</div>' +

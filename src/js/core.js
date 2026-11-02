@@ -109,6 +109,12 @@
     return Math.round((number + (number >= 0 ? 1 : -1) * Number.EPSILON) * 100) / 100;
   }
 
+  /* 截断到2位小数：只舍不入（朝零方向），避免小数末尾被四舍五入进位 */
+  function trunc2(value) {
+    var number = Number(value) || 0;
+    return Math.trunc((number + (number >= 0 ? 1e-9 : -1e-9)) * 100) / 100;
+  }
+
   function monthLabel(month) {
     var parts = String(month).split('-');
     return parts[0] + '年' + Number(parts[1]) + '月';
