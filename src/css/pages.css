@@ -74,6 +74,10 @@
   padding-right: 6px;
 }
 
+.field input[type="datetime-local"] {
+  min-width: 220px;
+}
+
 .field-wide {
   flex: 1 1 380px;
   min-width: 280px;

@@ -107,7 +107,7 @@
   }
 
   function addTrip(input) {
-    var date = String(input.date || '').trim();
+    var date = formatDateTimeLocal(String(input.date || '').trim());
     if (!validDate(date)) throw new Error('请选择正确的日期');
     var driverId = Number(input.driver_id);
     var driver = db.drivers.find(function (item) { return item.id === driverId; });

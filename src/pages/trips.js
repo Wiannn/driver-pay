@@ -15,7 +15,7 @@ definePage('trips', {
     <form class="entry-card" id="tripForm">
       <div class="field">
         <label for="tripDate">日期</label>
-        <input type="date" id="tripDate" required>
+        <input type="datetime-local" id="tripDate" required step="60">
       </div>
       <div class="field">
         <label for="tripDriver">司机</label>
@@ -273,6 +273,12 @@ definePage('trips', {
 .trip-table th.num,
 .trip-table td.num {
   text-align: left;
+}
+
+/* 日期列 inline-edit 的 datetime-local 需要足够宽度显示时间部分 */
+.data-table .trip-date input.inline-edit[type="datetime-local"] {
+  min-width: 180px;
+  width: auto;
 }
 
 /* 操作列（删除）也左对齐，右侧留白不再空一大块 */
@@ -557,7 +563,7 @@ function kmInt(value) {
 }
 
 /* ---------- 列宽：默认值 / 读取 / 应用 / 拖动 / 保存 ---------- */
-var TRIP_COL_DEFAULT = [110, 90, 240, 220, 90, 90, 160, 90, 150, 60];
+var TRIP_COL_DEFAULT = [190, 90, 240, 220, 90, 90, 160, 90, 150, 60];
 var TRIP_COL_MIN = 60;
 
 function tripColEls() {
@@ -594,6 +600,12 @@ function getTripColWidths() {
       // 迁移：删除列（最后一列）强制不超过 60，旧默认是 110 太宽
       if (widths.length > 0 && widths[widths.length - 1] > 60) {
         widths[widths.length - 1] = 60;
+        db.configs.trip_col_widths = widths;
+        saveLocal();
+      }
+      // 迁移：日期列（第1列）宽度旧值 110 太窄，不够显示时间部分，至少 180
+      if (widths[0] < 180) {
+        widths[0] = 190;
         db.configs.trip_col_widths = widths;
         saveLocal();
       }
@@ -1118,9 +1130,10 @@ function editTripDate(cell) {
   if (!trip) return;
 
   var input = document.createElement('input');
-  input.type = 'date';
-  input.value = trip.date;
+  input.type = 'datetime-local';
+  input.value = toDateTimeLocalValue(trip.date);
   input.className = 'inline-edit';
+  input.step = '60';
   input.style.width = '100%';
 
   cell.innerHTML = '';
@@ -1131,13 +1144,13 @@ function editTripDate(cell) {
   function finish() {
     if (done) return;
     done = true;
-    var v = input.value;
+    var v = formatDateTimeLocal(input.value);
     if (!v || !validDate(v)) { renderTrips(); return; }
     if (v === trip.date) { renderTrips(); return; }
     trip.date = v;
     markTripUpdated(trip);
     saveLocal();
-    if (String(v).slice(0, 7) !== state.month) ensureMonth(v);
+    if (dateOnly(v) !== dateOnly(trip.date) || String(v).slice(0, 7) !== state.month) ensureMonth(v);
     renderPage();
     toast('日期已改为 ' + v);
   }

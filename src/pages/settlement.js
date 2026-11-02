@@ -190,7 +190,7 @@ function computeSettlement(month) {
 
     var days = {};
     trips.forEach(function (item) {
-      days[item.date] = true;
+      days[dateOnly(item.date)] = true;
     });
     // 出勤登记：本月该司机的全部记录（正常/休息/台风）
     var attAll = db.attendance

@@ -249,8 +249,9 @@ function renderAttCalendar() {
   var tripsMap = {};
   db.trips.forEach(function (t) {
     if (t.driver_id === driverId && String(t.date).slice(0, 7) === month) {
-      if (!tripsMap[t.date]) tripsMap[t.date] = [];
-      tripsMap[t.date].push(t);
+      var dayKey = dateOnly(t.date);
+      if (!tripsMap[dayKey]) tripsMap[dayKey] = [];
+      tripsMap[dayKey].push(t);
     }
   });
 

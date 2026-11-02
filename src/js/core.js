@@ -131,18 +131,52 @@
     );
   }
 
+  /** 从日期字符串中提取 YYYY-MM-DD 部分 */
+  function dateOnly(text) {
+    return String(text || '').slice(0, 10);
+  }
+
+  /** 校验日期：支持纯日期 YYYY-MM-DD 或带时间 YYYY-MM-DD HH:mm 两种格式 */
   function validDate(text) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
-    var date = new Date(text + 'T00:00:00');
+    var d = dateOnly(text);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+    var date = new Date(d + 'T00:00:00');
     if (isNaN(date.getTime())) return false;
     return (
-      text ===
+      d ===
       date.getFullYear() +
         '-' +
         String(date.getMonth() + 1).padStart(2, '0') +
         '-' +
         String(date.getDate()).padStart(2, '0')
     );
+  }
+
+  /** 把 datetime-local 输入值（YYYY-MM-DDTHH:mm）转为存储格式（YYYY-MM-DD HH:mm） */
+  function formatDateTimeLocal(value) {
+    if (!value) return '';
+    // datetime-local 的值如 "2026-11-02T14:30"
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+      return value.replace('T', ' ');
+    }
+    return String(value);
+  }
+
+  /** 把存储格式（YYYY-MM-DD HH:mm）转为 datetime-local 输入值（YYYY-MM-DDTHH:mm） */
+  function toDateTimeLocalValue(stored) {
+    if (!stored) return '';
+    var v = String(stored);
+    // 已有时间部分
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(v)) {
+      return v.replace(' ', 'T');
+    }
+    // 纯日期 → 追加当前时分
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      var now = new Date();
+      return v + 'T' + String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0');
+    }
+    return v;
   }
 
   function parseNumber(value, label, minimum) {
