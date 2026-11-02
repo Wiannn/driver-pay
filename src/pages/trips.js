@@ -763,6 +763,8 @@ function renderTripBuildSteps(steps) {
   var wrap = $('tripBuildSteps');
   var html = '';
   list.forEach(function (step, idx) {
+    // 新步骤（没有 container 字段）默认选中 40HC；用户主动选「柜型」留空时保持留空
+    var selectedContainer = step.container == null ? CONTAINER_TYPES[0] : step.container;
     html +=
       '<div class="step-row" data-step-idx="' + idx + '">' +
       '<span class="step-idx">' + (idx + 1) + '</span>' +
@@ -783,7 +785,7 @@ function renderTripBuildSteps(steps) {
         '<option value="">柜型</option>' +
         CONTAINER_TYPES.map(function (type) {
           return '<option value="' + type + '"' +
-            (step.container === type ? ' selected' : '') + '>' + type + '</option>';
+            (selectedContainer === type ? ' selected' : '') + '>' + type + '</option>';
         }).join('') +
       '</select>' +
       '<button type="button" class="step-del" data-role="del" title="删除">×</button>' +
