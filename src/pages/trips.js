@@ -455,6 +455,12 @@ definePage('trips', {
   min-width: 140px;
 }
 
+/* 柜型下拉：固定窄宽度，跟在目的地后面 */
+.step-row select.step-container {
+  width: 86px;
+  flex-shrink: 0;
+}
+
 .step-row button.step-del {
   flex-shrink: 0;
   width: 28px;
@@ -549,6 +555,9 @@ definePage('trips', {
 });
 
 /* ================= 趟次 ================= */
+
+/* 柜型选项（可选，仅记录展示，不参与公里和提成计算） */
+var CONTAINER_TYPES = ['40HC', '20GP', '40GP', '40RH'];
 
 /* 提成、公里展示为整数，不显示小数（如 ¥120 而非 ¥120.00） */
 var intFormat = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -770,6 +779,13 @@ function renderTripBuildSteps(steps) {
         '<input type="hidden" data-role="dest" value="' + esc(step.dest || '') + '">' +
         '<div class="dest-list is-hidden" data-role="destlist"></div>' +
       '</div>' +
+      '<select class="step-container" data-role="container" title="柜型（可选）">' +
+        '<option value="">柜型</option>' +
+        CONTAINER_TYPES.map(function (type) {
+          return '<option value="' + type + '"' +
+            (step.container === type ? ' selected' : '') + '>' + type + '</option>';
+        }).join('') +
+      '</select>' +
       '<button type="button" class="step-del" data-role="del" title="删除">×</button>' +
       '</div>';
   });
@@ -905,8 +921,13 @@ function collectTripBuildSteps() {
   rows.forEach(function (row) {
     var actionSel = row.querySelector('[data-role="action"]');
     var destSel = row.querySelector('[data-role="dest"]');
+    var containerSel = row.querySelector('[data-role="container"]');
     if (actionSel && destSel && destSel.value) {
-      steps.push({ action: actionSel.value, dest: destSel.value });
+      steps.push({
+        action: actionSel.value,
+        dest: destSel.value,
+        container: containerSel ? containerSel.value : '',
+      });
     }
   });
   return steps;

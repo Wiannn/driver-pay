@@ -580,7 +580,7 @@
     return 0;
   }
 
-  /** 由结构化 route 拼出展示名 */
+  /** 由结构化 route 拼出展示名；每段可选柜型（40HC/20GP/40GP/40RH）跟在目的地后面 */
   function buildRouteName(route) {
     if (!route || !Array.isArray(route.steps) || !route.steps.length) return route.origin || '';
     var parts = [route.origin];
@@ -588,7 +588,7 @@
       if (!s) return;
       var label = s.action === '提' ? '提'
         : (s.action === '还' ? '还' : (s.action === '落' ? '落' : '重进'));
-      parts.push(label + (s.dest || ''));
+      parts.push(label + (s.dest || '') + (s.container ? ' ' + s.container : ''));
     });
     return parts.join(' → ');
   }
