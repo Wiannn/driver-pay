@@ -230,6 +230,40 @@ definePage('map', {
   padding: 6px;
 }
 
+/* ========== 移动端适配（手机 / 小平板） ==========
+   仅 max-width: 768px 生效，桌面端样式完全不变。
+   思路：双栏改单栏，地图顶上去占满宽度并按视口高度撑开；
+   地点列表放到底部并限制高度，避免喧宾夺主。 */
+@media (max-width: 768px) {
+  .map-layout {
+    grid-template-columns: 1fr;   /* 单栏：地图在上，列表在下 */
+    gap: 12px;
+  }
+
+  .map-canvas {
+    height: 56vh;                /* 用视口高度，保证地图够大 */
+    min-height: 300px;
+  }
+
+  .map-side {
+    max-height: 42vh;            /* 列表别占满整屏 */
+  }
+
+  /* 搜索框加大，方便触摸输入 */
+  .map-search input {
+    height: 40px;
+    font-size: 15px;
+  }
+
+  .map-search .btn {
+    height: 40px;
+  }
+
+  .map-search-list {
+    top: 46px;
+  }
+}
+
 /* 分组折叠 */
 .map-group {
   margin-bottom: 4px;
