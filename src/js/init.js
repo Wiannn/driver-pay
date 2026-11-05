@@ -82,6 +82,7 @@
     state.month = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     buildMonthOptions();
     $('tripDate').value = todayString();
+    $('tripTime').value = String(now.getHours()).padStart(2, '0') + ':00';
     $('fuelDate').value = todayString();
     $('attMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 

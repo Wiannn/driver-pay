@@ -93,6 +93,11 @@
   min-width: 88px;
 }
 
+.field-inline input[type="time"] {
+  flex: 0 0 100px;
+  min-width: 0;
+}
+
 .field-inline select {
   flex: 1 1 auto;
   min-width: 180px;

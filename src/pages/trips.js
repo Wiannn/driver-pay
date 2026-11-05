@@ -15,7 +15,10 @@ definePage('trips', {
     <form class="entry-card" id="tripForm">
       <div class="field">
         <label for="tripDate">日期</label>
-        <input type="datetime-local" id="tripDate" required step="3600">
+        <div class="field-inline">
+          <input type="date" id="tripDate" required>
+          <input type="time" id="tripTime" required step="3600" title="只选整点">
+        </div>
       </div>
       <div class="field">
         <label for="tripDriver">司机</label>
@@ -980,9 +983,14 @@ function addTripBuildStep() {
 function saveTrip(event) {
   event.preventDefault();
   try {
+    var datePart = $('tripDate').value;
+    var timePart = $('tripTime').value;
+    // time input step=3600 时值为 "14" 或 "14:00"；统一取小时，分钟归零
+    var hourOnly = (timePart || '').split(':')[0] || '12';
+    var fullDate = datePart + ' ' + String(hourOnly).padStart(2, '0') + ':00';
+
     var payload = {
-      // 强制用小时粒度存，浏览器可能残留分钟
-      date: formatDateTimeLocal($('tripDate').value),
+      date: fullDate,
       driver_id: $('tripDriver').value,
       route_origin: $('tripBuildOrigin').value,
       route_steps: collectTripBuildSteps(),
@@ -996,6 +1004,7 @@ function saveTrip(event) {
     // reset
     fillTripBuildOrigin();
     $('tripDate').value = '';
+    $('tripTime').value = '';
     $('tripBuildOrigin').value = '';
     renderTripBuildSteps([{ action: '重进', dest: '' }]);
     $('tripKm').value = '';
@@ -1169,37 +1178,57 @@ function editTripDate(cell) {
   var trip = db.trips.find(function (t) { return t.id === tripId; });
   if (!trip) return;
 
-  var input = document.createElement('input');
-  input.type = 'datetime-local';
-  input.value = toDateTimeLocalValue(trip.date);
-  input.className = 'inline-edit';
-  input.step = '3600';
-  input.style.width = '100%';
+  // 拆出日期和小时
+  var dateOnly = dateOnly(trip.date) || '';
+  var hourMatch = String(trip.date).match(/ (\d{2}):\d{2}$/);
+  var hour = hourMatch ? hourMatch[1] : '12';
+
+  var wrap = document.createElement('span');
+  wrap.style.cssText = 'display:inline-flex;gap:4px;align-items:center;width:100%;';
+  var dInput = document.createElement('input');
+  dInput.type = 'date';
+  dInput.value = dateOnly;
+  dInput.className = 'inline-edit';
+  dInput.style.flex = '1 1 auto';
+  var tInput = document.createElement('input');
+  tInput.type = 'time';
+  tInput.value = hour + ':00';
+  tInput.step = '3600';
+  tInput.className = 'inline-edit';
+  tInput.style.width = '90px';
+  wrap.appendChild(dInput);
+  wrap.appendChild(tInput);
 
   cell.innerHTML = '';
-  cell.appendChild(input);
-  input.focus();
+  cell.appendChild(wrap);
+  dInput.focus();
 
   var done = false;
   function finish() {
     if (done) return;
     done = true;
-    var v = formatDateTimeLocal(input.value);
-    if (!v || !validDate(v)) { renderTrips(); return; }
+    if (!dInput.value || !tInput.value) { renderTrips(); return; }
+    var h = (tInput.value || '').split(':')[0];
+    var v = dInput.value + ' ' + String(h).padStart(2, '0') + ':00';
+    if (!validDate(v)) { renderTrips(); return; }
     if (v === trip.date) { renderTrips(); return; }
     trip.date = v;
     markTripUpdated(trip);
     saveLocal();
     if (dateOnly(v) !== dateOnly(trip.date) || String(v).slice(0, 7) !== state.month) ensureMonth(v);
     renderPage();
-    toast('日期已改为 ' + v);
+    toast('日期已改为 ' + displayTripDate(v));
   }
-  input.addEventListener('blur', finish);
-  input.addEventListener('change', finish);
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-    if (e.key === 'Escape') { done = true; input.blur(); renderTrips(); }
-  });
+  function setup(input) {
+    input.addEventListener('blur', finish);
+    input.addEventListener('change', finish);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { done = true; input.blur(); renderTrips(); }
+    });
+  }
+  setup(dInput);
+  setup(tInput);
 }
 
 /** 双击线路单元格 → 直接改线路名字符 */
