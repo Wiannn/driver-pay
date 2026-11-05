@@ -11,7 +11,7 @@
   var AMAP_KEY = '35ff17adac7d27b664587854d5538448';                 // 高德 JS API Key
   var AMAP_SECURITY_CODE = '1ce351cd7b768471d33f0b94c8e6b407';  // 高德安全密钥（2022 年后新 Key 必须填）
 
-  var state = { month: '', page: 'settlement', tripMode: 'build', tripPage: 1 };
+  var state = { month: '', page: 'settlement', tripMode: 'build', tripPage: 1, tripOrder: 'desc' };
   var TRIP_PAGE_SIZE = 12;
   var db;
 

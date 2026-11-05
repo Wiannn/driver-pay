@@ -54,6 +54,8 @@ definePage('trips', {
         <div class="table-tools">
           <input type="search" id="tripSearch" autocomplete="off"
             placeholder="搜索线路 / 箱号" title="按空格分隔多个关键词">
+          <button type="button" class="btn btn-ghost" id="tripOrderBtn"
+            title="切换日期排序（新旧 / 旧新）">新→旧</button>
           <span class="table-sum" id="tripSummary"></span>
         </div>
       </div>
@@ -521,6 +523,13 @@ definePage('trips', {
         state.tripPage = 1;
         renderTrips();
       }
+    });
+    // 日期排序切换：新→旧 / 旧→新，回第一页
+    $('tripOrderBtn').addEventListener('click', function () {
+      state.tripOrder = state.tripOrder === 'desc' ? 'asc' : 'desc';
+      this.textContent = state.tripOrder === 'desc' ? '新→旧' : '旧→新';
+      state.tripPage = 1;
+      renderTrips();
     });
     $('tripBuildAddStep').addEventListener('click', addTripBuildStep);
     $('tripBuildOrigin').addEventListener('change', updateAutoTripKm);
@@ -1069,14 +1078,17 @@ function filteredTrips() {
       });
     });
   }
-  return (driverId
+  var sorted = driverId
     ? monthRows.filter(function (item) {
         return String(item.driver_id) === String(driverId);
       })
-    : monthRows
-  ).sort(function (a, b) {
-    return b.date.localeCompare(a.date) || b.id - a.id;
+    : monthRows;
+  sorted.sort(function (a, b) {
+    return state.tripOrder === 'asc'
+      ? a.date.localeCompare(b.date) || a.id - b.id
+      : b.date.localeCompare(a.date) || b.id - a.id;
   });
+  return sorted;
 }
 
 function renderTrips() {
