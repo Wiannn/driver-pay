@@ -981,7 +981,8 @@ function saveTrip(event) {
   event.preventDefault();
   try {
     var payload = {
-      date: $('tripDate').value,
+      // 强制用小时粒度存，浏览器可能残留分钟
+      date: formatDateTimeLocal($('tripDate').value),
       driver_id: $('tripDriver').value,
       route_origin: $('tripBuildOrigin').value,
       route_steps: collectTripBuildSteps(),
@@ -994,6 +995,7 @@ function saveTrip(event) {
     toast('趟次已保存');
     // reset
     fillTripBuildOrigin();
+    $('tripDate').value = '';
     $('tripBuildOrigin').value = '';
     renderTripBuildSteps([{ action: '重进', dest: '' }]);
     $('tripKm').value = '';

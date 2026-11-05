@@ -73,7 +73,9 @@
     var now = new Date();
     state.month = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     buildMonthOptions();
-    $('tripDate').value = todayString();
+    // 趟次日期：小时粒度，分钟归零，避免浏览器用当前分钟自动补值
+    var todayH00 = todayString() + 'T' + String(now.getHours()).padStart(2, '0') + ':00';
+    $('tripDate').value = todayH00;
     $('fuelDate').value = todayString();
     $('attMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
