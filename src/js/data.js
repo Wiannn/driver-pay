@@ -137,6 +137,7 @@
       id: newId(), date: date, driver_id: driverId,
       route_id: routeId, route_origin: routeOrigin, route_steps: routeSteps,
       route_name: routeName, km: round2(km), commission: round2(commission),
+      container_no: String(input.container_no || '').trim(),
       updated_by: operatorName(), updated_at: nowStamp(),
     };
     db.trips.push(trip);
