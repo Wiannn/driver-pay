@@ -1228,11 +1228,13 @@ function editTripDate(cell) {
 
   cell.innerHTML = '';
   cell.appendChild(wrap);
-  dInput.focus();
+  // 两个输入框都不聚焦，等用户自己点
 
   var done = false;
   function finish() {
     if (done) return;
+    // 如果焦点还在 wrap 内（比如从 date 切到 time），不触发保存
+    if (wrap.contains(document.activeElement)) return;
     done = true;
     if (!dInput.value || !tInput.value) { renderTrips(); return; }
     var h = (tInput.value || '').split(':')[0];
@@ -1246,12 +1248,12 @@ function editTripDate(cell) {
     renderPage();
     toast('日期已改为 ' + displayTripDate(v));
   }
+  // 用 focusout 代替 blur，focusout 会冒泡到 wrap，能检测焦点是否还在 wrap 内
+  wrap.addEventListener('focusout', finish);
   function setup(input) {
-    input.addEventListener('blur', finish);
-    input.addEventListener('change', finish);
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-      if (e.key === 'Escape') { done = true; input.blur(); renderTrips(); }
+      if (e.key === 'Escape') { done = true; renderTrips(); }
     });
   }
   setup(dInput);
