@@ -332,7 +332,9 @@ definePage('trips', {
 .dest-picker {
   position: relative;
   flex: 1 1 auto;
-  min-width: 160px;
+  min-width: 140px;
+  /* 下拉候选需要盖住同 step-row 的柜型/删除按钮 */
+  z-index: 2;
 }
 
 .dest-picker .dest-input {
@@ -407,7 +409,7 @@ definePage('trips', {
 .step-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 10px 12px;
   background: #f8fafd;
   border: 1px solid var(--line);
@@ -457,7 +459,7 @@ definePage('trips', {
 
 /* 柜型下拉：固定窄宽度，跟在目的地后面 */
 .step-row select.step-container {
-  width: 86px;
+  width: 76px;
   flex-shrink: 0;
 }
 
@@ -955,10 +957,23 @@ function onTripBuildStepChange(event) {
 }
 
 function addTripBuildStep() {
-  var existing = collectTripBuildSteps();
-  if (existing.length >= 4) { toast('最多 4 段', 'error'); return; }
-  existing.push({ action: '提', dest: '' });
-  renderTripBuildSteps(existing);
+  // 现有行数直接数 DOM，不要用 collectTripBuildSteps（它只收集已填目的地的行）
+  var rows = document.querySelectorAll('#tripBuildSteps .step-row');
+  if (rows.length >= 4) { toast('最多 4 段', 'error'); return; }
+  // 读取当前已渲染的所有步骤（含空目的地的），再追加一条
+  var all = [];
+  rows.forEach(function (row) {
+    var actionSel = row.querySelector('[data-role="action"]');
+    var destSel = row.querySelector('[data-role="dest"]');
+    var containerSel = row.querySelector('[data-role="container"]');
+    all.push({
+      action: actionSel ? actionSel.value : '重进',
+      dest: destSel ? destSel.value : '',
+      container: containerSel ? containerSel.value : '',
+    });
+  });
+  all.push({ action: '提', dest: '' });
+  renderTripBuildSteps(all);
   updateAutoTripKm();
 }
 
