@@ -466,6 +466,12 @@ definePage('trips', {
   flex-shrink: 0;
 }
 
+/* 箱号输入框：可选，固定宽度 */
+.step-row input.step-container-no {
+  width: 110px;
+  flex-shrink: 0;
+}
+
 .step-row button.step-del {
   flex-shrink: 0;
   width: 28px;
@@ -793,6 +799,9 @@ function renderTripBuildSteps(steps) {
             (selectedContainer === type ? ' selected' : '') + '>' + type + '</option>';
         }).join('') +
       '</select>' +
+      '<input type="text" class="step-container-no" data-role="containerno"' +
+        ' placeholder="箱号" title="可选 · 多个用逗号/空格分隔"' +
+        ' value="' + esc(step.container_no || '') + '">' +
       '<button type="button" class="step-del" data-role="del" title="删除">×</button>' +
       '</div>';
   });
@@ -929,15 +938,29 @@ function collectTripBuildSteps() {
     var actionSel = row.querySelector('[data-role="action"]');
     var destSel = row.querySelector('[data-role="dest"]');
     var containerSel = row.querySelector('[data-role="container"]');
+    var containerNoInput = row.querySelector('[data-role="containerno"]');
     if (actionSel && destSel && destSel.value) {
       steps.push({
         action: actionSel.value,
         dest: destSel.value,
         container: containerSel ? containerSel.value : '',
+        container_no: containerNoInput ? containerNoInput.value.trim() : '',
       });
     }
   });
   return steps;
+}
+
+/** 合并所有步骤里的箱号为逗号分隔字符串；重复/空值自动清洗 */
+function mergeStepContainerNos(steps) {
+  var all = [];
+  (steps || []).forEach(function (s) {
+    if (!s || !s.container_no) return;
+    splitContainerNos(s.container_no).forEach(function (n) {
+      if (n && all.indexOf(n) < 0) all.push(n);
+    });
+  });
+  return all.join(', ');
 }
 
 function onTripBuildStepChange(event) {
@@ -969,10 +992,12 @@ function addTripBuildStep() {
     var actionSel = row.querySelector('[data-role="action"]');
     var destSel = row.querySelector('[data-role="dest"]');
     var containerSel = row.querySelector('[data-role="container"]');
+    var noInput = row.querySelector('[data-role="containerno"]');
     all.push({
       action: actionSel ? actionSel.value : '重进',
       dest: destSel ? destSel.value : '',
       container: containerSel ? containerSel.value : '',
+      container_no: noInput ? noInput.value.trim() : '',
     });
   });
   all.push({ action: '提', dest: '' });
@@ -989,11 +1014,13 @@ function saveTrip(event) {
     var hourOnly = (timePart || '').split(':')[0] || '12';
     var fullDate = datePart + ' ' + String(hourOnly).padStart(2, '0') + ':00';
 
+    var steps = collectTripBuildSteps();
     var payload = {
       date: fullDate,
       driver_id: $('tripDriver').value,
       route_origin: $('tripBuildOrigin').value,
-      route_steps: collectTripBuildSteps(),
+      route_steps: steps,
+      container_no: mergeStepContainerNos(steps),
       km: $('tripKm').value,
       commission: $('tripCommission').value,
     };
