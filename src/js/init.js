@@ -70,12 +70,18 @@
     mountPages();
     loadDb();
 
+    // 启动时强制把所有趟次日期的分钟归零（历史数据可能带分钟）
+    var dirty = false;
+    db.trips.forEach(function (t) {
+      var fixed = formatDateTimeLocal(t.date);
+      if (fixed !== t.date) { t.date = fixed; dirty = true; }
+    });
+    if (dirty) saveLocal();
+
     var now = new Date();
     state.month = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     buildMonthOptions();
-    // 趟次日期：小时粒度，分钟归零，避免浏览器用当前分钟自动补值
-    var todayH00 = todayString() + 'T' + String(now.getHours()).padStart(2, '0') + ':00';
-    $('tripDate').value = todayH00;
+    $('tripDate').value = todayString();
     $('fuelDate').value = todayString();
     $('attMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 

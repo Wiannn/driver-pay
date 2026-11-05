@@ -161,18 +161,25 @@
     return v;
   }
 
-  /** 把 datetime-local 输入值转为存储格式（YYYY-MM-DD HH:00，只保留小时粒度） */
+  /** 把日期时间统一为小时粒度（YYYY-MM-DD HH:00）；
+   * 接受任意输入：datetime-local 值(2026-11-05T10:36)、已存值(2026-11-05 10:36)、纯日期(2026-11-05)
+   */
   function formatDateTimeLocal(value) {
     if (!value) return '';
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}(:\d{2})?$/.test(value)) {
-      // step=3600 时浏览器会传 "2026-11-02T14"，分钟可能省略
-      var m = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2})(?::(\d{2}))?$/);
-      if (m) {
-        return m[1] + ' ' + m[2] + ':00';
-      }
-      return value.replace('T', ' ') + ':00';
+    var v = String(value);
+    // datetime-local 格式（浏览器输入）: 2026-11-05T10:36 或 2026-11-05T10
+    var m1 = v.match(/^(\d{4}-\d{2}-\d{2})T(\d{2})(?::\d{2})?$/);
+    if (m1) return m1[1] + ' ' + m1[2] + ':00';
+    // 已存格式: 2026-11-05 10:36 或 2026-11-05 10:00
+    var m2 = v.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}):\d{2}$/);
+    if (m2) return m2[1] + ' ' + m2[2] + ':00';
+    // 纯日期: 2026-11-05 → 补当前小时 分钟归零
+    var m3 = v.match(/^(\d{4}-\d{2}-\d{2})$/);
+    if (m3) {
+      var now = new Date();
+      return m3[1] + ' ' + String(now.getHours()).padStart(2, '0') + ':00';
     }
-    return String(value);
+    return v;
   }
 
   /** 把存储格式转为 datetime-local 输入值；小时粒度 */
