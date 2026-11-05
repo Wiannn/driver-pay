@@ -1210,8 +1210,13 @@ function markTripUpdated(trip) {
   trip.updated_at = tripStamp();
 }
 
+/** 当前打开的日期编辑器（全局只允许一个，开新的会先静默保存旧的） */
+var activeDateEditor = null;
+
 /** 双击日期单元格 → 内联改日期（跨月会自动跳月份） */
 function editTripDate(cell) {
+  // 打开新编辑器前，先把上一个编辑器静默保存掉（不重排表格，不打断当前操作）
+  if (activeDateEditor) activeDateEditor.commit(true);
   var tripId = Number(cell.dataset.trip);
   var trip = db.trips.find(function (t) { return t.id === tripId; });
   if (!trip) return;
@@ -1242,29 +1247,77 @@ function editTripDate(cell) {
   // 两个输入框都不聚焦，等用户自己点
 
   var done = false;
-  function finish() {
+  var pending = null;
+  var editor = { commit: commit };
+  activeDateEditor = editor;
+
+  function cancelPending() {
+    if (pending) { clearTimeout(pending); pending = null; }
+  }
+  /** 提交编辑。silent=true 时只写数据不重排表格（用于切换到另一个编辑器时） */
+  function commit(silent) {
     if (done) return;
-    // 如果焦点还在 wrap 内（比如从 date 切到 time），不触发保存
-    if (wrap.contains(document.activeElement)) return;
+    cancelPending();
     done = true;
-    if (!dInput.value || !tInput.value) { renderTrips(); return; }
-    var h = (tInput.value || '').split(':')[0];
-    var v = dInput.value + ' ' + String(h).padStart(2, '0') + ':00';
-    if (!validDate(v)) { renderTrips(); return; }
-    if (v === trip.date) { renderTrips(); return; }
+    document.removeEventListener('pointerdown', onDocPointerDown, true);
+    if (activeDateEditor === editor) activeDateEditor = null;
+    var v = null;
+    var skip = false;
+    if (!dInput.value || !tInput.value) skip = true;
+    if (!skip) {
+      var h = (tInput.value || '').split(':')[0];
+      v = dInput.value + ' ' + String(h).padStart(2, '0') + ':00';
+      if (!validDate(v) || v === trip.date) skip = true;
+    }
+    if (skip) { if (!silent) renderTrips(); return; }
     trip.date = v;
     markTripUpdated(trip);
     saveLocal();
+    if (silent) return;
     if (dateOnly(v) !== datePart || String(v).slice(0, 7) !== state.month) ensureMonth(v);
     renderPage();
     toast('日期已改为 ' + displayTripDate(v));
   }
-  // 用 focusout 代替 blur，focusout 会冒泡到 wrap，能检测焦点是否还在 wrap 内
-  wrap.addEventListener('focusout', finish);
+  /** 延迟提交：点击原生日历/时钟弹层、输入框间隙都会触发假失焦，延迟等焦点回来就取消 */
+  function scheduleCommit() {
+    if (done) return;
+    cancelPending();
+    pending = setTimeout(function () {
+      pending = null;
+      // 焦点若已进入其他单元格的内联编辑框（公里/提成/备注等），先不提交，避免重排销毁那边的编辑器
+      var ae = document.activeElement;
+      if (ae && ae.classList && ae.classList.contains('inline-edit') && !wrap.contains(ae)) {
+        scheduleCommit();
+        return;
+      }
+      commit(false);
+    }, 250);
+  }
+  /** 点击页面任何地方：编辑区内（含两个输入框之间的空隙）= 继续编辑；区外 = 延迟提交 */
+  function onDocPointerDown(e) {
+    if (done) return;
+    if (wrap.contains(e.target)) { cancelPending(); return; }
+    scheduleCommit();
+  }
+  document.addEventListener('pointerdown', onDocPointerDown, true);
+  wrap.addEventListener('focusout', function () {
+    if (wrap.contains(document.activeElement)) return;
+    scheduleCommit();
+  });
+  // 焦点回到编辑区（比如弹层选完值自动回焦）就取消提交
+  wrap.addEventListener('focusin', cancelPending);
+  function discard() {
+    if (done) return;
+    cancelPending();
+    done = true;
+    document.removeEventListener('pointerdown', onDocPointerDown, true);
+    if (activeDateEditor === editor) activeDateEditor = null;
+    renderTrips();
+  }
   function setup(input) {
     input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-      if (e.key === 'Escape') { done = true; renderTrips(); }
+      if (e.key === 'Enter') { e.preventDefault(); commit(false); }
+      if (e.key === 'Escape') discard();
     });
   }
   setup(dInput);
