@@ -1206,20 +1206,20 @@ function editTripDate(cell) {
   if (!trip) return;
 
   // 拆出日期和小时
-  var dateOnly = dateOnly(trip.date) || '';
+  var datePart = dateOnly(trip.date) || '';
   var hourMatch = String(trip.date).match(/ (\d{2}):\d{2}$/);
-  var hour = hourMatch ? hourMatch[1] : '12';
+  var hourPart = hourMatch ? hourMatch[1] : '12';
 
   var wrap = document.createElement('span');
   wrap.style.cssText = 'display:inline-flex;gap:4px;align-items:center;width:100%;';
   var dInput = document.createElement('input');
   dInput.type = 'date';
-  dInput.value = dateOnly;
+  dInput.value = datePart;
   dInput.className = 'inline-edit';
   dInput.style.flex = '1 1 auto';
   var tInput = document.createElement('input');
   tInput.type = 'time';
-  tInput.value = hour + ':00';
+  tInput.value = hourPart + ':00';
   tInput.step = '3600';
   tInput.className = 'inline-edit';
   tInput.style.width = '90px';
@@ -1242,7 +1242,7 @@ function editTripDate(cell) {
     trip.date = v;
     markTripUpdated(trip);
     saveLocal();
-    if (dateOnly(v) !== dateOnly(trip.date) || String(v).slice(0, 7) !== state.month) ensureMonth(v);
+    if (dateOnly(v) !== datePart || String(v).slice(0, 7) !== state.month) ensureMonth(v);
     renderPage();
     toast('日期已改为 ' + displayTripDate(v));
   }
