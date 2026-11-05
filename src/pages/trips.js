@@ -55,7 +55,7 @@ definePage('trips', {
           <input type="search" id="tripSearch" autocomplete="off"
             placeholder="搜索线路 / 箱号" title="按空格分隔多个关键词">
           <button type="button" class="btn btn-ghost" id="tripOrderBtn"
-            title="切换日期排序（新旧 / 旧新）">新→旧</button>
+            title="切换日期排序（逆序 / 顺序）">逆序</button>
           <span class="table-sum" id="tripSummary"></span>
         </div>
       </div>
@@ -524,10 +524,10 @@ definePage('trips', {
         renderTrips();
       }
     });
-    // 日期排序切换：新→旧 / 旧→新，回第一页
+    // 日期排序切换：逆序（新→旧）/ 顺序（旧→新），回第一页
     $('tripOrderBtn').addEventListener('click', function () {
       state.tripOrder = state.tripOrder === 'desc' ? 'asc' : 'desc';
-      this.textContent = state.tripOrder === 'desc' ? '新→旧' : '旧→新';
+      this.textContent = state.tripOrder === 'desc' ? '逆序' : '顺序';
       state.tripPage = 1;
       renderTrips();
     });
