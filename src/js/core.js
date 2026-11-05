@@ -152,29 +152,42 @@
     );
   }
 
-  /** 把 datetime-local 输入值（YYYY-MM-DDTHH:mm）转为存储格式（YYYY-MM-DD HH:mm） */
+  /** 趟次表格日期展示：YYYY-MM-DD HH时；纯日期原样显示 */
+  function displayTripDate(stored) {
+    if (!stored) return '';
+    var v = String(stored);
+    var m = v.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}):\d{2}$/);
+    if (m) return m[1] + ' ' + m[2] + '时';
+    return v;
+  }
+
+  /** 把 datetime-local 输入值转为存储格式（YYYY-MM-DD HH:00，只保留小时粒度） */
   function formatDateTimeLocal(value) {
     if (!value) return '';
-    // datetime-local 的值如 "2026-11-02T14:30"
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
-      return value.replace('T', ' ');
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}(:\d{2})?$/.test(value)) {
+      // step=3600 时浏览器会传 "2026-11-02T14"，分钟可能省略
+      var m = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2})(?::(\d{2}))?$/);
+      if (m) {
+        return m[1] + ' ' + m[2] + ':00';
+      }
+      return value.replace('T', ' ') + ':00';
     }
     return String(value);
   }
 
-  /** 把存储格式（YYYY-MM-DD HH:mm）转为 datetime-local 输入值（YYYY-MM-DDTHH:mm） */
+  /** 把存储格式转为 datetime-local 输入值；小时粒度 */
   function toDateTimeLocalValue(stored) {
     if (!stored) return '';
     var v = String(stored);
-    // 已有时间部分
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(v)) {
-      return v.replace(' ', 'T');
+    // 已有时间部分 → 只取小时，分钟归零
+    var m1 = v.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}):/);
+    if (m1) {
+      return m1[1] + 'T' + m1[2] + ':00';
     }
-    // 纯日期 → 追加当前时分
+    // 纯日期 → 追加当前小时，分钟归零
     if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
       var now = new Date();
-      return v + 'T' + String(now.getHours()).padStart(2, '0') + ':' +
-        String(now.getMinutes()).padStart(2, '0');
+      return v + 'T' + String(now.getHours()).padStart(2, '0') + ':00';
     }
     return v;
   }

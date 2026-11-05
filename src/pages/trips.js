@@ -15,7 +15,7 @@ definePage('trips', {
     <form class="entry-card" id="tripForm">
       <div class="field">
         <label for="tripDate">日期</label>
-        <input type="datetime-local" id="tripDate" required step="60">
+        <input type="datetime-local" id="tripDate" required step="3600">
       </div>
       <div class="field">
         <label for="tripDriver">司机</label>
@@ -1080,7 +1080,7 @@ function renderTrips() {
       });
       return (
         '<tr><td class="trip-date" data-trip="' + trip.id + '" title="双击修改日期">' +
-          esc(trip.date) + '</td>' +
+          esc(displayTripDate(trip.date)) + '</td>' +
         '<td>' + esc(driver ? driver.name : '—') + '</td>' +
         '<td class="route-name trip-route" data-trip="' + trip.id + '" title="双击编辑线路名">' +
           esc(trip.route_name) + '</td>' +
@@ -1171,7 +1171,7 @@ function editTripDate(cell) {
   input.type = 'datetime-local';
   input.value = toDateTimeLocalValue(trip.date);
   input.className = 'inline-edit';
-  input.step = '60';
+  input.step = '3600';
   input.style.width = '100%';
 
   cell.innerHTML = '';

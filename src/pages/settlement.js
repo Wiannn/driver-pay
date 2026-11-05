@@ -716,7 +716,7 @@ function importBackup(event) {
       sheet.rows.push([B('趟次明细')]);
       sheet.rows.push([H('日期'), H('线路'), H('箱号'), H('公里数'), H('提成（元）')]);
       driver.trips.forEach(function (trip) {
-        sheet.rows.push([S(trip.date), S(trip.route_name), S(trip.container_no || ''), N(trip.km), N(trip.commission)]);
+        sheet.rows.push([S(displayTripDate(trip.date)), S(trip.route_name), S(trip.container_no || ''), N(trip.km), N(trip.commission)]);
       });
       sheet.rows.push([TL('合计'), TL('共 ' + driver.trips.length + ' 趟'), TL(''), TN(driver.km), TN(driver.commission)]);
       sheet.rows.push([]);
