@@ -1029,10 +1029,8 @@ function saveTrip(event) {
     var trip = addTrip(payload);
     ensureMonth(trip.date);
     toast('趟次已保存');
-    // reset
+    // reset：保留日期时间，方便连续录入同一天的趟次
     fillTripBuildOrigin();
-    $('tripDate').value = '';
-    $('tripTime').value = '';
     $('tripBuildOrigin').value = '';
     renderTripBuildSteps([{ action: '重进', dest: '' }]);
     $('tripKm').value = '';
