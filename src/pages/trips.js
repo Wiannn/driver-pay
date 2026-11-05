@@ -334,8 +334,9 @@ definePage('trips', {
 /* ---------- 直接搭建：目的地可搜索下拉 ---------- */
 .dest-picker {
   position: relative;
-  flex: 1 1 auto;
+  flex: 0 1 280px;
   min-width: 140px;
+  max-width: 280px;
   /* 下拉候选需要盖住同 step-row 的柜型/删除按钮 */
   z-index: 2;
 }
@@ -466,9 +467,9 @@ definePage('trips', {
   flex-shrink: 0;
 }
 
-/* 箱号输入框：可选，固定宽度 */
+/* 箱号输入框：可选，适当宽度 */
 .step-row input.step-container-no {
-  width: 110px;
+  width: 160px;
   flex-shrink: 0;
 }
 
