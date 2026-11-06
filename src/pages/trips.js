@@ -718,8 +718,8 @@ function updateAutoTripKm() {
   var steps = collectTripBuildSteps();
   if (origin && steps.length) {
     var autoKm = computeAutoKm(origin, steps);
-    // 自定义分组没有公里规则 → 留空，手填
-    $('tripKm').value = (autoKm === null ? '' : autoKm);
+    // 算不出公里（目的地没规则）时保留已填内容，不清掉用户手填的值
+    if (autoKm !== null) $('tripKm').value = autoKm;
   }
   // 同步自动提成
   var autoComm = computeAutoCommission(steps);
@@ -987,6 +987,9 @@ function onTripBuildStepChange(event) {
     steps.splice(idx, 1);
     if (!steps.length) steps.push({ action: '重进', dest: '' });
     renderTripBuildSteps(steps);
+  } else if (target.matches('[data-role="container"], [data-role="containerno"]')) {
+    // 柜型 / 箱号不影响公里和提成，直接返回，避免把手填的公里冲掉
+    return;
   }
   // 任何步骤变化 → 重算公里
   updateAutoTripKm();
