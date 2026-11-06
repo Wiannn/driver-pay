@@ -470,6 +470,18 @@
     return base;
   }
 
+  /** 同 id 的另一套分组：进港区 ↔ 提还堆场（两套分组的公里规则一一对应） */
+  function groupOnOtherSide(groupId, side) {
+    if (!groupId) return null;
+    var list = side === 'in'
+      ? ((db.configs && db.configs.dest_pick_groups) || [])
+      : ((db.configs && db.configs.dest_groups) || []);
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === groupId) return list[i];
+    }
+    return null;
+  }
+
   /** 某段的实际公里：分组设了公里就统一跟随（新成员自动继承）；
    *  分组没设时才回退到目的地自己的 base_km，再没则用内置组的基准地点，否则留空手填
    *  side 传 'in' / 'pick'：先进本侧分组里找，找不到再退回两套一起找 */
@@ -478,6 +490,8 @@
     var group = gid ? findGroupById(gid, side) : null;
     // 分组自己设了公里（如「新库130」组：新库 130 / 东库自动 120）——组内所有成员统一跟随
     var groupKm = groupKmValue(origin, group);
+    // 本侧没设 → 跟随同 id 的另一套分组（进港区 W4W5 没设，提还 W4W5-50 设了 50，重进也按 50）
+    if (groupKm === null && gid) groupKm = groupKmValue(origin, groupOnOtherSide(gid, side));
     if (groupKm !== null) return groupKm;
     // 分组没设 → 用目的地自己登记的公里
     var own = lookupBaseKm(origin, dest);
