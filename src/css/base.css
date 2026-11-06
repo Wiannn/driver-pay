@@ -208,8 +208,8 @@ body {
 .wrap {
   flex: 1;
   min-width: 0;
-  max-width: 1440px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 26px 28px 64px;
 }
 
