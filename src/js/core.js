@@ -396,9 +396,6 @@
     return false;
   }
 
-  /** 有公里规则的内置区域；其余分组（自建组）公里留白 */
-  var KM_GROUP_IDS = ['zone-ab', 'zone-cd', 'zone-ys'];
-
   /** 内置分组的基准地点：组内没单独登记公里的地点，跟随基准地点的公里 */
   var GROUP_ANCHORS = {
     'zone-ab': ['外一', '外二'],
@@ -412,6 +409,16 @@
     if (!anchors) return null;
     for (var i = 0; i < anchors.length; i++) {
       var v = lookupBaseKm(origin, anchors[i]);
+      if (typeof v === 'number' && v > 0) return v;
+    }
+    return null;
+  }
+
+  /** 分组里第一个登记了公里的成员公里：目的地自己没配时跟随同组地点（自建组同样生效） */
+  function groupMemberKm(origin, group) {
+    var members = (group && group.members) || [];
+    for (var i = 0; i < members.length; i++) {
+      var v = lookupBaseKm(origin, members[i]);
       if (typeof v === 'number' && v > 0) return v;
     }
     return null;
@@ -475,9 +482,12 @@
     // 分组没设 → 用目的地自己登记的公里
     var own = lookupBaseKm(origin, dest);
     if (typeof own === 'number' && own > 0) return own;
-    // 非内置区域（自建组）没有基准，留空手填
-    if (!gid || KM_GROUP_IDS.indexOf(gid) < 0) return null;
-    return groupAnchorKm(origin, gid);
+    if (!gid) return null;
+    // 内置区域：先用基准地点兜底
+    var anchor = groupAnchorKm(origin, gid);
+    if (anchor !== null) return anchor;
+    // 自建组 / 新加进组的地点：跟随同组里已登记公里的地点
+    return groupMemberKm(origin, group);
   }
 
   /** 自动算总公里：
