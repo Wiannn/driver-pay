@@ -167,8 +167,32 @@ definePage('settlement', {
       $('restoreFile').click();
     });
     $('restoreFile').addEventListener('change', importBackup);
+
+    window.addEventListener('resize', applyDriverGridCols);
   },
 });
+
+/* 卡片列数按司机人数均分，避免 4 个司机排成 3+1 这种不整齐的布局 */
+function applyDriverGridCols() {
+  var list = $('settleList');
+  if (!list) return;
+  var count = list.children.length;
+  if (!count) return;
+  var gap = 18;
+  var minCard = 540;
+  var width = list.clientWidth || (list.parentNode && list.parentNode.clientWidth) || 0;
+  if (!width) return; // 页面不可见时拿不到宽度，保持 CSS 默认排布
+  var maxCols = Math.max(1, Math.floor((width + gap) / (minCard + gap)));
+  maxCols = Math.min(maxCols, count);
+  var cols = maxCols;
+  for (var c = maxCols; c >= 2; c--) {
+    if (count % c === 0) {
+      cols = c;
+      break;
+    }
+  }
+  list.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+}
 
 /* ================= 结算计算 ================= */
 function computeSettlement(month) {
@@ -315,6 +339,7 @@ function renderSettlement() {
       return driverCard(driver);
     })
     .join('');
+  applyDriverGridCols();
 }
 
 function stat(label, value, className) {
