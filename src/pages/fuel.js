@@ -5,20 +5,13 @@
 definePage('fuel', {
   html: `
     <style>
-      .data-table .fuel-note {
+      .data-table .fuel-cost {
         color: var(--ink);
         cursor: text;
-        min-width: 140px;
-        max-width: 220px;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        min-width: 100px;
         white-space: nowrap;
       }
-      .data-table .fuel-note:empty::before {
-        content: '—';
-        color: #ccc;
-      }
-      .data-table .fuel-note input.inline-edit {
+      .data-table .fuel-cost input.inline-edit {
         width: 100%;
         box-sizing: border-box;
         border: 1px solid var(--primary);
@@ -76,7 +69,7 @@ definePage('fuel', {
               <th>司机</th>
               <th>地点</th>
               <th class="num">升数（升）</th>
-              <th>备注</th>
+              <th>费用</th>
               <th>更新人</th>
               <th>更新时间</th>
               <th class="op"></th>
@@ -92,12 +85,12 @@ definePage('fuel', {
     $('fuelForm').addEventListener('submit', saveFuel);
     // 选司机 = 只看这个司机的加油；不选 = 当月全部
     $('fuelDriver').addEventListener('change', renderFuel);
-    // 双击备注单元格 → 内联编辑
+    // 双击费用单元格 → 内联编辑
     $('fuelRows').addEventListener('dblclick', function (event) {
-      var cell = event.target.closest('.fuel-note[data-fuel]');
+      var cell = event.target.closest('.fuel-cost[data-fuel]');
       if (!cell) return;
       event.preventDefault();
-      editFuelNote(cell);
+      editFuelCost(cell);
     });
   },
 });
@@ -158,8 +151,8 @@ function renderFuel() {
         '<td>' + esc(driver ? driver.name : '—') + '</td>' +
         '<td>' + esc(item.place) + '</td>' +
         '<td class="num">' + fmt2(item.liters) + '</td>' +
-        '<td class="fuel-note" data-fuel="' + item.id + '">' +
-        esc(item.note || '') + '</td>' +
+        '<td class="fuel-cost" data-fuel="' + item.id + '">' +
+        yuanInt(item.cost) + '</td>' +
         '<td>' + esc(item.updated_by || '—') + '</td>' +
         '<td>' + esc(item.updated_at || '—') + '</td>' +
         '<td class="op"><button type="button" class="link-danger" data-del-fuel="' +
@@ -184,29 +177,37 @@ function renderFuel() {
     '（加油站 ' + fmt2(station) + ' L / 仓库 ' + fmt2(depot) + ' L）';
 }
 
-/* 双击备注单元格 → 内联编辑，回车/失焦保存，Esc 取消 */
-function editFuelNote(cell) {
+/* 双击费用单元格 → 内联填数字（留空视为 0），回车/失焦保存，Esc 取消 */
+function editFuelCost(cell) {
   var recordId = Number(cell.dataset.fuel);
   var record = db.fuel.find(function (item) {
     return item.id === recordId;
   });
   if (!record) return;
 
+  var oldValue = Number(record.cost) || 0;
   var input = document.createElement('input');
   input.type = 'text';
-  input.value = record.note || '';
+  input.inputMode = 'decimal';
+  input.value = String(oldValue);
   input.className = 'inline-edit';
-  input.placeholder = '备注（可选）';
+  input.placeholder = '费用';
 
   cell.innerHTML = '';
   cell.appendChild(input);
   input.focus();
   input.select();
 
+  var done = false;
   function finish() {
-    var value = input.value.trim();
-    if (value !== (record.note || '')) {
-      record.note = value;
+    if (done) return;
+    done = true;
+    var raw = input.value.replace(/[^0-9.\-]/g, '');
+    var value = raw === '' ? 0 : Number(raw);
+    if (isNaN(value)) value = 0;
+    value = round2(value);
+    if (value !== oldValue) {
+      record.cost = value;
       record.updated_by = operatorName();
       record.updated_at = nowStamp();
       saveLocal();
@@ -220,7 +221,7 @@ function editFuelNote(cell) {
       input.blur();
     }
     if (event.key === 'Escape') {
-      input.removeEventListener('blur', finish);
+      done = true;
       renderFuel();
     }
   });

@@ -162,6 +162,7 @@
     var record = {
       id: newId(), date: date, driver_id: driverId,
       place: place, liters: round2(liters),
+      cost: 0,
       updated_by: operatorName(), updated_at: nowStamp(),
     };
     db.fuel.push(record);
