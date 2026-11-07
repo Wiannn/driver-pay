@@ -7,7 +7,7 @@ definePage('attendance', {
     <div class="page-head">
       <div>
         <h2>出勤登记</h2>
-        <p class="sub">明确登记每位司机每一天的状态（正常上班 / 休息 / 台风）。结算时的「上班天数」以此为准，路线记录作为补充对照。</p>
+        <p class="sub">明确登记每位司机每一天的状态（上班 / 休息 / 台风 / 修车）。结算时的「上班天数」只统计「上班」状态，其余不计工资。</p>
       </div>
     </div>
 
@@ -21,9 +21,10 @@ definePage('attendance', {
         <select id="attDriver" required></select>
       </div>
       <div class="attendance-legend">
-        <span class="legend-item"><i class="dot dot-work"></i>正常</span>
+        <span class="legend-item"><i class="dot dot-work"></i>上班</span>
         <span class="legend-item"><i class="dot dot-rest"></i>休息</span>
         <span class="legend-item"><i class="dot dot-weather"></i>台风</span>
+        <span class="legend-item"><i class="dot dot-repair"></i>修车</span>
         <span class="legend-item"><i class="dot dot-empty"></i>未登记</span>
       </div>
       <div class="attendance-control att-lock-ctrl">
@@ -55,12 +56,14 @@ definePage('attendance', {
 .dot-work { background: #0a8f5c; }
 .dot-rest { background: #2a5be0; }
 .dot-weather { background: #c2410c; }
+.dot-repair { background: #7c3aed; }
 .dot-empty { background: #e5e7eb; border: 1px dashed #cbd5e1; }
 .attendance-stats { display: flex; gap: 12px; margin-bottom: 12px; font-size: 13px; color: var(--ink); }
 .attendance-stats .stat-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 14px; background: #f3f6fb; }
 .attendance-stats .stat-pill strong { color: #0a8f5c; font-weight: 600; }
 .attendance-stats .stat-pill.rest strong { color: #2a5be0; }
 .attendance-stats .stat-pill.weather strong { color: #c2410c; }
+.attendance-stats .stat-pill.repair strong { color: #7c3aed; }
 .calendar-wrap { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .calendar-head { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 3px; }
@@ -70,6 +73,7 @@ definePage('attendance', {
 .cal-cell.work { background: rgba(10, 143, 92, 0.1); border-color: rgba(10, 143, 92, 0.4); }
 .cal-cell.rest { background: rgba(42, 91, 224, 0.1); border-color: rgba(42, 91, 224, 0.4); }
 .cal-cell.weather { background: rgba(194, 65, 12, 0.1); border-color: rgba(194, 65, 12, 0.4); }
+.cal-cell.repair { background: rgba(124, 58, 237, 0.1); border-color: rgba(124, 58, 237, 0.4); }
 .cal-cell.none { background: #f9fafc; }
 .cal-cell.other-month { opacity: 0.25; cursor: default; background: transparent; }
 .cal-cell.other-month:hover { transform: none; box-shadow: none; }
@@ -77,11 +81,13 @@ definePage('attendance', {
 .cal-cell.work .cal-day { color: #0a8f5c; }
 .cal-cell.rest .cal-day { color: #2a5be0; }
 .cal-cell.weather .cal-day { color: #c2410c; }
+.cal-cell.repair .cal-day { color: #7c3aed; }
 .cal-status { font-size: 10px; line-height: 1; padding: 1px 4px; border-radius: 3px; font-weight: 500; }
 .cal-cell.none .cal-status { color: #bcc6d3; }
 .cal-cell.work .cal-status { background: rgba(10,143,92,0.18); color: #0a8f5c; }
 .cal-cell.rest .cal-status { background: rgba(42,91,224,0.18); color: #2a5be0; }
 .cal-cell.weather .cal-status { background: rgba(194,65,12,0.18); color: #c2410c; }
+.cal-cell.repair .cal-status { background: rgba(124,58,237,0.18); color: #7c3aed; }
 .cal-trip-mini { position: absolute; bottom: 2px; right: 3px; font-size: 10px; color: var(--muted); max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
   `,
 
@@ -100,8 +106,8 @@ definePage('attendance', {
   },
 });
 
-var ATT_STATUS = { work: '正常', rest: '休息', weather: '台风' };
-var ATT_STATUS_CYCLE = ['work', 'rest', 'weather']; // 点击循环顺序
+var ATT_STATUS = { work: '上班', rest: '休息', weather: '台风', repair: '修车' };
+var ATT_STATUS_CYCLE = ['work', 'rest', 'weather', 'repair']; // 点击循环顺序
 
 /** 某司机某月的确认锁：返回确认日期字符串，未确认返回 '' */
 function attLockOf(driverId, month) {
@@ -281,16 +287,18 @@ function renderAttCalendar() {
   syncAttLockUi(driverId, month);
 
   // 统计
-  var statWork = 0, statRest = 0, statWeather = 0, statTripsDays = Object.keys(tripsMap).length;
+  var statWork = 0, statRest = 0, statWeather = 0, statRepair = 0, statTripsDays = Object.keys(tripsMap).length;
   Object.values(attMap).forEach(function (a) {
     if (a.status === 'work') statWork++;
     else if (a.status === 'rest') statRest++;
     else if (a.status === 'weather') statWeather++;
+    else if (a.status === 'repair') statRepair++;
   });
   $('attStats').innerHTML =
-    '<span class="stat-pill">正常 <strong>' + statWork + '</strong> 天</span>' +
+    '<span class="stat-pill">上班 <strong>' + statWork + '</strong> 天</span>' +
     '<span class="stat-pill rest">休息 <strong>' + statRest + '</strong> 天</span>' +
     '<span class="stat-pill weather">台风 <strong>' + statWeather + '</strong> 天</span>' +
+    '<span class="stat-pill repair">修车 <strong>' + statRepair + '</strong> 天</span>' +
     '<span class="stat-pill">趟次记录 <strong>' + statTripsDays + '</strong> 天（对照）</span>';
 }
 

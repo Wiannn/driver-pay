@@ -216,7 +216,7 @@ function computeSettlement(month) {
     trips.forEach(function (item) {
       days[dateOnly(item.date)] = true;
     });
-    // 出勤登记：本月该司机的全部记录（正常/休息/台风）
+    // 出勤登记：本月该司机的全部记录（上班/休息/台风/修车）
     var attAll = db.attendance
       .filter(function (a) {
         return a.driver_id === driver.id && String(a.date).slice(0, 7) === month;
@@ -232,6 +232,9 @@ function computeSettlement(month) {
     }).length;
     var weatherDays = attAll.filter(function (a) {
       return a.status === 'weather';
+    }).length;
+    var repairDays = attAll.filter(function (a) {
+      return a.status === 'repair';
     }).length;
     // 上班天数：优先从 attendance 取，没有登记时才 fallback 到 trips
     var dayCount = attRows.length ? attRows.length : Object.keys(days).length;
@@ -263,6 +266,7 @@ function computeSettlement(month) {
       days: dayCount,
       rest_days: restDays,
       weather_days: weatherDays,
+      repair_days: repairDays,
       km: km,
       commission: commission,
       expected_fuel: expectedFuel,
@@ -296,6 +300,9 @@ function computeSettlement(month) {
       }, 0),
       weather_days: drivers.reduce(function (sum, item) {
         return sum + item.weather_days;
+      }, 0),
+      repair_days: drivers.reduce(function (sum, item) {
+        return sum + item.repair_days;
       }, 0),
       km: total('km'),
       commission: total('commission'),
@@ -720,6 +727,7 @@ function importBackup(event) {
       sheet.rows.push([S('上班天数'), INT(driver.days)]);
       sheet.rows.push([S('休息天数'), INT(driver.rest_days)]);
       sheet.rows.push([S('台风天数'), INT(driver.weather_days)]);
+      sheet.rows.push([S('修车天数'), INT(driver.repair_days)]);
       sheet.rows.push([S('总公里数'), N(driver.km)]);
       sheet.rows.push([S('提成合计（元）'), N(driver.commission)]);
       sheet.rows.push([S('应加油量（升）'), N(driver.expected_fuel)]);
@@ -735,7 +743,7 @@ function importBackup(event) {
       });
       sheet.rows.push([
         TL('合计'),
-        TL('正常 ' + driver.days + ' / 休息 ' + driver.rest_days + ' / 台风 ' + driver.weather_days),
+        TL('上班 ' + driver.days + ' / 休息 ' + driver.rest_days + ' / 台风 ' + driver.weather_days + ' / 修车 ' + driver.repair_days),
       ]);
       sheet.rows.push([]);
       sheet.rows.push([B('趟次明细')]);
@@ -756,20 +764,20 @@ function importBackup(event) {
 
     var summary = {
       name: uniqueSheetName('汇总', used),
-      widths: [14, 14, 12, 12, 12, 12, 14, 14, 14, 12, 12, 14],
+      widths: [14, 14, 12, 12, 12, 12, 12, 14, 14, 14, 12, 12, 14],
       rows: [],
     };
     summary.rows.push([TITLE(monthLabel(month) + ' 全司机汇总')]);
     summary.rows.push([]);
     summary.rows.push([
-      H('司机'), H('车牌'), H('上班天数'), H('休息天数'), H('台风天数'), H('总公里数'), H('提成合计'),
+      H('司机'), H('车牌'), H('上班天数'), H('休息天数'), H('台风天数'), H('修车天数'), H('总公里数'), H('提成合计'),
       H('应加油量（升）'), H('实际加油量（升）'), H('节油量（升）'),
       H('节油（元）'), H('工资（元）'),
     ]);
     data.drivers.forEach(function (driver) {
       summary.rows.push([
         S(driver.name), S(driver.plate), INT(driver.days), INT(driver.rest_days),
-        INT(driver.weather_days), N(driver.km),
+        INT(driver.weather_days), INT(driver.repair_days), N(driver.km),
         N(driver.commission), N(driver.expected_fuel), N(driver.actual_fuel),
         N(driver.saved_fuel), N(driver.saving_amount), NB(driver.salary),
       ]);
@@ -777,7 +785,7 @@ function importBackup(event) {
     var totals = data.totals;
     summary.rows.push([
       TL('合计'), TL(''), TI(totals.days), TI(totals.rest_days), TI(totals.weather_days),
-      TN(totals.km), TN(totals.commission),
+      TI(totals.repair_days), TN(totals.km), TN(totals.commission),
       TN(totals.expected_fuel), TN(totals.actual_fuel), TN(totals.saved_fuel),
       TN(totals.saving_amount), TN(totals.salary),
     ]);
