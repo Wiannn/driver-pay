@@ -22,6 +22,14 @@ definePage('fuel', {
         outline: none;
         background: #fff;
       }
+      /* 与趟次录入表一致：每个单元格都有竖向框线 */
+      .fuel-table th,
+      .fuel-table td {
+        border-right: 1px solid #e8edf5;
+      }
+      .fuel-table th {
+        border-right-color: #dde5f1;
+      }
     </style>
     <div class="page-head">
       <div>
@@ -62,7 +70,7 @@ definePage('fuel', {
         <span class="table-sum" id="fuelSummary"></span>
       </div>
       <div class="table-scroll">
-        <table class="data-table">
+        <table class="data-table fuel-table">
           <thead>
             <tr>
               <th>日期</th>
