@@ -4,6 +4,32 @@
 
 definePage('fuel', {
   html: `
+    <style>
+      .data-table .fuel-note {
+        color: var(--ink);
+        cursor: text;
+        min-width: 140px;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .data-table .fuel-note:empty::before {
+        content: '—';
+        color: #ccc;
+      }
+      .data-table .fuel-note input.inline-edit {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid var(--primary);
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: inherit;
+        color: var(--ink);
+        outline: none;
+        background: #fff;
+      }
+    </style>
     <div class="page-head">
       <div>
         <h2>加油录入</h2>
@@ -50,6 +76,7 @@ definePage('fuel', {
               <th>司机</th>
               <th>地点</th>
               <th class="num">升数（升）</th>
+              <th>备注</th>
               <th>更新人</th>
               <th>更新时间</th>
               <th class="op"></th>
@@ -65,6 +92,13 @@ definePage('fuel', {
     $('fuelForm').addEventListener('submit', saveFuel);
     // 选司机 = 只看这个司机的加油；不选 = 当月全部
     $('fuelDriver').addEventListener('change', renderFuel);
+    // 双击备注单元格 → 内联编辑
+    $('fuelRows').addEventListener('dblclick', function (event) {
+      var cell = event.target.closest('.fuel-note[data-fuel]');
+      if (!cell) return;
+      event.preventDefault();
+      editFuelNote(cell);
+    });
   },
 });
 
@@ -109,7 +143,7 @@ function renderFuel() {
       : db.fuel.length
         ? '本月还没有加油记录 · 试试切换月份（共有 ' + db.fuel.length + ' 笔历史数据）'
         : '还没有加油记录';
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">' + hint + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">' + hint + '</td></tr>';
     $('fuelSummary').textContent = '共 0 笔';
     return;
   }
@@ -124,6 +158,8 @@ function renderFuel() {
         '<td>' + esc(driver ? driver.name : '—') + '</td>' +
         '<td>' + esc(item.place) + '</td>' +
         '<td class="num">' + fmt2(item.liters) + '</td>' +
+        '<td class="fuel-note" data-fuel="' + item.id + '">' +
+        esc(item.note || '') + '</td>' +
         '<td>' + esc(item.updated_by || '—') + '</td>' +
         '<td>' + esc(item.updated_at || '—') + '</td>' +
         '<td class="op"><button type="button" class="link-danger" data-del-fuel="' +
@@ -146,5 +182,47 @@ function renderFuel() {
   $('fuelSummary').innerHTML =
     '共 <b>' + rows.length + '</b> 笔 · 合计 ' + fmt2(total) + ' L' +
     '（加油站 ' + fmt2(station) + ' L / 仓库 ' + fmt2(depot) + ' L）';
+}
+
+/* 双击备注单元格 → 内联编辑，回车/失焦保存，Esc 取消 */
+function editFuelNote(cell) {
+  var recordId = Number(cell.dataset.fuel);
+  var record = db.fuel.find(function (item) {
+    return item.id === recordId;
+  });
+  if (!record) return;
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.value = record.note || '';
+  input.className = 'inline-edit';
+  input.placeholder = '备注（可选）';
+
+  cell.innerHTML = '';
+  cell.appendChild(input);
+  input.focus();
+  input.select();
+
+  function finish() {
+    var value = input.value.trim();
+    if (value !== (record.note || '')) {
+      record.note = value;
+      record.updated_by = operatorName();
+      record.updated_at = nowStamp();
+      saveLocal();
+    }
+    renderFuel();
+  }
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      input.blur();
+    }
+    if (event.key === 'Escape') {
+      input.removeEventListener('blur', finish);
+      renderFuel();
+    }
+  });
 }
 
