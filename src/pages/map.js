@@ -600,6 +600,12 @@ definePage('map', {
   box-shadow: 0 0 0 3px rgba(42, 91, 224, 0.1);
 }
 
+.cfg-export-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
 /* 地点管理弹窗：加宽，分组多栏布局（窄屏自动退回单列） */
 #cfgModal .modal {
   width: 760px;
@@ -1052,6 +1058,7 @@ definePage('map', {
     $('cfgDestPickBtn').addEventListener('click', function () { openCfgModal('dest_pick'); });
 
     // ===== 配置弹窗（始发地 / 进港区 / 提还堆场）事件绑定 =====
+    $('cfgExportBtn').addEventListener('click', exportPlacesCsv);
     $('cfgModalClose').addEventListener('click', closeCfgModal);
     $('cfgModal').addEventListener('click', function (e) {
       if (e.target.id === 'cfgModal') closeCfgModal();
@@ -1207,6 +1214,52 @@ function refreshCfgSuggestList() {
 function closeCfgModal() {
   $('cfgModal').classList.add('is-hidden');
   cfgModalKey = null;
+}
+
+/** CSV 单元格转义：含逗号 / 引号 / 换行时用双引号包裹 */
+function csvCell(text) {
+  var value = String(text == null ? '' : text);
+  return /[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
+}
+
+/** 按分组顺序输出某一方向的地点行，未归组的地点排在最后 */
+function pushSideRows(rows, side, groups, destList) {
+  var seen = {};
+  groups.forEach(function (group) {
+    (group.members || []).forEach(function (name) {
+      if (!name || seen[name] || destList.indexOf(name) < 0) return;
+      seen[name] = true;
+      rows.push([side, group.label || '未分组', name]);
+    });
+  });
+  destList.forEach(function (name) {
+    if (!name || seen[name]) return;
+    seen[name] = true;
+    rows.push([side, '未分组', name]);
+  });
+}
+
+/** 导出地点列表：方向 / 分组 / 地点，CSV（Excel 可直接打开） */
+function exportPlacesCsv() {
+  if (!requireManager('导出地点')) return;
+  var cfg = db.configs || {};
+  var rows = [['方向', '分组', '地点']];
+  (cfg.origins || []).forEach(function (name) {
+    rows.push(['始发地', '', name]);
+  });
+  pushSideRows(rows, '进', cfg.dest_groups || [], cfg.dest_in || []);
+  pushSideRows(rows, '提 / 还 / 落', cfg.dest_pick_groups || [], cfg.dest_pick || []);
+
+  var text = rows
+    .map(function (row) {
+      return row.map(csvCell).join(',');
+    })
+    .join('\r\n');
+  downloadBlob(
+    new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' }),
+    '地点列表_' + todayString() + '.csv'
+  );
+  toast('地点列表已导出');
 }
 
 function cfgGroupKey() {
