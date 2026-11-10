@@ -934,7 +934,7 @@ definePage('map', {
         toast('「' + name + '」还没有坐标，右键选「用弹窗精确设置」');
         return;
       }
-      if (mapState.map) mapState.map.setZoomAndCenter(15, [coord.lng, coord.lat]);
+      locateOnMainMap(coord);
       var group = getPlaceGroups().filter(function (g) { return g.names.indexOf(name) >= 0; })[0];
       if (group) openPlaceInfo(name, group);
     });
@@ -1800,6 +1800,7 @@ var mapState = {
   coordLatLng: null,
   info: null,
   menuName: '',
+  locateSeq: 0,
 };
 
 function amapConfigured() {
@@ -2195,8 +2196,20 @@ function renderMapMarkers(fit) {
   });
 
   if (fit && mapState.markers.length) {
-    map.setFitView(mapState.markers, false, [70, 70, 70, 70]);
+    map.setFitView(mapState.markers, true, [70, 70, 70, 70]);
   }
+}
+
+/** 在地图上定位到某坐标：地图刚初始化或全览动画未结束时首次设置可能被忽略，400ms 后补一次 */
+function locateOnMainMap(coord) {
+  if (!coord) return;
+  var seq = ++mapState.locateSeq;
+  var apply = function () {
+    if (seq !== mapState.locateSeq || !mapState.map) return;
+    mapState.map.setZoomAndCenter(15, [coord.lng, coord.lat]);
+  };
+  apply();
+  setTimeout(apply, 400);
 }
 
 function openPlaceInfo(name, group) {
