@@ -5,7 +5,7 @@
 var AUTH_HTML = `
   <div class="auth-view is-hidden" id="authView">
     <div class="auth-card">
-      <div class="auth-logo"><svg viewBox="0 0 40 40" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="8"/><path d="M20 12V6"/><path d="M20 28v6"/><path d="M12 20H6"/><path d="M34 20h-6"/><path d="M14 24l6-8 6 8"/><path d="M15 26h10"/><path d="M17 23h6"/></svg></div>
+      <div class="auth-logo"><svg viewBox="0 0 64 64" width="30" height="30" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16 L32 36 L44 16"/><path d="M32 36 V50"/><path d="M22 42 H42"/><path d="M22 50 H42"/></svg></div>
       <h1 class="auth-title">司机工资结算</h1>
       <p class="auth-sub">请选择本次使用的身份</p>
       <div class="auth-actions" id="authActions">
