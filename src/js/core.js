@@ -282,6 +282,8 @@
       trips: [],
       fuel: [],
       attendance: [],
+      // 月度结算手动值：{ '司机id|YYYY-MM': { km, commission } }，优先于趟次汇总
+      settle_manual: {},
     };
   }
 
@@ -743,6 +745,7 @@
         trips: parsed.trips,
         fuel: parsed.fuel,
         attendance: Array.isArray(parsed.attendance) ? parsed.attendance : [],
+        settle_manual: parsed.settle_manual && typeof parsed.settle_manual === 'object' ? parsed.settle_manual : {},
       };
     } catch (error) {
       return defaultDb();

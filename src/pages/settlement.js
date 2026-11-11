@@ -141,6 +141,41 @@ definePage('settlement', {
   color: var(--warn);
 }
 
+/* 可手动覆盖的统计项（双击编辑） */
+.stat-edit {
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.stat-edit:hover {
+  outline: 1px dashed var(--primary);
+  outline-offset: -1px;
+}
+
+.manual-tag {
+  font-style: normal;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.stat-input {
+  display: block;
+  width: 100%;
+  margin-top: 3px;
+  padding: 1px 6px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  outline: none;
+  background: #fff;
+}
+
 .stat.good strong {
   color: var(--good);
 }
@@ -167,6 +202,8 @@ definePage('settlement', {
       $('restoreFile').click();
     });
     $('restoreFile').addEventListener('change', importBackup);
+
+    $('settleList').addEventListener('dblclick', onSettleEditDblClick);
 
     window.addEventListener('resize', applyDriverGridCols);
   },
@@ -238,16 +275,22 @@ function computeSettlement(month) {
     }).length;
     // 上班天数：优先从 attendance 取，没有登记时才 fallback 到 trips
     var dayCount = attRows.length ? attRows.length : Object.keys(days).length;
-    var km = round2(
+    var tripKm = round2(
       trips.reduce(function (sum, item) {
         return sum + Number(item.km);
       }, 0)
     );
-    var commission = round2(
+    var tripCommission = round2(
       trips.reduce(function (sum, item) {
         return sum + Number(item.commission);
       }, 0)
     );
+    // 手动值（没有趟次录入时使用），有值时优先覆盖趟次汇总
+    var manual = (db.settle_manual || {})[driver.id + '|' + month] || {};
+    var manualKm = typeof manual.km === 'number';
+    var manualCommission = typeof manual.commission === 'number';
+    var km = manualKm ? round2(manual.km) : tripKm;
+    var commission = manualCommission ? round2(manual.commission) : tripCommission;
     var actualFuel = trunc2(
       fuelRows.reduce(function (sum, item) {
         return sum + Number(item.liters);
@@ -269,6 +312,8 @@ function computeSettlement(month) {
       repair_days: repairDays,
       km: km,
       commission: commission,
+      manual_km: manualKm,
+      manual_commission: manualCommission,
       expected_fuel: expectedFuel,
       actual_fuel: actualFuel,
       saved_fuel: savedFuel,
@@ -361,11 +406,26 @@ function stat(label, value, className) {
   );
 }
 
+/** 可手动覆盖的统计项：双击数值直接输入，清空恢复自动汇总 */
+function editStat(label, value, field, manual) {
+  return (
+    '<div class="stat stat-edit" data-edit="' +
+    field +
+    '" title="双击可手动输入，清空后恢复按趟次汇总">' +
+    '<label>' +
+    label +
+    (manual ? '<em class="manual-tag">手动</em>' : '') +
+    '</label><strong>' +
+    value +
+    '</strong></div>'
+  );
+}
+
 function driverCard(driver) {
   var negative = Number(driver.saved_fuel) < 0;
   var dayWage = Number(driver.days) * DAILY_WAGE;
   return (
-    '<article class="driver-card">' +
+    '<article class="driver-card" data-driver-id="' + driver.id + '">' +
     '<div class="dc-head">' +
     '<div class="avatar">' + esc((driver.name || '?').slice(0, 1)) + '</div>' +
     '<div class="dc-id"><h3>' + esc(driver.name) + '</h3><p>' +
@@ -377,8 +437,8 @@ function driverCard(driver) {
     '<div class="stat-grid">' +
     stat('上班天数', driver.days + ' 天') +
     stat('出勤工资', yuan0(dayWage)) +
-    stat('总公里数', fmt0(driver.km) + ' km') +
-    stat('提成合计', yuan0(driver.commission)) +
+    editStat('总公里数', fmt0(driver.km) + ' km', 'km', driver.manual_km) +
+    editStat('提成合计', yuan0(driver.commission), 'commission', driver.manual_commission) +
     stat('应加油量', fmt2(driver.expected_fuel) + ' L') +
     stat('实际加油量', fmt2(driver.actual_fuel) + ' L') +
     stat('节油量', fmt2(driver.saved_fuel) + ' L', negative ? 'warn' : '') +
@@ -386,6 +446,75 @@ function driverCard(driver) {
     '</div>' +
     '</article>'
   );
+}
+
+/** 双击卡片上的「总公里数 / 提成合计」进入手动输入 */
+function onSettleEditDblClick(event) {
+  var cell = event.target.closest('[data-edit]');
+  if (!cell) return;
+  var card = cell.closest('[data-driver-id]');
+  if (!card) return;
+  startSettleManualEdit(card.dataset.driverId, cell.dataset.edit, cell);
+}
+
+function startSettleManualEdit(driverId, field, cell) {
+  if (cell.querySelector('input')) return;
+  var strong = cell.querySelector('strong');
+  if (!strong) return;
+  var key = driverId + '|' + state.month;
+  var entry = (db.settle_manual || {})[key] || {};
+  var input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.step = '0.01';
+  input.className = 'stat-input';
+  input.value = typeof entry[field] === 'number' ? String(entry[field]) : '';
+  strong.replaceWith(input);
+  input.focus();
+  input.select();
+
+  var settled = false;
+  var finish = function (save) {
+    if (settled) return;
+    settled = true;
+    if (!save) {
+      renderSettlement();
+      return;
+    }
+    var raw = input.value.trim();
+    var store = db.settle_manual || (db.settle_manual = {});
+    var target = store[key] || (store[key] = {});
+    if (raw === '') {
+      delete target[field];
+    } else {
+      var num = Number(raw);
+      if (!isFinite(num) || num < 0) {
+        toast('请输入不小于 0 的数字', 'error');
+        renderSettlement();
+        return;
+      }
+      target[field] = round2(num);
+    }
+    if (!Object.keys(target).length) delete store[key];
+    saveLocal();
+    toast(raw === '' ? '已恢复按趟次汇总' : '已保存手动值');
+    renderSettlement();
+  };
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      finish(true);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      finish(false);
+    }
+  });
+  input.addEventListener('blur', function () {
+    finish(true);
+  });
+  input.addEventListener('dblclick', function (event) {
+    event.stopPropagation();
+  });
 }
 
 /* ================= 数据备份 ================= */
@@ -422,6 +551,7 @@ function importBackup(event) {
         trips: parsed.trips,
         fuel: parsed.fuel,
         attendance: Array.isArray(parsed.attendance) ? parsed.attendance : [],
+        settle_manual: parsed.settle_manual && typeof parsed.settle_manual === 'object' ? parsed.settle_manual : {},
       };
       saveLocal();
       toast('备份已恢复');
@@ -728,6 +858,12 @@ function importBackup(event) {
       sheet.rows.push([S('休息天数'), INT(driver.rest_days)]);
       sheet.rows.push([S('台风天数'), INT(driver.weather_days)]);
       sheet.rows.push([S('修车天数'), INT(driver.repair_days)]);
+      if (driver.manual_km || driver.manual_commission) {
+        var manualParts = [];
+        if (driver.manual_km) manualParts.push('公里数');
+        if (driver.manual_commission) manualParts.push('提成');
+        sheet.rows.push([S('数据来源'), S('手动录入（' + manualParts.join('、') + '）')]);
+      }
       sheet.rows.push([S('总公里数'), N(driver.km)]);
       sheet.rows.push([S('提成合计（元）'), N(driver.commission)]);
       sheet.rows.push([S('应加油量（升）'), N(driver.expected_fuel)]);
