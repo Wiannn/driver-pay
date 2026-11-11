@@ -1120,6 +1120,17 @@ definePage('map', {
       e.preventDefault();
       createDestGroup(groupInput.value);
     });
+    // ESC 关闭弹窗：coordModal 在上、cfgModal 在下，按可见顺序倒序关闭
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if ($('coordModal') && !$('coordModal').classList.contains('is-hidden')) {
+        closeCoordModal();
+        return;
+      }
+      if ($('cfgModal') && !$('cfgModal').classList.contains('is-hidden')) {
+        closeCfgModal();
+      }
+    });
     // 目的地 / 始发地标签右键：坐标菜单
     $('cfgTags').addEventListener('contextmenu', function (e) {
       if (cfgModalKey === 'dest_pick') return;
