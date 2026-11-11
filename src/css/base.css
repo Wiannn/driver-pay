@@ -66,12 +66,9 @@ body {
   border-radius: 11px;
   background: var(--primary);
   color: #fff;
-  font-size: 17px;
-  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  letter-spacing: 0;
   box-shadow: 0 6px 14px -6px rgba(42, 91, 224, 0.7);
 }
 
@@ -503,9 +500,9 @@ body.is-auth .layout {
   border-radius: 14px;
   background: linear-gradient(135deg, #2a5be0, #1f49c2);
   color: #fff;
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 10px 22px -10px rgba(42, 91, 224, 0.9);
 }
 
