@@ -9,60 +9,14 @@
   var appStarted = false;
 
   function init() {
-    bindRoleChip();
-    if (!getRole()) {
-      showAuth();
-      return;
-    }
+    // 已取消身份选择与主管 PIN：一律按主管权限直接进入
+    setRole('manager');
     startApp();
   }
 
-  /* ================= 顶栏身份菜单 ================= */
-  function bindRoleChip() {
-    $('roleChip').addEventListener('click', function (e) {
-      e.stopPropagation();
-      $('roleMenu').classList.toggle('is-hidden');
-    });
-    document.addEventListener('click', function (e) {
-      if (!e.target.closest('.role-box')) $('roleMenu').classList.add('is-hidden');
-    });
-    $('roleChangePin').addEventListener('click', changeManagerPin);
-    $('roleExit').addEventListener('click', exitToAuth);
-  }
-
-  /** 修改主管 PIN：必须先输对当前 PIN，再设置新的 */
-  function changeManagerPin() {
-    $('roleMenu').classList.add('is-hidden');
-    if (!isManager()) {
-      toast('只有主管可以修改 PIN', 'error');
-      return;
-    }
-    var oldPin = window.prompt('请先输入当前主管 PIN', '');
-    if (oldPin === null) return;
-    if (String(oldPin).trim() !== managerPin()) {
-      toast('当前 PIN 不正确', 'error');
-      return;
-    }
-    var next = window.prompt('输入新的 4 位主管 PIN', '');
-    if (next === null) return;
-    next = String(next).trim();
-    if (!/^\d{4}$/.test(next)) {
-      toast('PIN 必须是 4 位数字', 'error');
-      return;
-    }
-    db.configs.manager_pin = next;
-    saveLocal();
-    toast('主管 PIN 已修改', 'success');
-  }
-
-  /** 按身份刷新界面：员工隐藏只读入口 */
+  /** 始终主管权限，不再区分员工只读 */
   function applyRole() {
-    var manager = isManager();
-    document.body.classList.toggle('is-staff', !manager);
-    var chip = $('roleChip');
-    chip.textContent = manager ? '主管' : '员工';
-    chip.classList.toggle('is-staff', !manager);
-    $('roleChangePin').classList.toggle('is-hidden', !manager);
+    document.body.classList.remove('is-staff');
   }
 
   function startApp() {
